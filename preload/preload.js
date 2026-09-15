@@ -52,8 +52,8 @@ contextBridge.exposeInMainWorld('mc', {
   installMod: (projectId, versionId, instanceId, category) => ipcRenderer.invoke('mods:install', { projectId, versionId, instanceId, category }),
   listInstalledMods: (instanceId) => ipcRenderer.invoke('mods:list', { instanceId }),
   uninstallMod: (file, category, instanceId) => ipcRenderer.invoke('mods:uninstall', { file, category, instanceId }),
-  uploadContent: (category) => ipcRenderer.invoke('content:upload', { category }),
-  dropFiles: (category, paths) => ipcRenderer.invoke('content:drop', { category, paths }),
+  uploadContent: (category, instanceId) => ipcRenderer.invoke('content:upload', { category, instanceId }),
+  dropFiles: (category, paths, instanceId) => ipcRenderer.invoke('content:drop', { category, paths, instanceId }),
 
   getSkinPreview: () => ipcRenderer.invoke('skins:preview'),
   listCapes: () => ipcRenderer.invoke('skins:capes'),

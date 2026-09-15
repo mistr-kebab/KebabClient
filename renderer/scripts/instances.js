@@ -277,6 +277,13 @@
   let detailId = null;
   let detailSearchTimer = null;
   let detailSearching = false;
+  let detailCategory = 'mod';
+
+  const DETAIL_CATS = {
+    mod: { label: 'mods', ext: '.jar' },
+    resourcepack: { label: 'resource packs', ext: '.zip' },
+    shader: { label: 'shaders', ext: '.zip' }
+  };
 
   const DETAIL_GROUPS = [
     ['mod', 'detail-mod', 'mods'],
@@ -312,6 +319,11 @@
     if (title) title.textContent = `Add content to ${found.name}`;
     const input = document.getElementById('detailSearchInput');
     if (input) input.value = '';
+    detailCategory = 'mod';
+    document.querySelectorAll('#detailTabs .segment-btn').forEach((x) => {
+      x.classList.toggle('is-active', x.dataset.category === 'mod');
+    });
+    refreshDetailDropText();
     const results = document.getElementById('detailResults');
     if (results) results.textContent = '';
     const st = document.getElementById('detailSearchStatus');
@@ -447,6 +459,91 @@
     detailSearchTimer = window.setTimeout(detailSearch, 400);
   }
 
+  function refreshDetailDropText() {
+    const text = document.getElementById('detailDropZoneText');
+    const cat = DETAIL_CATS[detailCategory] || DETAIL_CATS.mod;
+    if (text) text.textContent = `Drop ${cat.ext} files here to add them to this instance`;
+  }
+
+  function summarizeImport(res, kind) {
+    const parts = [];
+    if (res.added?.length) parts.push(`added ${res.added.join(', ')}`);
+    if (res.skipped?.length) parts.push(`already there: ${res.skipped.join(', ')}`);
+    if (!parts.length && !(res.failed?.length)) return `${kind}: nothing to do.`;
+    let msg = `${kind}: ${parts.join('; ') || 'done'}.`;
+    if (res.failed?.length) {
+      msg += ` Failed: ${res.failed.map((f) => `${f.file} (${f.reason})`).join('; ')}`;
+    }
+    return msg;
+  }
+
+  async function detailUpload() {
+    if (!detailId) return;
+    try {
+      const res = await bridge().uploadContent(detailCategory, detailId);
+      if (res?.canceled) return;
+      toast(summarizeImport(res, DETAIL_CATS[detailCategory].label), res?.failed?.length ? 'error' : 'ok');
+      await loadDetailInstalled();
+    } catch (err) {
+      toast(`Upload failed: ${err.message}`, 'error');
+    }
+  }
+
+  function bindDetailDropzone() {
+    const zone = document.getElementById('detailDropZone');
+    const view = document.getElementById('view-instance-detail');
+    if (view) {
+      view.addEventListener('dragover', (e) => e.preventDefault());
+      view.addEventListener('drop', (e) => e.preventDefault());
+    }
+    if (!zone) return;
+    const stop = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    };
+    ['dragenter', 'dragover'].forEach((name) => {
+      zone.addEventListener(name, (e) => {
+        stop(e);
+        zone.classList.add('is-drag');
+      });
+    });
+    ['dragleave', 'drop'].forEach((name) => {
+      zone.addEventListener(name, (e) => {
+        stop(e);
+        zone.classList.remove('is-drag');
+      });
+    });
+    zone.addEventListener('drop', async (e) => {
+      if (!detailId) return;
+      const files = [...(e.dataTransfer?.files || [])]
+        .map((f) => f.path)
+        .filter((p) => typeof p === 'string' && p.length > 0);
+      if (!files.length) {
+        toast('Drop files from Explorer (not browser content).', 'error');
+        return;
+      }
+      try {
+        const res = await bridge().dropFiles(detailCategory, files, detailId);
+        toast(summarizeImport(res, DETAIL_CATS[detailCategory].label), res?.failed?.length ? 'error' : 'ok');
+        await loadDetailInstalled();
+      } catch (err) {
+        toast(`Drop failed: ${err.message}`, 'error');
+      }
+    });
+  }
+
+  function bindDetailTabs() {
+    document.querySelectorAll('#detailTabs .segment-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        detailCategory = btn.dataset.category || 'mod';
+        document.querySelectorAll('#detailTabs .segment-btn').forEach((x) => {
+          x.classList.toggle('is-active', x === btn);
+        });
+        refreshDetailDropText();
+      });
+    });
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
     const newBtn = document.getElementById('newInstanceButton');
     const panel = document.getElementById('newInstancePanel');
@@ -471,6 +568,11 @@
     if (detailReload) detailReload.addEventListener('click', loadDetailInstalled);
     const detailInput = document.getElementById('detailSearchInput');
     if (detailInput) detailInput.addEventListener('input', onDetailSearchInput);
+    const detailUploadBtn = document.getElementById('detailUploadButton');
+    if (detailUploadBtn) detailUploadBtn.addEventListener('click', detailUpload);
+    bindDetailTabs();
+    bindDetailDropzone();
+    refreshDetailDropText();
     const detailPlay = document.getElementById('detailPlayButton');
     if (detailPlay) {
       detailPlay.addEventListener('click', async () => {

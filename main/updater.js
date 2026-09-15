@@ -12,21 +12,28 @@ function emit(state, data) {
   } catch { /* window may be gone */ }
 }
 
+function publishConfig() {
+  try {
+    return require('../package.json').build?.publish || null;
+  } catch {
+    return null;
+  }
+}
+
 function isSupported() {
   if (!app.isPackaged) return false;
-  try {
-    const cfg = require('../package.json').build?.publish;
-    if (!cfg || !cfg.owner || !cfg.repo) return false;
-    if (String(cfg.owner).includes('DEIN-')) return false;
-  } catch {
-    return false;
+  const cfg = publishConfig();
+  if (!cfg || !cfg.provider) return false;
+  if (cfg.provider === 'generic') return !!cfg.url && !String(cfg.url).includes('DEIN-');
+  if (cfg.provider === 'github') {
+    return !!cfg.owner && !!cfg.repo && !String(cfg.owner).includes('DEIN-');
   }
-  return true;
+  return false;
 }
 
 async function checkNow(userInitiated) {
   if (!isSupported()) {
-    if (userInitiated) emit('error', { message: 'Kein Update-Repo konfiguriert (package.json → build.publish).' });
+    if (userInitiated) emit('error', { message: 'Keine Update-Quelle konfiguriert (package.json → build.publish).' });
     return { ok: false, reason: 'not-configured' };
   }
   try {
@@ -83,7 +90,7 @@ function repeat(fn, ms) {
 }
 
 async function downloadUpdate() {
-  if (!isSupported()) throw new Error('Kein Update-Repo konfiguriert (package.json → build.publish).');
+  if (!isSupported()) throw new Error('Keine Update-Quelle konfiguriert (package.json → build.publish).');
   await autoUpdater.downloadUpdate();
   return { ok: true };
 }
