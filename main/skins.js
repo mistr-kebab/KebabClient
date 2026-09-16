@@ -180,7 +180,7 @@ async function equipCape(capeId) {
   const token = await getValidMcAccessToken();
   const id = String(capeId || '').trim();
   if (!id) throw new Error('Missing cape id.');
-  const res = await fetch(URLS.mcProfileCapes, {
+  const res = await fetch(`${URLS.mcProfileCapes}/active`, {
     method: 'PUT',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ capeId: id })

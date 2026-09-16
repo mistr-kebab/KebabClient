@@ -327,8 +327,13 @@
 
   let detailId = null;
   let detailSearchTimer = null;
-  let detailSearching = false;
+  let resultOffset = 0;
+  let resultTotal = 0;
+  let resultLoading = false;
+  let resultQ = '';
+  const RESULT_LIMIT = 50;
   let detailCategory = 'mod';
+  let searchFilter = 'all';
 
   const DETAIL_CATS = {
     mod: { label: 'mods', ext: '.jar' },
@@ -416,13 +421,14 @@
     const input = document.getElementById('detailSearchInput');
     if (input) input.value = '';
     detailCategory = 'mod';
+    searchFilter = 'all';
     document.querySelectorAll('#detailTabs .segment-btn').forEach((x) => {
-      x.classList.toggle('is-active', x.dataset.category === 'mod');
+      x.classList.toggle('is-active', x.dataset.category === 'all');
     });
     refreshDetailDropText();
     window.showView('instance-detail');
     await loadDetailInstalled();
-    loadBrowse();
+    void fetchResults(true);
   }
 
   const installedProjectIds = new Set();
@@ -532,16 +538,35 @@
     if (window.refreshIcons) window.refreshIcons();
   }
 
-  function renderDetailResults(results) {
+  function resultCardCount() {
+    const grid = document.getElementById('detailResults');
+    return grid ? grid.querySelectorAll('.mod-card').length : 0;
+  }
+
+  function showEmptyResultsMessage() {
+    const grid = document.getElementById('detailResults');
+    if (!grid || resultCardCount()) return;
+    grid.textContent = '';
+    grid.appendChild(el('p', 'muted', resultTotal ? 'Everything here is already installed.' : 'No compatible content found.'));
+  }
+
+  function pruneInstalledCards() {
     const grid = document.getElementById('detailResults');
     if (!grid) return;
-    grid.textContent = '';
-    if (!results.length) {
-      grid.appendChild(el('p', 'muted', 'No compatible content found.'));
-      return;
-    }
-    for (const mod of results) {
+    grid.querySelectorAll('[data-project-id]').forEach((card) => {
+      if (installedProjectIds.has(card.dataset.projectId)) card.remove();
+    });
+    showEmptyResultsMessage();
+  }
+
+  function renderDetailResults(results, append) {
+    const grid = document.getElementById('detailResults');
+    if (!grid) return;
+    if (!append) grid.textContent = '';
+    const fresh = (results || []).filter((mod) => mod && !installedProjectIds.has(mod.id));
+    for (const mod of fresh) {
       const card = el('article', 'mod-card');
+      card.dataset.projectId = mod.id;
       const top = el('div', 'mod-top');
       if (mod.iconUrl) {
         const img = document.createElement('img');
@@ -579,26 +604,20 @@
       if (mod.author) meta.appendChild(el('span', '', `by ${mod.author}`));
       if (meta.childElementCount) foot.appendChild(meta);
       if (INSTALLABLE.includes(mod.projectType)) {
-        const alreadyInstalled = installedProjectIds.has(mod.id);
-        const btn = el('button', 'btn btn-primary btn-sm mod-install', alreadyInstalled ? 'Installed' : 'Install');
+        const btn = el('button', 'btn btn-primary btn-sm mod-install', 'Install');
         btn.type = 'button';
-        btn.disabled = alreadyInstalled;
         btn.addEventListener('click', async () => {
           btn.disabled = true;
-          let done = false;
           try {
             const res = await bridge().installMod(mod.id, undefined, detailId, mod.projectType, { title: mod.title, icon: mod.iconUrl });
             const extra = res?.dependencies?.length ? ` (+${res.dependencies.length} deps)` : '';
             const missing = res?.depProblems?.length ? ` Missing: ${res.depProblems.join('; ')}` : '';
             toast(`Installed ${res?.file || mod.title}${extra}.${missing}`, res?.depProblems?.length ? 'error' : 'ok');
-            installedProjectIds.add((res && res.projectId) || mod.id);
-            btn.textContent = 'Installed';
-            done = true;
             await loadDetailInstalled();
+            pruneInstalledCards();
           } catch (err) {
             toast(`Install failed: ${err.message}`, 'error');
-          } finally {
-            btn.disabled = done;
+            btn.disabled = false;
           }
         });
         foot.appendChild(btn);
@@ -606,56 +625,60 @@
       if (foot.childElementCount) card.appendChild(foot);
       grid.appendChild(card);
     }
+    showEmptyResultsMessage();
     if (window.refreshIcons) window.refreshIcons();
   }
 
-  async function loadBrowse() {
-    if (!detailId || detailSearching) return;
-    const input = document.getElementById('detailSearchInput');
-    if (input && input.value.trim()) return;
+  function resultStatus() {
     const statusEl = document.getElementById('detailSearchStatus');
-    detailSearching = true;
-    if (statusEl) statusEl.textContent = 'Loading popular content…';
-    try {
-      const res = await bridge().searchMods('', {
-        limit: 20, offset: 0, instanceId: detailId, category: detailCategory, sort: 'popular'
-      });
-      if (!detailId) return;
-      if (statusEl) statusEl.textContent = res.total ? `${res.total} popular items.` : 'Popular right now.';
-      renderDetailResults(res.results || []);
-    } catch (err) {
-      if (statusEl) statusEl.textContent = `Browse failed: ${err.message}`;
-    } finally {
-      detailSearching = false;
+    if (!statusEl) return;
+    const shown = resultCardCount();
+    if (resultLoading && !shown) {
+      statusEl.textContent = resultQ ? `Searching for “${resultQ}”…` : 'Loading popular content…';
+    } else if (resultTotal) {
+      statusEl.textContent = `${shown} of ${resultTotal} shown.`;
+    } else {
+      statusEl.textContent = resultQ ? 'No results.' : 'Popular right now.';
     }
   }
 
-  async function detailSearch() {
-    if (!detailId || detailSearching) return;
+  async function fetchResults(reset) {
+    if (!detailId || resultLoading) return;
     const input = document.getElementById('detailSearchInput');
-    const statusEl = document.getElementById('detailSearchStatus');
-    const q = input ? input.value.trim() : '';
-    if (!q) {
-      await loadBrowse();
-      return;
+    if (reset) {
+      resultOffset = 0;
+      resultTotal = 0;
+      resultQ = input ? input.value.trim() : '';
     }
-    detailSearching = true;
-    if (statusEl) statusEl.textContent = `Searching for “${q}”…`;
+    const searching = resultQ.length > 0;
+    resultLoading = true;
+    resultStatus();
     try {
-      const res = await bridge().searchMods(q, { limit: 12, offset: 0, instanceId: detailId, category: 'all' });
+      const params = { limit: RESULT_LIMIT, offset: resultOffset, instanceId: detailId, category: searchFilter };
+      if (!searching) params.sort = 'popular';
+      const res = await bridge().searchMods(resultQ, params);
       if (!detailId) return;
-      if (statusEl) statusEl.textContent = `${res.total} result(s).`;
-      renderDetailResults(res.results || []);
+      resultTotal = res.total || 0;
+      renderDetailResults(res.results || [], !reset);
+      resultOffset += (res.results || []).length;
     } catch (err) {
-      if (statusEl) statusEl.textContent = `Search failed: ${err.message}`;
+      const statusEl = document.getElementById('detailSearchStatus');
+      if (statusEl) statusEl.textContent = searching ? `Search failed: ${err.message}` : `Browse failed: ${err.message}`;
     } finally {
-      detailSearching = false;
+      resultLoading = false;
+      resultStatus();
     }
+  }
+
+  function loadMoreResults() {
+    if (!detailId || resultLoading) return;
+    if (resultOffset >= resultTotal) return;
+    void fetchResults(false);
   }
 
   function onDetailSearchInput() {
     if (detailSearchTimer) window.clearTimeout(detailSearchTimer);
-    detailSearchTimer = window.setTimeout(detailSearch, 400);
+    detailSearchTimer = window.setTimeout(() => { void fetchResults(true); }, 400);
   }
 
   function refreshDetailDropText() {
@@ -773,14 +796,16 @@
   function bindDetailTabs() {
     document.querySelectorAll('#detailTabs .segment-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
-        detailCategory = btn.dataset.category || 'mod';
+        const cat = btn.dataset.category || 'all';
+        searchFilter = cat;
+        if (cat !== 'all') detailCategory = cat;
         document.querySelectorAll('#detailTabs .segment-btn').forEach((x) => {
           x.classList.toggle('is-active', x === btn);
         });
         refreshDetailDropText();
         const input = document.getElementById('detailSearchInput');
         if (input) input.value = '';
-        loadBrowse();
+        void fetchResults(true);
       });
     });
   }
@@ -808,7 +833,23 @@
     const detailReload = document.getElementById('detailReloadButton');
     if (detailReload) detailReload.addEventListener('click', loadDetailInstalled);
     const detailInput = document.getElementById('detailSearchInput');
-    if (detailInput) detailInput.addEventListener('input', onDetailSearchInput);
+    if (detailInput) {
+      detailInput.addEventListener('input', onDetailSearchInput);
+      detailInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          void fetchResults(true);
+        }
+      });
+    }
+    const detailSearchButton = document.getElementById('detailSearchButton');
+    if (detailSearchButton) detailSearchButton.addEventListener('click', () => { void fetchResults(true); });
+    const sentinel = document.getElementById('detailSentinel');
+    if (sentinel && window.IntersectionObserver) {
+      new IntersectionObserver((entries) => {
+        if (entries.some((e) => e.isIntersecting)) loadMoreResults();
+      }, { rootMargin: '600px' }).observe(sentinel);
+    }
     const detailUploadBtn = document.getElementById('detailUploadButton');
     if (detailUploadBtn) detailUploadBtn.addEventListener('click', detailUpload);
     bindDetailTabs();

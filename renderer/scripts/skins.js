@@ -179,11 +179,13 @@
 
   async function upgradeCapeThumb(slot, cape, skinDataUrl, model) {
     try {
-      let shot = capeSnapCache.get(cape.id);
+      const skinKey = skinDataUrl ? `${skinDataUrl.length}:${skinDataUrl.slice(0, 32)}:${skinDataUrl.slice(-32)}` : 'noskin';
+      const cacheKey = `${cape.id}|${skinKey}`;
+      let shot = capeSnapCache.get(cacheKey);
       if (!shot) {
         shot = await snapshotCape(skinDataUrl, model, cape.dataUrl);
         if (!shot || shot.length < 1000) return;
-        capeSnapCache.set(cape.id, shot);
+        capeSnapCache.set(cacheKey, shot);
       }
       if (!slot.isConnected) return;
       slot.textContent = '';
@@ -303,7 +305,11 @@
         variant = b.dataset.variant;
         syncVariantButtons();
         if (currentSkin) {
-          try { await ensureViewer().loadSkin(currentSkin, { model: viewerModel() }); }
+          try {
+            const v = ensureViewer();
+            await v.loadSkin(currentSkin, { model: viewerModel() });
+            if (capeVisible && currentCape) await v.loadCape(currentCape);
+          }
           catch (err) { toast(`Preview failed: ${err.message}`, 'error'); }
         }
       });

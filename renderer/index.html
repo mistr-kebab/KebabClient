@@ -322,10 +322,15 @@
                   <i data-lucide="search" class="search-icon"></i>
                   <input type="search" id="detailSearchInput" class="input" placeholder="Search Modrinth — type to search" autocomplete="off" spellcheck="false">
                 </div>
+                <button type="button" class="btn btn-primary" id="detailSearchButton">
+                  <i data-lucide="plus" class="btn-icon"></i>
+                  <span>Add Content</span>
+                </button>
               </div>
               <p class="status-line" id="detailSearchStatus">Type to search Modrinth for this instance.</p>
-              <div class="segment" role="group" aria-label="Upload category" id="detailTabs">
-                <button type="button" class="segment-btn is-active" data-category="mod">Mods</button>
+              <div class="segment" role="group" aria-label="Content type" id="detailTabs">
+                <button type="button" class="segment-btn is-active" data-category="all">All</button>
+                <button type="button" class="segment-btn" data-category="mod">Mods</button>
                 <button type="button" class="segment-btn" data-category="resourcepack">Resource Packs</button>
                 <button type="button" class="segment-btn" data-category="shader">Shaders</button>
               </div>
@@ -339,6 +344,7 @@
                 </button>
               </div>
               <div class="mod-grid" id="detailResults"></div>
+              <div id="detailSentinel" class="scroll-sentinel" aria-hidden="true"></div>
             </div>
             <div class="panel">
               <div class="panel-head">
