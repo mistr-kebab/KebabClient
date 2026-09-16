@@ -111,17 +111,8 @@
   width: 30px;
   height: 30px;
   border-radius: 8px;
-  background: var(--accent);
-  position: relative;
+  background: url('../assets/icon-256.png') center / cover no-repeat;
   flex: 0 0 30px;
-}
-
-.brand-mark::after {
-  content: "";
-  position: absolute;
-  inset: 8px 6px;
-  background: var(--accent-ink);
-  clip-path: polygon(0 0, 100% 0, 100% 35%, 65% 35%, 65% 100%, 35% 100%, 35% 35%, 0 35%);
 }
 
 .main-col {

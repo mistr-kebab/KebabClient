@@ -16,6 +16,26 @@
   height: 28px;
 }
 
+.instance-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 14px;
+}
+
+.tile-customicon {
+  position: absolute;
+  right: 12px;
+  bottom: -20px;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  object-fit: cover;
+  border: 2px solid var(--bg-raised);
+  background: var(--bg-hover);
+  z-index: 1;
+}
+
 .hero {
   position: relative;
   overflow: hidden;
@@ -305,18 +325,37 @@
   gap: var(--space-3);
 }
 
-.skin-canvas {
+.skin-stage {
   width: 100%;
-  height: auto;
-  aspect-ratio: 1;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
   background: radial-gradient(80% 80% at 50% 30%, #141416 0%, #060607 70%);
   border: 1px solid var(--line-soft);
   border-radius: var(--radius-md);
   cursor: grab;
 }
 
-.skin-canvas:active {
+.skin-stage:active {
   cursor: grabbing;
+}
+
+.skin-canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+
+#view-skins .panel-head {
+  flex-wrap: wrap;
+  row-gap: 8px;
+}
+
+#skinPlayerLabel {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .viewer-controls {
@@ -853,4 +892,98 @@ select.input {
   .home-hero {
     grid-template-columns: 1fr;
   }
+}
+
+/* ---------- Instance-Tiles mit Banner ---------- */
+.instance-tile {
+  padding: 0 0 var(--space-4);
+  overflow: hidden;
+}
+
+.tile-banner {
+  position: relative;
+  height: 92px;
+  align-self: stretch;
+  background-size: cover;
+  background-position: center;
+  background-color: var(--bg-hover);
+}
+
+.tile-banner::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.05) 30%, rgba(0, 0, 0, 0.55) 100%);
+}
+
+.tile-banner .loader-badge {
+  position: absolute;
+  left: 12px;
+  bottom: 10px;
+  z-index: 1;
+}
+
+.tile-activepill {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid rgba(var(--accent-rgb), 0.6);
+  padding: 3px 8px;
+  border-radius: 999px;
+}
+
+.tile-activepill svg {
+  width: 12px;
+  height: 12px;
+}
+
+.instance-tile > :not(.tile-banner) {
+  margin-left: var(--space-4);
+  margin-right: var(--space-4);
+}
+
+.tile-name {
+  margin-top: var(--space-2);
+}
+
+.tile-actions {
+  width: auto;
+  align-self: stretch;
+}
+
+.tile-actions .btn-play {
+  flex: 1;
+  justify-content: center;
+}
+
+.tile-progress {
+  width: auto;
+  align-self: stretch;
+}
+
+.instance-empty {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 48px 24px;
+  text-align: center;
+  background: var(--bg-raised);
+  border: 1px dashed var(--line);
+  border-radius: 16px;
+}
+
+.instance-empty svg {
+  width: 36px;
+  height: 36px;
+  color: var(--text-faint);
 }

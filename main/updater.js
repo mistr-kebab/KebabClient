@@ -12,28 +12,23 @@ function emit(state, data) {
   } catch { /* window may be gone */ }
 }
 
-function publishConfig() {
-  try {
-    return require('../package.json').build?.publish || null;
-  } catch {
-    return null;
-  }
-}
-
 function isSupported() {
-  if (!app.isPackaged) return false;
-  const cfg = publishConfig();
-  if (!cfg || !cfg.provider) return false;
-  if (cfg.provider === 'generic') return !!cfg.url && !String(cfg.url).includes('DEIN-');
-  if (cfg.provider === 'github') {
-    return !!cfg.owner && !!cfg.repo && !String(cfg.owner).includes('DEIN-');
+  // Nur geprueft: paketierte App oder nicht (im Dev-Modus gibt es keine Updates).
+  // Die Update-Quelle selbst (app-update.yml in resources/) prueft electron-updater
+  // beim Check – dessen Fehler reichen wir durch. Hinweis: package.json im asar
+  // enthaelt KEIN build.publish mehr, daher darf hier nicht darauf geprueft werden.
+  try {
+    return app.isPackaged === true;
+  } catch {
+    return false;
   }
-  return false;
 }
 
 async function checkNow(userInitiated) {
   if (!isSupported()) {
-    if (userInitiated) emit('error', { message: 'Keine Update-Quelle konfiguriert (package.json → build.publish).' });
+    if (userInitiated) {
+      emit('error', { code: 'not-configured', message: 'Dev mode or missing update configuration.' });
+    }
     return { ok: false, reason: 'not-configured' };
   }
   try {
@@ -43,7 +38,7 @@ async function checkNow(userInitiated) {
     }
     return { ok: true };
   } catch (err) {
-    emit('error', { message: String(err?.message || err) });
+    emit('error', { code: 'check-failed', message: String(err?.message || err) });
     return { ok: false, reason: String(err?.message || err) };
   }
 }
@@ -90,14 +85,14 @@ function repeat(fn, ms) {
 }
 
 async function downloadUpdate() {
-  if (!isSupported()) throw new Error('Keine Update-Quelle konfiguriert (package.json → build.publish).');
+  if (!isSupported()) throw new Error('No update source configured.');
   await autoUpdater.downloadUpdate();
   return { ok: true };
 }
 
 function installUpdate() {
   try {
-    autoUpdater.quitAndInstall(false, true);
+    autoUpdater.quitAndInstall(true, true);
   } catch {
     app.relaunch();
     app.quit();

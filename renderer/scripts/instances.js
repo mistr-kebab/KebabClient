@@ -67,12 +67,36 @@
     return span;
   }
 
+  const TILE_BANNERS = ['banner.jpg', 'banner_2.jpg', 'banner_3.png', 'banner_4.webp', 'banner_5.webp', 'banner_7.jpg', 'banner_8.jpg', 'banner_9.jpg', 'banner_10.avif', 'banner_11.webp'];
+
+  function tileBanner(instance) {
+    const s = String((instance && instance.id) || (instance && instance.name) || '');
+    let h = 0;
+    for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+    return `./assets/${TILE_BANNERS[h % TILE_BANNERS.length]}`;
+  }
+
   function renderTiles(instances, activeId) {
     const grid = document.getElementById('instanceGrid');
     if (!grid) return;
     grid.textContent = '';
     if (!instances.length) {
-      grid.appendChild(el('p', 'muted', 'No instances yet. Create one above.'));
+      const empty = el('div', 'instance-empty');
+      const ic = document.createElement('i');
+      ic.setAttribute('data-lucide', 'boxes');
+      empty.appendChild(ic);
+      empty.appendChild(el('p', 'muted', 'No instances yet. Create your first one to start playing.'));
+      const btn = el('button', 'btn btn-play btn-sm', 'Create instance');
+      btn.type = 'button';
+      btn.addEventListener('click', () => {
+        const panel = document.getElementById('newInstancePanel');
+        const newBtn = document.getElementById('newInstanceButton');
+        if (panel && panel.hidden && newBtn) newBtn.click();
+        if (panel) panel.scrollIntoView({ block: 'nearest' });
+      });
+      empty.appendChild(btn);
+      grid.appendChild(empty);
+      if (window.refreshIcons) window.refreshIcons();
       return;
     }
     for (const instance of instances) {
@@ -81,18 +105,37 @@
       tile.dataset.instanceId = instance.id;
       tile.setAttribute('role', 'button');
       tile.setAttribute('aria-label', `Select instance ${instance.name}`);
-      const icon = el('span', 'tile-icon');
-      const glyph = document.createElement('i');
-      glyph.setAttribute('data-lucide', instance.loader === 'vanilla' ? 'boxes' : 'package');
-      icon.appendChild(glyph);
-      tile.appendChild(icon);
+      const banner = el('div', 'tile-banner');
+      banner.style.backgroundImage = `url("${tileBanner(instance)}")`;
+      banner.setAttribute('aria-hidden', 'true');
+      banner.appendChild(badge(instance));
+      if (instance.iconDataUrl) {
+        const custom = document.createElement('img');
+        custom.className = 'tile-customicon';
+        custom.alt = '';
+        custom.src = instance.iconDataUrl;
+        banner.appendChild(custom);
+      }
+      if (instance.id === activeId) {
+        const pill = el('span', 'tile-activepill');
+        const check = document.createElement('i');
+        check.setAttribute('data-lucide', 'check');
+        pill.appendChild(check);
+        pill.appendChild(el('span', null, 'Active'));
+        banner.appendChild(pill);
+      }
+      tile.appendChild(banner);
       tile.appendChild(el('span', 'tile-name', instance.name));
-      const sub = el('span', 'tile-sub', `${instance.mc} · `);
-      sub.appendChild(badge(instance));
-      tile.appendChild(sub);
-      if (instance.lastPlayed) {
-        const date = new Date(instance.lastPlayed);
-        tile.appendChild(el('span', 'tile-played', `Played ${date.toLocaleDateString()}`));
+      tile.appendChild(el('span', 'tile-sub', instance.loaderVersion
+        ? `${instance.mc} · ${instance.loader} ${instance.loaderVersion}`
+        : `${instance.mc} · ${instance.loader}`));
+      if (instance.lastPlayed || instance.playtimeText) {
+        const bits = [];
+        if (instance.lastPlayed) {
+          bits.push(`Played ${new Date(instance.lastPlayed).toLocaleDateString()}`);
+        }
+        if (instance.playtimeText) bits.push(`${instance.playtimeText} played`);
+        tile.appendChild(el('span', 'tile-played', bits.join(' · ')));
       }
       const actions = el('span', 'tile-actions');
       const playBtn = el('button', 'btn btn-play btn-sm-pill', 'Play');
@@ -314,6 +357,51 @@
     if (subEl) {
       subEl.textContent = `${found.mc} · `;
       subEl.appendChild(badge(found));
+      if (found.playtimeText) subEl.appendChild(document.createTextNode(` · ${found.playtimeText} played`));
+    }
+    const iconBox = document.querySelector('.detail-head .instance-icon');
+    if (iconBox) {
+      iconBox.textContent = '';
+      if (found.iconDataUrl) {
+        const img = document.createElement('img');
+        img.alt = '';
+        img.src = found.iconDataUrl;
+        iconBox.appendChild(img);
+      } else {
+        const fb = document.createElement('i');
+        fb.setAttribute('data-lucide', 'boxes');
+        iconBox.appendChild(fb);
+        if (window.refreshIcons) window.refreshIcons();
+      }
+    }
+    const iconBtn = document.getElementById('detailIconButton');
+    if (iconBtn) {
+      iconBtn.onclick = async () => {
+        try {
+          const res = await bridge().setInstanceIcon(detailId);
+          if (res && !res.canceled) {
+            toast('Icon updated.', 'ok');
+            await openDetail(detailId);
+            await loadInstances();
+          }
+        } catch (err) {
+          toast(`Icon failed: ${err.message}`, 'error');
+        }
+      };
+    }
+    const iconClearBtn = document.getElementById('detailIconClearButton');
+    if (iconClearBtn) {
+      iconClearBtn.hidden = !found.iconDataUrl;
+      iconClearBtn.onclick = async () => {
+        try {
+          await bridge().clearInstanceIcon(detailId);
+          toast('Icon reset.', 'ok');
+          await openDetail(detailId);
+          await loadInstances();
+        } catch (err) {
+          toast(`Reset failed: ${err.message}`, 'error');
+        }
+      };
     }
     const title = document.getElementById('detailSearchTitle');
     if (title) title.textContent = `Add content to ${found.name}`;
@@ -324,12 +412,9 @@
       x.classList.toggle('is-active', x.dataset.category === 'mod');
     });
     refreshDetailDropText();
-    const results = document.getElementById('detailResults');
-    if (results) results.textContent = '';
-    const st = document.getElementById('detailSearchStatus');
-    if (st) st.textContent = 'Type to search Modrinth for this instance.';
     window.showView('instance-detail');
     await loadDetailInstalled();
+    loadBrowse();
   }
 
   async function loadDetailInstalled() {
@@ -429,15 +514,34 @@
     if (window.refreshIcons) window.refreshIcons();
   }
 
+  async function loadBrowse() {
+    if (!detailId || detailSearching) return;
+    const input = document.getElementById('detailSearchInput');
+    if (input && input.value.trim()) return;
+    const statusEl = document.getElementById('detailSearchStatus');
+    detailSearching = true;
+    if (statusEl) statusEl.textContent = 'Loading popular content…';
+    try {
+      const res = await bridge().searchMods('', {
+        limit: 20, offset: 0, instanceId: detailId, category: detailCategory, sort: 'popular'
+      });
+      if (!detailId) return;
+      if (statusEl) statusEl.textContent = res.total ? `${res.total} popular items.` : 'Popular right now.';
+      renderDetailResults(res.results || []);
+    } catch (err) {
+      if (statusEl) statusEl.textContent = `Browse failed: ${err.message}`;
+    } finally {
+      detailSearching = false;
+    }
+  }
+
   async function detailSearch() {
     if (!detailId || detailSearching) return;
     const input = document.getElementById('detailSearchInput');
     const statusEl = document.getElementById('detailSearchStatus');
-    const grid = document.getElementById('detailResults');
     const q = input ? input.value.trim() : '';
     if (!q) {
-      if (grid) grid.textContent = '';
-      if (statusEl) statusEl.textContent = 'Type to search Modrinth for this instance.';
+      await loadBrowse();
       return;
     }
     detailSearching = true;
@@ -471,6 +575,12 @@
     if (res.skipped?.length) parts.push(`already there: ${res.skipped.join(', ')}`);
     if (!parts.length && !(res.failed?.length)) return `${kind}: nothing to do.`;
     let msg = `${kind}: ${parts.join('; ') || 'done'}.`;
+    if (res.depProblems?.length) {
+      res.failed = [...(res.failed || []), ...res.depProblems.map((d) => ({ file: 'dependency', reason: d }))];
+    }
+    if (res.installedDeps?.length) {
+      msg += ` Dependencies installed: ${res.installedDeps.join(', ')}.`;
+    }
     if (res.failed?.length) {
       msg += ` Failed: ${res.failed.map((f) => `${f.file} (${f.reason})`).join('; ')}`;
     }
@@ -489,6 +599,38 @@
     }
   }
 
+  function collectDropPaths(dt) {
+    const out = [];
+    const push = (p) => {
+      if (typeof p === 'string' && p.length > 0 && !out.includes(p)) out.push(p);
+    };
+    try {
+      for (const f of (dt && dt.files) || []) push(f && f.path);
+    } catch { /* noop */ }
+    try {
+      const items = dt && dt.items ? [...dt.items] : [];
+      for (const it of items) {
+        if (it && it.kind === 'file' && typeof it.getAsFile === 'function') {
+          const f = it.getAsFile();
+          push(f && f.path);
+        }
+      }
+    } catch { /* noop */ }
+    return out;
+  }
+
+  function dropErrorHint(dt) {
+    let hasFiles = false;
+    try {
+      const types = [...(dt?.types || [])].map((s) => String(s).toLowerCase());
+      hasFiles = types.includes('files');
+    } catch { /* noop */ }
+    if (hasFiles) {
+      return 'Drop was blocked (Windows strips file drops when the app runs as administrator — restart it normally or use the file button).';
+    }
+    return 'Drop files from Explorer (not browser content).';
+  }
+
   function bindDetailDropzone() {
     const zone = document.getElementById('detailDropZone');
     const view = document.getElementById('view-instance-detail');
@@ -504,6 +646,9 @@
     ['dragenter', 'dragover'].forEach((name) => {
       zone.addEventListener(name, (e) => {
         stop(e);
+        try {
+          if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+        } catch { /* noop */ }
         zone.classList.add('is-drag');
       });
     });
@@ -515,11 +660,9 @@
     });
     zone.addEventListener('drop', async (e) => {
       if (!detailId) return;
-      const files = [...(e.dataTransfer?.files || [])]
-        .map((f) => f.path)
-        .filter((p) => typeof p === 'string' && p.length > 0);
+      const files = collectDropPaths(e.dataTransfer);
       if (!files.length) {
-        toast('Drop files from Explorer (not browser content).', 'error');
+        toast(dropErrorHint(e.dataTransfer), 'error');
         return;
       }
       try {
@@ -540,6 +683,9 @@
           x.classList.toggle('is-active', x === btn);
         });
         refreshDetailDropText();
+        const input = document.getElementById('detailSearchInput');
+        if (input) input.value = '';
+        loadBrowse();
       });
     });
   }

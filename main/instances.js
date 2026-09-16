@@ -258,6 +258,90 @@ function touchLastPlayed(id) {
   } catch { /* non-critical */ }
 }
 
+const ICON_EXTS = ['.png', '.jpg', '.jpeg', '.webp'];
+const ICON_MAX_BYTES = 2 * 1024 * 1024;
+
+function instanceDir(entry) {
+  return path.join(instancesRoot(), entry.dir);
+}
+
+function iconPathFor(entry) {
+  if (!entry || !entry.icon) return null;
+  return path.join(instanceDir(entry), path.basename(String(entry.icon)));
+}
+
+function setInstanceIcon(id, srcPath) {
+  const instances = listInstances();
+  const entry = instances.find((i) => i.id === id);
+  if (!entry) throw new Error('Instance not found.');
+  const src = String(srcPath || '');
+  if (!src || !fs.existsSync(src)) throw new Error('Image file not found.');
+  const ext = path.extname(src).toLowerCase();
+  if (!ICON_EXTS.includes(ext)) throw new Error('Icon must be PNG, JPG or WebP.');
+  if (fs.statSync(src).size > ICON_MAX_BYTES) throw new Error('Icon must be smaller than 2 MB.');
+  const destName = `icon${ext}`;
+  fs.mkdirSync(instanceDir(entry), { recursive: true });
+  try {
+    const old = iconPathFor(entry);
+    if (old && path.resolve(old) !== path.resolve(path.join(instanceDir(entry), destName)) && fs.existsSync(old)) {
+      fs.unlinkSync(old);
+    }
+  } catch { /* noop */ }
+  fs.copyFileSync(src, path.join(instanceDir(entry), destName));
+  entry.icon = destName;
+  persistInstances(instances);
+  return entry;
+}
+
+function clearInstanceIcon(id) {
+  const instances = listInstances();
+  const entry = instances.find((i) => i.id === id);
+  if (!entry) throw new Error('Instance not found.');
+  try {
+    const old = iconPathFor(entry);
+    if (old && fs.existsSync(old)) fs.unlinkSync(old);
+  } catch { /* noop */ }
+  entry.icon = null;
+  persistInstances(instances);
+  return entry;
+}
+
+function iconDataUrl(entry) {
+  try {
+    const full = iconPathFor(entry);
+    if (!full || !fs.existsSync(full)) return null;
+    const ext = path.extname(full).toLowerCase();
+    const mime = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg';
+    return `data:${mime};base64,${fs.readFileSync(full).toString('base64')}`;
+  } catch {
+    return null;
+  }
+}
+
+function fmtPlaytime(ms) {
+  const totalMin = Math.floor((Number(ms) || 0) / 60000);
+  if (totalMin <= 0) return '';
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  if (h <= 0) return `${m} min`;
+  return `${h}h ${m}m`;
+}
+
+function describeInstance(entry) {
+  if (!entry) return entry;
+  return { ...entry, iconDataUrl: iconDataUrl(entry), playtimeText: fmtPlaytime(entry.totalPlayMs) };
+}
+
+function addPlaytime(id, ms) {
+  try {
+    const instances = listInstances();
+    const entry = instances.find((i) => i.id === id);
+    if (!entry || !(ms > 0)) return;
+    entry.totalPlayMs = (Number(entry.totalPlayMs) || 0) + Math.round(ms);
+    persistInstances(instances);
+  } catch { /* non-critical */ }
+}
+
 module.exports = {
   LOADERS,
   listInstances,
@@ -269,6 +353,10 @@ module.exports = {
   renameInstance,
   deleteInstance,
   touchLastPlayed,
+  setInstanceIcon,
+  clearInstanceIcon,
+  addPlaytime,
+  describeInstance,
   provisionalVariantId,
   ensureSeeded
 };

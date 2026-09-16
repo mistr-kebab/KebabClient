@@ -4,6 +4,7 @@
   const { bridge, toast, el } = window.launcherUtil;
 
   let viewer = null;
+  let resizeObserver = null;
   let variant = 'classic';
   let pickedBase64 = null;
   let currentSkin = null;
@@ -14,6 +15,21 @@
     return variant === 'slim' ? 'slim' : 'default';
   }
 
+  function stageSize() {
+    const stage = document.getElementById('skinStage');
+    if (!stage) return 0;
+    return Math.max(0, Math.round(stage.getBoundingClientRect().width || 0));
+  }
+
+  function fitViewer() {
+    if (!viewer) return;
+    const size = stageSize();
+    if (size < 40) return;
+    try {
+      if (Math.abs(viewer.width - size) >= 2) viewer.setSize(size, size);
+    } catch { /* keep current size */ }
+  }
+
   function ensureViewer() {
     if (viewer) return viewer;
     if (!window.skinview3d) {
@@ -21,18 +37,24 @@
     }
     const canvas = document.getElementById('skinCanvas');
     if (!canvas) throw new Error('Preview canvas not found.');
-    const box = canvas.getBoundingClientRect();
-    const size = Math.max(240, Math.min(480, Math.round(box.width || 360)));
+    const startSize = stageSize() || 320;
     viewer = new window.skinview3d.SkinViewer({
       canvas,
-      width: size,
-      height: size,
-      preserveRatio: false
+      width: startSize,
+      height: startSize
     });
     viewer.controls.enablePan = false;
     viewer.autoRotate = true;
     viewer.autoRotateSpeed = 1.0;
     applyAnimation();
+    try {
+      const stage = document.getElementById('skinStage');
+      if (stage && window.ResizeObserver && !resizeObserver) {
+        resizeObserver = new ResizeObserver(() => fitViewer());
+        resizeObserver.observe(stage);
+      }
+    } catch { /* fixed-size fallback */ }
+    fitViewer();
     return viewer;
   }
 
@@ -58,16 +80,26 @@
     const v = ensureViewer();
     currentSkin = dataUrl || null;
     currentCape = capeDataUrl || null;
+    let skinError = null;
+    let capeError = null;
     if (dataUrl) {
-      await v.loadSkin(dataUrl, { model: viewerModel() });
+      try {
+        await v.loadSkin(dataUrl, { model: viewerModel() });
+      } catch (err) {
+        skinError = err?.message || String(err);
+      }
     }
     if (capeDataUrl && capeVisible) {
-      await v.loadCape(capeDataUrl).catch(() => {
+      try {
+        await v.loadCape(capeDataUrl);
+      } catch (err) {
+        capeError = err?.message || String(err);
         try { v.resetCape(); } catch { /* noop */ }
-      });
+      }
     } else {
       try { v.resetCape(); } catch { /* noop */ }
     }
+    return { skinOk: !!dataUrl && !skinError, skinError, capeError };
   }
 
   function renderCapes(capes, activeId) {
@@ -143,6 +175,8 @@
     } catch { /* history is optional */ }
   }
 
+  let dataLoadedAt = 0;
+
   async function reload() {
     const statusEl = document.getElementById('skinStatus');
     const label = document.getElementById('skinPlayerLabel');
@@ -153,17 +187,36 @@
       if (preview?.skin?.variant === 'SLIM') variant = 'slim';
       else if (preview?.skin?.variant === 'CLASSIC') variant = 'classic';
       syncVariantButtons();
-      await showSkin(preview?.skin?.dataUrl, preview?.cape?.dataUrl);
+      const shown = await showSkin(preview?.skin?.dataUrl, preview?.cape?.dataUrl);
       renderCapes(preview?.capes || [], preview?.cape?.id);
       if (statusEl) {
-        statusEl.textContent = preview?.skin
-          ? `Skin: ${preview.skin.variant || variant} · Cape: ${preview?.cape?.alias || 'none'}`
-          : 'No skin found on profile.';
+        if (!preview?.skin) {
+          statusEl.textContent = 'No skin found on profile.';
+        } else if (!preview.skin.dataUrl) {
+          statusEl.textContent = `Skin texture download failed (${preview.skin.variant || variant}) — check connection, then Reload preview.`;
+        } else if (shown.skinError) {
+          statusEl.textContent = `Skin preview error: ${shown.skinError}`;
+        } else {
+          statusEl.textContent = `Skin: ${preview.skin.variant || variant} · Cape: ${preview?.cape?.alias || 'none'}`;
+        }
+        if (shown.capeError) statusEl.textContent += ` (cape: ${shown.capeError})`;
+      }
+      if (preview?.skin && (!preview.skin.dataUrl || shown.skinError)) {
+        toast('Skin texture failed to load — check connection, then Reload preview.', 'error');
       }
       await loadHistory();
+      dataLoadedAt = Date.now();
     } catch (err) {
       if (statusEl) statusEl.textContent = `Preview unavailable: ${err.message}`;
     }
+  }
+
+  function onSkinsShown() {
+    try {
+      ensureViewer();
+      fitViewer();
+    } catch { /* viewer bleibt optional */ }
+    if (!dataLoadedAt || Date.now() - dataLoadedAt > 5 * 60 * 1000) reload();
   }
 
   function syncVariantButtons() {
@@ -216,7 +269,8 @@
           if (pickedLabel) pickedLabel.textContent = `${res.fileName} (${res.width}x${res.height})`;
           if (uploadBtn) uploadBtn.disabled = false;
           try {
-            await showSkin(`data:image/png;base64,${pickedBase64}`, currentCape);
+            const shown = await showSkin(`data:image/png;base64,${pickedBase64}`, currentCape);
+            if (!shown.skinOk) toast(`Preview failed: ${shown.skinError || 'invalid texture'}`, 'error');
           } catch (err) { toast(`Preview failed: ${err.message}`, 'error'); }
         } catch (err) {
           toast(`Invalid skin: ${err.message}`, 'error');
@@ -246,6 +300,9 @@
       const statusEl = document.getElementById('skinStatus');
       if (statusEl) statusEl.textContent = `3D preview unavailable: ${err.message}`;
     }
+    document.addEventListener('view:shown', (e) => {
+      if (e && e.detail && e.detail.view === 'skins') onSkinsShown();
+    });
     reload();
   });
 })();

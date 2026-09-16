@@ -44,6 +44,8 @@ contextBridge.exposeInMainWorld('mc', {
   renameInstance: (id, name) => ipcRenderer.invoke('instances:rename', { id, name }),
   deleteInstance: (id) => ipcRenderer.invoke('instances:delete', { id }),
   setActiveInstance: (id) => ipcRenderer.invoke('instances:setActive', { id }),
+  setInstanceIcon: (id) => ipcRenderer.invoke('instances:setIcon', { id }),
+  clearInstanceIcon: (id) => ipcRenderer.invoke('instances:clearIcon', { id }),
   onInstancesChanged: (cb) => on('instances:changed', cb),
   getMcVersions: () => ipcRenderer.invoke('meta:mcVersions'),
   getLoaders: (mc) => ipcRenderer.invoke('meta:loaders', { mc }),

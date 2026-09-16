@@ -101,6 +101,12 @@ function microsoftClientId() {
   return process.env.MC_LAUNCHER_CLIENT_ID || process.env.AZURE_CLIENT_ID || '';
 }
 
+const BUILTIN_DISCORD_CLIENT_ID = '1549540973653004320';
+
+function discordClientId() {
+  return process.env.DISCORD_CLIENT_ID || BUILTIN_DISCORD_CLIENT_ID;
+}
+
 function msRedirectUri() {
   return 'https://login.microsoftonline.com/common/oauth2/nativeclient';
 }
@@ -110,6 +116,8 @@ module.exports = {
   APP_NAME,
   BUILTIN_CLIENT_ID,
   BUILTIN_REDIRECT_URI,
+  BUILTIN_DISCORD_CLIENT_ID,
+  discordClientId,
   URLS,
   dataDir,
   defaultDataDir,

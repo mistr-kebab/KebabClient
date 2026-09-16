@@ -42,6 +42,9 @@
     });
     const crumb = document.getElementById('crumbView');
     if (crumb) crumb.textContent = crumbName(view);
+    try {
+      document.dispatchEvent(new CustomEvent('view:shown', { detail: { view } }));
+    } catch { /* noop */ }
   }
 
   function bindNav() {

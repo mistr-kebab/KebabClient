@@ -53,6 +53,15 @@
       'update.restartTitle': 'App neustarten und Update installieren',
       'update.readyMsg': 'Update geladen — Neustart zum Installieren.',
       'update.failed': 'Update fehlgeschlagen',
+      'update.errNotConfigured': 'Keine Update-Quelle konfiguriert (Dev-Modus oder fehlende Update-Konfiguration).',
+      'about.title': 'KebabClient',
+      'about.installed': 'Installierte Version',
+      'about.latest': 'Neueste Version',
+      'about.users': 'Aktive Nutzer',
+      'about.check': 'Nach Updates suchen',
+      'about.checking': 'Suche läuft …',
+      'about.uptodate': 'Du bist aktuell.',
+      'about.failed': 'Versionsabfrage fehlgeschlagen',
       'toast.close': 'Schließen'
     },
     en: {
@@ -106,6 +115,15 @@
       'update.restartTitle': 'Restart app and install update',
       'update.readyMsg': 'Update downloaded — restart to install.',
       'update.failed': 'Update failed',
+      'update.errNotConfigured': 'No update source configured (dev mode or missing update configuration).',
+      'about.title': 'KebabClient',
+      'about.installed': 'Installed version',
+      'about.latest': 'Latest version',
+      'about.users': 'Active users',
+      'about.check': 'Check for updates',
+      'about.checking': 'Checking …',
+      'about.uptodate': 'You are up to date.',
+      'about.failed': 'Version check failed',
       'toast.close': 'Dismiss'
     }
   };

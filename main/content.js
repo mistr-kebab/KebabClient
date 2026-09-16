@@ -1,5 +1,6 @@
 'use strict';
 
+const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
 const { URLS } = require('./config');
@@ -74,12 +75,14 @@ async function searchMods(query, options) {
     const cat = categoryOf(catKey);
     facets.push([`project_type:${cat.key}`]);
   }
-  const data = await apiGet('/search', {
+  const params = {
     query: query || '',
     facets: JSON.stringify(facets),
     limit: String(opts.limit || 24),
     offset: String(opts.offset || 0)
-  });
+  };
+  if (opts.sort === 'popular') params.index = 'downloads';
+  const data = await apiGet('/search', params);
   return {
     total: data.total_hits || 0,
     results: (data.hits || []).map((h) => ({
@@ -152,14 +155,49 @@ async function installMod(projectId, versionId, instanceId, onStep, category) {
   onStep && onStep({ phase: 'download', label: `Downloading ${primary.filename}` });
   await downloadToFile(primary.url, dest);
 
-  async function fetchPinnedVersion(projectId, versionId) {
-    try {
-      const v = await apiGet(`/version/${encodeURIComponent(versionId)}`);
-      if (v && v.project_id === projectId && (v.files || []).length) return v;
-    } catch { /* fall through */ }
+  const depResult = await installRequiredDeps(version, loaders, mc, dir, onStep);
+  const installedDeps = depResult.installedDeps;
+  const depProblems = depResult.depProblems;
+
+  return { file: primary.filename, version: version.version_number, dependencies: installedDeps, depProblems };
+}
+
+function sha512File(file) {
+  return new Promise((resolve, reject) => {
+    const h = crypto.createHash('sha512');
+    const s = fs.createReadStream(file);
+    s.on('data', (c) => h.update(c));
+    s.on('end', () => resolve(h.digest('hex')));
+    s.on('error', reject);
+  });
+}
+
+async function fetchPinnedVersion(projectId, versionId) {
+  try {
+    const v = await apiGet(`/version/${encodeURIComponent(versionId)}`);
+    if (v && v.project_id === projectId && (v.files || []).length) return v;
+  } catch { /* fall through */ }
+  return null;
+}
+
+// Modrinth-Version einer lokalen Datei anhand ihres sha512-Hash bestimmen.
+// Gibt null zurueck, wenn die Datei nicht auf Modrinth liegt (Custom-Mod).
+async function identifyVersionByHash(filePath) {
+  let hash;
+  try {
+    hash = await sha512File(filePath);
+  } catch {
     return null;
   }
+  try {
+    return await apiGet(`/version_file/${hash}`, { algorithm: 'sha512' });
+  } catch (err) {
+    if (/\(404\)/.test(String(err && err.message)) || /\(400\)/.test(String(err && err.message))) return null;
+    throw err;
+  }
+}
 
+async function installRequiredDeps(version, loaders, mc, dir, onStep) {
   const installedDeps = [];
   const depProblems = [];
   for (const dep of version.dependencies || []) {
@@ -191,8 +229,38 @@ async function installMod(projectId, versionId, instanceId, onStep, category) {
       depProblems.push(`${dep.project_id}: ${err.message}`);
     }
   }
+  return { installedDeps, depProblems };
+}
 
-  return { file: primary.filename, version: version.version_number, dependencies: installedDeps, depProblems };
+// Holt fehlende Pflicht-Abhaengigkeiten fuer bereits im Ordner liegende
+// Dateien (Drop/Upload) anhand ihres Modrinth-Hash nach.
+async function ensureDependenciesForFiles(filenames, instanceId, category, onStep) {
+  const cat = categoryOf(category);
+  const instance = resolveInstance(instanceId);
+  const mc = instance.mc;
+  const loaders = cat.key === 'mod' ? loaderFilter(instance) : null;
+  const dir = contentDir(instance.id, cat.key);
+  const installedDeps = [];
+  const depProblems = [];
+  const unknownFiles = [];
+  for (const file of filenames || []) {
+    const full = path.join(dir, path.basename(String(file)));
+    let version = null;
+    try {
+      version = await identifyVersionByHash(full);
+    } catch (err) {
+      depProblems.push(`${file}: dependency check failed (${err.message})`);
+      continue;
+    }
+    if (!version) {
+      unknownFiles.push(file);
+      continue;
+    }
+    const r = await installRequiredDeps(version, loaders, mc, dir, onStep);
+    installedDeps.push(...r.installedDeps);
+    depProblems.push(...r.depProblems);
+  }
+  return { installedDeps, depProblems, unknownFiles };
 }
 
 function listDir(dir, exts) {
@@ -236,7 +304,7 @@ function uninstallMod(filename, instanceId, category) {
   return { removed: safe };
 }
 
-function importContent(category, sourcePaths, instanceId) {
+async function importContent(category, sourcePaths, instanceId) {
   const cat = categoryOf(category);
   const dir = contentDir(instanceId, cat.key);
   const added = [];
@@ -260,7 +328,20 @@ function importContent(category, sourcePaths, instanceId) {
       failed.push({ file: safe, reason: err.message });
     }
   }
-  return { added, skipped, failed };
+  // Pflicht-Abhaengigkeiten fuer frisch hinzugefuegte Dateien nachholen
+  // (Hash-Lookup auf Modrinth; Custom-Mods werden uebersprungen).
+  let installedDeps = [];
+  let depProblems = [];
+  if (added.length) {
+    try {
+      const r = await ensureDependenciesForFiles(added, instanceId, cat.key, null);
+      installedDeps = r.installedDeps;
+      depProblems = r.depProblems;
+    } catch (err) {
+      depProblems.push(`dependency check failed: ${err.message}`);
+    }
+  }
+  return { added, skipped, failed, installedDeps, depProblems };
 }
 
 module.exports = {
@@ -271,6 +352,8 @@ module.exports = {
   listInstalled,
   uninstallMod,
   importContent,
+  ensureDependenciesForFiles,
+  installRequiredDeps,
   modsDir,
   contentDir
 };

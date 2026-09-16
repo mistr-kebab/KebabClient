@@ -18,6 +18,14 @@ function setEmitter(fn) {
   emit = fn;
 }
 
+function appVersion() {
+  try {
+    return require('electron').app.getVersion();
+  } catch {
+    return '0.0.0';
+  }
+}
+
 function isRunning() {
   return child !== null;
 }
@@ -329,17 +337,23 @@ async function ensureLoaderFiles(instance, layout, vanillaJson, progress, tally)
     setLoaderVersion(instance.id, loaderVersion, variantId);
     instance = getInstance(instance.id);
   }
-  const merged = loaders.mergeProfile(vanillaJson, profile, instance.mc);
+  const mavenBase = loaders.LOADERS[loader].maven;
+  // Profil-Libs VOR dem Merge normalisieren (downloads.artifact aufloesen),
+  // damit sie im gemergten JSON stehen. Sonst fehlen sie im Classpath und der
+  // Start stirbt mit ClassNotFoundException (z.B. KnotClient).
+  const normalizedProfileLibs = [];
+  for (const rawLib of profile.libraries || []) {
+    if (!rulesAllow(rawLib.rules)) continue;
+    normalizedProfileLibs.push(loaders.normalizeProfileLibrary(rawLib, mavenBase));
+  }
+  const merged = loaders.mergeProfile(vanillaJson, { ...profile, libraries: normalizedProfileLibs }, instance.mc);
   const variantDir = path.join(layout.versionsBase, variantId);
   fs.mkdirSync(variantDir, { recursive: true });
   const versionFile = path.join(variantDir, `${variantId}.json`);
   fs.writeFileSync(versionFile, JSON.stringify(merged), 'utf8');
 
   progress('loader', 0.5, `Downloading ${label} libraries`);
-  const mavenBase = loaders.LOADERS[loader].maven;
-  for (const rawLib of profile.libraries || []) {
-    if (!rulesAllow(rawLib.rules)) continue;
-    const lib = loaders.normalizeProfileLibrary(rawLib, mavenBase);
+  for (const lib of normalizedProfileLibs) {
     const dest = libraryArtifactPath(lib, layout.libraries);
     const art = lib.downloads.artifact;
     if (dest && art?.url) {
@@ -536,7 +550,7 @@ async function launchGame(instanceId) {
     version_type: versionJson.type || 'release',
     natives_directory: natives,
     launcher_name: 'KebabClient',
-    launcher_version: '0.1.0',
+    launcher_version: appVersion(),
     classpath
   };
 
@@ -563,12 +577,16 @@ async function launchGame(instanceId) {
 
   child = spawn(java, args, { cwd: inst, env: { ...process.env } });
   touchLastPlayed(instance.id);
+  const playStart = Date.now();
+  const playId = instance.id;
+  try { require('./discord').showGame(instance.name); } catch { /* noop */ }
   emit('game:status', { running: true, pid: child.pid || null });
 
   const pump = (stream) => (chunk) => {
     const text = chunk.toString('utf8');
     for (const line of text.split(/\r?\n/)) {
       if (line.length === 0) continue;
+      try { require('./discord').handleGameLine(line); } catch { /* noop */ }
       emit('game:log', { stream, line: line.slice(0, 4000) });
     }
   };
@@ -580,6 +598,10 @@ async function launchGame(instanceId) {
     child = null;
   });
   child.on('exit', (code, signal) => {
+    try {
+      require('./instances').addPlaytime(playId, Date.now() - playStart);
+    } catch { /* non-critical */ }
+    try { require('./discord').clearGame(); } catch { /* noop */ }
     emit('game:log', { stream: 'system', line: `Game exited (code=${code} signal=${signal || '-'})` });
     emit('game:status', { running: false, pid: null, code });
     child = null;

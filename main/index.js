@@ -6,13 +6,14 @@ const config = require('./config');
 const store = require('./store');
 const auth = require('./auth');
 const minecraft = require('./minecraft');
-const modrinth = require('./modrinth');
+const content = require('./content');
 const skins = require('./skins');
 const servers = require('./servers');
 const instances = require('./instances');
 const loaders = require('./loaders');
 const appSettings = require('./settings');
 const updater = require('./updater');
+const telemetry = require('./telemetry');
 
 let mainWindow = null;
 
@@ -126,9 +127,26 @@ function registerIpc() {
   });
 
   ipcMain.handle('instances:list', async () => ({
-    instances: instances.listInstances(),
+    instances: instances.listInstances().map((i) => instances.describeInstance(i)),
     activeId: instances.getActiveInstance()?.id || null
   }));
+  ipcMain.handle('instances:setIcon', async (_e, args) => {
+    const id = String(args?.id || '');
+    const picked = await dialog.showOpenDialog(mainWindow, {
+      title: 'Choose instance icon',
+      filters: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'webp'] }],
+      properties: ['openFile']
+    });
+    if (picked.canceled || !picked.filePaths[0]) return { canceled: true };
+    const entry = instances.setInstanceIcon(id, picked.filePaths[0]);
+    broadcast('instances:changed', { instances: instances.listInstances(), activeId: instances.getActiveInstance()?.id || null });
+    return { canceled: false, entry: instances.describeInstance(entry) };
+  });
+  ipcMain.handle('instances:clearIcon', async (_e, args) => {
+    const entry = instances.clearInstanceIcon(String(args?.id || ''));
+    broadcast('instances:changed', { instances: instances.listInstances(), activeId: instances.getActiveInstance()?.id || null });
+    return { ok: true, entry: instances.describeInstance(entry) };
+  });
   ipcMain.handle('instances:create', async (_e, args) => {
     const created = instances.createInstance({ name: args?.name, mc: args?.mc, loader: args?.loader });
     broadcast('instances:changed', { instances: instances.listInstances(), activeId: created.id });
@@ -178,23 +196,24 @@ function registerIpc() {
   });
 
   ipcMain.handle('mods:search', async (_e, args) =>
-    modrinth.searchMods(args?.query || '', {
+    content.searchMods(args?.query || '', {
       limit: args?.limit || 24,
       offset: args?.offset || 0,
       instanceId: args?.instanceId,
-      category: args?.category
+      category: args?.category,
+      sort: args?.sort
     })
   );
   ipcMain.handle('mods:install', async (_e, args) => {
-    const res = await modrinth.installMod(args?.projectId, args?.versionId, args?.instanceId, (s) =>
+    const res = await content.installMod(args?.projectId, args?.versionId, args?.instanceId, (s) =>
       broadcast('game:progress', { phase: 'mods', ...s }), args?.category);
     return res;
   });
-  ipcMain.handle('mods:list', async (_e, args) => modrinth.listInstalled(args?.instanceId, args?.category));
-  ipcMain.handle('mods:uninstall', async (_e, args) => modrinth.uninstallMod(args?.file, args?.instanceId, args?.category));
+  ipcMain.handle('mods:list', async (_e, args) => content.listInstalled(args?.instanceId, args?.category));
+  ipcMain.handle('mods:uninstall', async (_e, args) => content.uninstallMod(args?.file, args?.instanceId, args?.category));
 
   ipcMain.handle('content:drop', async (_e, args) =>
-    modrinth.importContent(args?.category, args?.paths, args?.instanceId)
+    content.importContent(args?.category, args?.paths, args?.instanceId)
   );
   ipcMain.handle('content:upload', async (_e, args) => {
     const key = String(args?.category || 'mod').toLowerCase();
@@ -207,7 +226,7 @@ function registerIpc() {
       properties: ['openFile', 'multiSelections']
     });
     if (res.canceled || !res.filePaths.length) return { canceled: true };
-    return { canceled: false, ...modrinth.importContent(key, res.filePaths, args?.instanceId) };
+    return { canceled: false, ...content.importContent(key, res.filePaths, args?.instanceId) };
   });
 
   ipcMain.handle('skins:preview', async () => skins.getPreview());
@@ -302,6 +321,8 @@ if (!gotSingleInstanceLock) {
     registerIpc();
     createWindow();
     updater.initUpdater(broadcast);
+    telemetry.startTelemetry();
+    try { require('./discord').showMenu(); } catch { /* noop */ }
     autoRefresh();
     try { servers.syncToAllInstances(); } catch (err) { console.error('Could not sync servers.dat:', err); }
     app.on('activate', () => {

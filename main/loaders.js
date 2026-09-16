@@ -21,8 +21,17 @@ function isSupported(loader) {
   return Object.hasOwn(LOADERS, loader);
 }
 
+function clientUA() {
+  try {
+    const v = require('electron').app.getVersion();
+    return `KebabClient/${v}`;
+  } catch {
+    return 'KebabClient/unknown';
+  }
+}
+
 async function fetchJson(url) {
-  const res = await fetch(url, { headers: { Accept: 'application/json', 'User-Agent': 'KebabClient/0.1.0' } });
+  const res = await fetch(url, { headers: { Accept: 'application/json', 'User-Agent': clientUA() } });
   if (!res.ok) throw new Error(`Loader metadata request failed (${res.status}): ${url}`);
   return res.json();
 }

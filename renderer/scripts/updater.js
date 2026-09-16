@@ -79,9 +79,12 @@
         } else if (msg.state === 'none') {
           if (state !== 'ready') state = 'idle';
         } else if (msg.state === 'error') {
+          const errText = msg.code === 'not-configured'
+            ? t('update.errNotConfigured', 'No update source configured.')
+            : `${t('update.failed', 'Update fehlgeschlagen')}${msg.message ? `: ${msg.message}` : ''}`;
           if (state === 'downloading') {
             state = 'available';
-            toast(`${t('update.failed', 'Update fehlgeschlagen')}: ${msg.message || ''}`, 'error');
+            toast(errText, 'error');
           } else {
             state = 'idle';
           }

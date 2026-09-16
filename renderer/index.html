@@ -302,6 +302,12 @@
                   <i data-lucide="play" class="btn-icon"></i>
                   <span data-i18n="home.play">Spielen</span>
                 </button>
+                <button type="button" class="icon-btn" id="detailIconButton" title="Change icon">
+                  <i data-lucide="upload" class="btn-icon"></i>
+                </button>
+                <button type="button" class="icon-btn" id="detailIconClearButton" title="Reset icon" hidden>
+                  <i data-lucide="x" class="btn-icon"></i>
+                </button>
               </span>
             </div>
             <div class="panel">
@@ -383,7 +389,9 @@
                     </label>
                   </div>
                 </div>
-                <canvas id="skinCanvas" class="skin-canvas" width="256" height="256"></canvas>
+                <div class="skin-stage" id="skinStage">
+                  <canvas id="skinCanvas" class="skin-canvas" width="320" height="320"></canvas>
+                </div>
                 <label class="check-row" for="capeVisibleCheck">
                   <input type="checkbox" id="capeVisibleCheck" checked>
                   <span>Show cape in preview</span>
@@ -562,6 +570,33 @@
               </div>
               <p class="status-line" id="downloadsStatus"></p>
             </div>
+
+            <div class="panel settings-panel">
+              <h3 class="panel-title">
+                <i data-lucide="info" class="panel-icon"></i>
+                <span data-i18n="about.title">KebabClient</span>
+              </h3>
+              <div class="mini-row">
+                <span class="mini-key" data-i18n="about.installed">Installierte Version</span>
+                <span class="mini-val" id="aboutVersion">…</span>
+              </div>
+              <div class="mini-row">
+                <span class="mini-key" data-i18n="about.latest">Neueste Version</span>
+                <span class="mini-val" id="aboutLatest">…</span>
+              </div>
+              <div class="mini-row">
+                <span class="mini-key" data-i18n="about.users">Aktive Nutzer</span>
+                <span class="mini-val" id="aboutUsers">…</span>
+              </div>
+              <p class="muted" id="aboutChangelog" hidden></p>
+              <div class="row">
+                <button type="button" class="btn btn-ghost btn-sm" id="aboutCheckButton">
+                  <i data-lucide="refresh-cw" class="btn-icon"></i>
+                  <span data-i18n="about.check">Nach Updates suchen</span>
+                </button>
+              </div>
+              <p class="status-line" id="aboutStatus"></p>
+            </div>
           </section>
 
           <section class="view" id="view-logs" aria-label="Logs">
@@ -659,5 +694,6 @@
   <script src="./scripts/home.js"></script>
   <script src="./scripts/updater.js"></script>
   <script src="./scripts/settings.js"></script>
+  <script src="./scripts/about.js"></script>
 </body>
 </html>

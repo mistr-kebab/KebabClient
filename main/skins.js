@@ -52,17 +52,30 @@ function validateSkinPng(buffer) {
   return { width, height };
 }
 
-async function fetchUrlAsDataUrl(url) {
+async function fetchUrlAsDataUrl(url, retries = 1) {
   if (!url) return null;
-  try {
-    const res = await fetch(url);
-    if (!res.ok) return null;
-    const buf = Buffer.from(await res.arrayBuffer());
-    const mime = res.headers.get('content-type') || 'image/png';
-    return `data:${mime};base64,${buf.toString('base64')}`;
-  } catch {
-    return null;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const res = await fetch(url, {
+        headers: {
+          'User-Agent': 'KebabClient (Minecraft launcher)',
+          Accept: 'image/png,image/*,*/*'
+        }
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const buf = Buffer.from(await res.arrayBuffer());
+      if (!buf.length) throw new Error('empty body');
+      const mime = res.headers.get('content-type') || 'image/png';
+      return `data:${mime};base64,${buf.toString('base64')}`;
+    } catch (err) {
+      if (attempt === retries) {
+        console.error(`[skins] texture download failed: ${url} — ${err?.message || err}`);
+        return null;
+      }
+      await new Promise((r) => setTimeout(r, 600));
+    }
   }
+  return null;
 }
 
 function skinsDir() {

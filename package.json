@@ -1,6 +1,6 @@
 {
   "name": "kebabclient",
-  "version": "0.1.1",
+  "version": "0.1.7",
   "description": "Minimal Electron Minecraft launcher (MVP): Microsoft auth, 26.1.2 instance, Modrinth mods, skins/capes.",
   "main": "main/index.js",
   "scripts": {
@@ -56,6 +56,7 @@
   },
   "dependencies": {
     "adm-zip": "^0.6.1",
-    "electron-updater": "^6.8.9"
+    "electron-updater": "^6.8.9",
+    "discord-rpc": "^4.0.1"
   }
 }
