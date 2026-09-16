@@ -71,7 +71,7 @@ function registerIpc() {
   ipcMain.handle('auth:profile', async () => ({ profile: auth.getStoredProfile() }));
   ipcMain.handle('settings:getClientId', async () => auth.getClientIdInfo());
   ipcMain.handle('settings:setClientId', async (_e, args) => {
-    const mode = args?.mode === 'custom' ? 'custom' : 'builtin';
+    const mode = args?.mode === 'custom' ? 'custom' : args?.mode === 'builtin' ? 'builtin' : 'own';
     if (mode === 'custom') {
       const value = String(args?.clientId || '').trim();
       if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)) {
@@ -79,7 +79,7 @@ function registerIpc() {
       }
       store.saveState({ clientId: value, authMode: 'custom' });
     } else {
-      store.saveState({ authMode: 'builtin' });
+      store.saveState({ authMode: mode });
     }
     return { ok: true, mode };
   });

@@ -104,7 +104,8 @@
 
   function currentMode() {
     const checked = document.querySelector('input[name="authMode"]:checked');
-    return checked ? checked.value : 'builtin';
+    const v = checked ? checked.value : 'own';
+    return v === 'custom' || v === 'builtin' ? v : 'own';
   }
 
   function applyModeToInput() {
@@ -118,13 +119,14 @@
     if (!input) return;
     try {
       const info = await bridge().getClientId();
-      const mode = info && info.mode === 'custom' ? 'custom' : 'builtin';
+      const mode = info && (info.mode === 'custom' || info.mode === 'builtin') ? info.mode : 'own';
       const radio = document.querySelector(`input[name="authMode"][value="${mode}"]`);
       if (radio) radio.checked = true;
       if (info && info.customValue) input.value = info.customValue;
       applyModeToInput();
       if (status) {
-        if (mode === 'builtin') status.textContent = 'Using built-in sign-in.';
+        if (mode === 'builtin') status.textContent = 'Using built-in sign-in (fallback).';
+        else if (mode === 'own') status.textContent = 'Using KebabClient app sign-in.';
         else if (info && info.customSource === 'env') status.textContent = 'Using MC_LAUNCHER_CLIENT_ID from environment.';
         else status.textContent = 'Using own App ID from local settings.';
       }
@@ -142,7 +144,7 @@
     if (btn) btn.disabled = true;
     try {
       await bridge().saveClientId(mode === 'custom' ? input.value : '', mode);
-      if (status) status.textContent = mode === 'builtin' ? 'Built-in sign-in selected.' : 'Own App ID saved.';
+      if (status) status.textContent = mode === 'builtin' ? 'Built-in sign-in selected.' : mode === 'own' ? 'KebabClient app selected.' : 'Own App ID saved.';
       toast('Sign-in method saved.', 'ok');
     } catch (err) {
       if (status) status.textContent = err.message;

@@ -37,10 +37,15 @@ npm run dev
 
 ## Sign-in
 
-- **Built-in (default):** official Mojang-allowlisted public client ID.
-  Works immediately — just press Sign in.
-- **Own App ID (optional):** register an app (see below), select
+- **KebabClient app (default):** our own approved Entra app, shipped with
+  the launcher like other launchers ship theirs. Works immediately —
+  just press Sign in.
+- **Built-in (fallback):** official Mojang-allowlisted public client ID.
+- **Own App ID (advanced):** register an app (see below), select
   *Own App ID* in the app, and paste the ID — or provide it via `.env`.
+  Note: brand-new App IDs return HTTP 403 from Minecraft Services until
+  Mojang approves them — request approval at
+  `https://aka.ms/mce-reviewappid`.
 
 ### Own Microsoft app registration
 
@@ -49,7 +54,9 @@ npm run dev
 3. Redirect URI **Public client / native (mobile & desktop)**:
    `https://login.microsoftonline.com/common/oauth2/nativeclient`.
 4. No client secret needed (public client + PKCE).
-5. Copy the Application (client) ID into `.env` (see below).
+5. Copy the Application (client) ID into `.env` (see below). Only needed
+   for a separate *Own App ID* setup — the shipped KebabClient app ID is
+   already approved and works out of the box.
 
 New App IDs return HTTP 403 from Minecraft Services until Mojang approves
 them — request approval at `https://aka.ms/mce-reviewappid`.

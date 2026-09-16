@@ -35,9 +35,13 @@ const MC_VERSION = '26.1.2';
 const APP_NAME = 'KebabClient';
 
 // Official, Mojang-allowlisted public client used by the vanilla launcher flow.
-// Works immediately, no approval needed. Used when no custom App ID is selected.
+// Fallback method, no approval needed. Used when the KebabClient app is deselected.
 const BUILTIN_CLIENT_ID = '00000000402B5328';
 const BUILTIN_REDIRECT_URI = 'https://login.live.com/oauth20_desktop.srf';
+
+// KebabDev's own approved Entra app (public client, no secret).
+// Default sign-in method. Shipped in the repo like other launchers ship theirs.
+const OWN_CLIENT_ID = 'b0be2e82-378f-4156-a4f5-c43506935142';
 
 function appDataRoot() {
   if (process.platform === 'win32') return process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming');
@@ -116,6 +120,7 @@ module.exports = {
   APP_NAME,
   BUILTIN_CLIENT_ID,
   BUILTIN_REDIRECT_URI,
+  OWN_CLIENT_ID,
   BUILTIN_DISCORD_CLIENT_ID,
   discordClientId,
   URLS,
