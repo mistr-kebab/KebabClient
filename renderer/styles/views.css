@@ -137,6 +137,11 @@
   padding: 13px 40px;
   font-size: var(--text-lg);
   font-weight: 700;
+  box-shadow: 0 8px 28px var(--accent-shadow);
+}
+
+.btn-hero:hover:not(:disabled) {
+  box-shadow: 0 10px 36px var(--accent-shadow);
 }
 
 @media (max-width: 640px) {
@@ -176,15 +181,23 @@
 
 .mod-card {
   display: flex;
-  gap: var(--space-3);
+  flex-direction: column;
+  gap: var(--space-2);
   background: var(--bg-raised);
   border: 1px solid var(--line-soft);
   border-radius: var(--radius-md);
   padding: var(--space-4);
+  transition: border-color 0.12s ease, transform 0.12s ease;
 }
 
 .mod-card:hover {
   border-color: var(--line);
+  transform: translateY(-2px);
+}
+
+.mod-top {
+  display: flex;
+  gap: var(--space-3);
 }
 
 .mod-icon {
@@ -237,8 +250,33 @@
   font-family: var(--font-mono);
 }
 
-.mod-install {
+.mod-meta svg {
+  width: 12px;
+  height: 12px;
+}
+
+.mod-badges {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
   margin-top: var(--space-2);
+}
+
+.mod-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.mod-foot .mod-meta {
+  margin-top: 0;
+}
+
+.mod-install {
+  margin-top: 0;
 }
 
 .installed-list {
@@ -274,6 +312,11 @@
   border-radius: var(--radius-sm);
   font-family: var(--font-mono);
   font-size: var(--text-sm);
+  transition: border-color 0.12s ease;
+}
+
+.installed-item:hover {
+  border-color: var(--line);
 }
 
 .installed-empty {
@@ -444,6 +487,11 @@ select.input {
   background: var(--bg-panel);
   border: 1px solid var(--line-soft);
   border-radius: var(--radius-sm);
+  transition: border-color 0.12s ease;
+}
+
+.cape-item:hover {
+  border-color: var(--line);
 }
 
 .cape-item.is-active {
@@ -501,6 +549,11 @@ select.input {
   background: var(--bg-raised);
   border: 1px solid var(--line-soft);
   border-radius: var(--radius-md);
+  transition: border-color 0.12s ease;
+}
+
+.server-item:hover {
+  border-color: var(--line);
 }
 
 .server-meta {
@@ -574,10 +627,13 @@ select.input {
   border-radius: 16px;
   padding: var(--space-4);
   cursor: pointer;
+  transition: transform 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
 }
 
 .instance-tile:hover {
   border-color: var(--line);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-panel);
 }
 
 .instance-tile.is-active {
@@ -614,6 +670,10 @@ select.input {
   display: flex;
   align-items: center;
   gap: var(--space-2);
+}
+
+.tile-sub .ver-badge {
+  font-family: var(--font-sans);
 }
 
 .tile-played {
@@ -701,6 +761,11 @@ select.input {
   font-size: var(--text-sm);
   font-weight: 600;
   color: var(--text-dim);
+}
+
+.form-field > span:first-child {
+  color: var(--text);
+  font-weight: 700;
 }
 
 .form-field select {
@@ -818,6 +883,77 @@ select.input {
   border-radius: var(--radius-lg);
 }
 
+.instance-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.instance-name {
+  font-size: var(--text-lg);
+  font-weight: 750;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.instance-sub {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text-dim);
+  font-size: var(--text-sm);
+  font-family: var(--font-mono);
+  flex-wrap: wrap;
+}
+
+.instance-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+
+#view-instance-detail .panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+#view-instance-detail .panel > .panel-head {
+  margin-bottom: 0;
+}
+
+#view-instance-detail .panel > .segment {
+  align-self: flex-start;
+}
+
+#view-instance-detail .group-title {
+  margin: 0;
+}
+
+#view-instance-detail .installed-list {
+  margin: 0;
+}
+
+#view-settings .panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  align-items: flex-start;
+}
+
+#view-settings .panel > .row,
+#view-settings .panel > .mini-row,
+#view-settings .panel > .form-grid,
+#view-settings .panel > .status-line {
+  width: 100%;
+}
+
 .home-hero {
   display: grid;
   grid-template-columns: 1fr 300px;
@@ -882,6 +1018,12 @@ select.input {
   flex-direction: column;
   gap: var(--space-3);
   align-items: flex-start;
+  transition: border-color 0.12s ease, transform 0.12s ease;
+}
+
+.home-card:hover {
+  border-color: var(--line);
+  transform: translateY(-2px);
 }
 
 .home-account {

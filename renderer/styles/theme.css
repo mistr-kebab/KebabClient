@@ -4,6 +4,7 @@
   --accent-strong: #f5b93c;
   --accent-dim: rgba(var(--accent-rgb), 0.14);
   --accent-ink: #1a1204;
+  --accent-shadow: rgba(var(--accent-rgb), 0.35);
 
   --bg: #000000;
   --bg-raised: #0a0a0b;

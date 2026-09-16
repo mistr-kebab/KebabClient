@@ -85,7 +85,8 @@
       const ic = document.createElement('i');
       ic.setAttribute('data-lucide', 'boxes');
       empty.appendChild(ic);
-      empty.appendChild(el('p', 'muted', 'No instances yet. Create your first one to start playing.'));
+      empty.appendChild(el('h3', 'empty-title', 'No instances yet'));
+      empty.appendChild(el('p', 'muted', 'Create your first one to start playing.'));
       const btn = el('button', 'btn btn-play btn-sm', 'Create instance');
       btn.type = 'button';
       btn.addEventListener('click', () => {
@@ -126,9 +127,16 @@
       }
       tile.appendChild(banner);
       tile.appendChild(el('span', 'tile-name', instance.name));
-      tile.appendChild(el('span', 'tile-sub', instance.loaderVersion
-        ? `${instance.mc} · ${instance.loader} ${instance.loaderVersion}`
-        : `${instance.mc} · ${instance.loader}`));
+      const sub = el('span', 'tile-sub');
+      const verBadge = el('span', `ver-badge ver-loader-${instance.loader || 'vanilla'}`);
+      verBadge.appendChild(el('span', 'ver-dot'));
+      verBadge.appendChild(document.createTextNode(instance.mc || ''));
+      sub.appendChild(verBadge);
+      const loaderInfo = instance.loaderVersion
+        ? `${loaderLabel(instance.loader)} ${instance.loaderVersion}`
+        : loaderLabel(instance.loader);
+      sub.appendChild(document.createTextNode(` · ${loaderInfo}`));
+      tile.appendChild(sub);
       if (instance.lastPlayed || instance.playtimeText) {
         const bits = [];
         if (instance.lastPlayed) {
@@ -466,29 +474,42 @@
     }
     for (const mod of results) {
       const card = el('article', 'mod-card');
+      const top = el('div', 'mod-top');
       if (mod.iconUrl) {
         const img = document.createElement('img');
         img.className = 'mod-icon';
         img.alt = '';
         img.loading = 'lazy';
         img.src = mod.iconUrl;
-        card.appendChild(img);
+        top.appendChild(img);
       } else {
         const fallback = el('span', 'mod-icon mod-icon-fallback', '◈');
         fallback.setAttribute('aria-hidden', 'true');
-        card.appendChild(fallback);
+        top.appendChild(fallback);
       }
       const main = el('div', 'mod-main');
       main.appendChild(el('h4', 'mod-title', mod.title));
-      main.appendChild(el('p', 'mod-desc', `${TYPE_LABELS[mod.projectType] || 'Content'} · ${mod.description || 'No description.'}`));
+      main.appendChild(el('p', 'mod-desc', mod.description || 'No description.'));
+      const badges = el('div', 'mod-badges');
+      const typeBadge = el('span', 'ver-badge');
+      typeBadge.appendChild(el('span', 'ver-dot'));
+      typeBadge.appendChild(document.createTextNode(TYPE_LABELS[mod.projectType] || 'Content'));
+      badges.appendChild(typeBadge);
+      main.appendChild(badges);
+      top.appendChild(main);
+      card.appendChild(top);
+      const foot = el('div', 'mod-foot');
       const meta = el('div', 'mod-meta');
       if (mod.downloads) {
+        const dlIcon = document.createElement('i');
+        dlIcon.setAttribute('data-lucide', 'download');
+        meta.appendChild(dlIcon);
         const dl = document.createElement('span');
-        dl.textContent = `⇩ ${formatDownloads(mod.downloads)}`;
+        dl.textContent = formatDownloads(mod.downloads);
         meta.appendChild(dl);
       }
       if (mod.author) meta.appendChild(el('span', '', `by ${mod.author}`));
-      main.appendChild(meta);
+      if (meta.childElementCount) foot.appendChild(meta);
       if (INSTALLABLE.includes(mod.projectType)) {
         const btn = el('button', 'btn btn-primary btn-sm mod-install', 'Install');
         btn.type = 'button';
@@ -506,9 +527,9 @@
             btn.disabled = false;
           }
         });
-        main.appendChild(btn);
+        foot.appendChild(btn);
       }
-      card.appendChild(main);
+      if (foot.childElementCount) card.appendChild(foot);
       grid.appendChild(card);
     }
     if (window.refreshIcons) window.refreshIcons();

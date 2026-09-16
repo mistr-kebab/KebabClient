@@ -11,6 +11,11 @@
   font-weight: 600;
   font-size: var(--text-sm);
   white-space: nowrap;
+  transition: transform 0.08s ease, background 0.12s ease, border-color 0.12s ease;
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.95);
 }
 
 .btn:hover:not(:disabled) {
@@ -129,6 +134,7 @@
 .input:focus {
   outline: none;
   border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-shadow);
 }
 
 .toolbar {
@@ -185,6 +191,7 @@
   cursor: pointer;
   font-size: var(--text-sm);
   font-weight: 600;
+  transition: background 0.12s ease, color 0.12s ease;
 }
 
 .segment-btn.is-active {
@@ -413,6 +420,11 @@
   background: transparent;
   color: var(--text-dim);
   cursor: pointer;
+  transition: transform 0.08s ease, background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+
+.icon-btn:active:not(:disabled) {
+  transform: scale(0.95);
 }
 
 .icon-btn:hover:not(:disabled) {
@@ -541,6 +553,7 @@
   border: 2px solid transparent;
   cursor: pointer;
   padding: 0;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
 }
 
 .swatch:hover {
@@ -566,4 +579,82 @@
 
 .settings-panel .status-line {
   word-break: break-all;
+}
+
+.ver-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.ver-dot {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 8px;
+  border-radius: 50%;
+  background: var(--text-faint);
+}
+
+.ver-badge.is-accent {
+  color: var(--accent-strong);
+}
+
+.ver-badge.is-accent .ver-dot {
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent-shadow);
+}
+
+.ver-badge.is-ok {
+  color: var(--ok);
+}
+
+.ver-badge.is-ok .ver-dot {
+  background: var(--ok);
+}
+
+.ver-badge.is-info {
+  color: var(--info);
+}
+
+.ver-badge.is-info .ver-dot {
+  background: var(--info);
+}
+
+.ver-badge.ver-loader-fabric {
+  color: var(--accent-strong);
+}
+
+.ver-badge.ver-loader-fabric .ver-dot {
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent-shadow);
+}
+
+.ver-badge.ver-loader-quilt {
+  color: #8fb8ff;
+}
+
+.ver-badge.ver-loader-quilt .ver-dot {
+  background: var(--info);
+}
+
+.empty-title {
+  font-size: var(--text-lg);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn,
+  .icon-btn,
+  .swatch {
+    transition: none;
+  }
+  .btn:active:not(:disabled),
+  .icon-btn:active:not(:disabled) {
+    transform: none;
+  }
 }
