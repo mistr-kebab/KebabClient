@@ -5,7 +5,7 @@ const path = require('node:path');
 const crypto = require('node:crypto');
 const { instanceDir } = require('./config');
 const { loadState, saveState } = require('./store');
-const { buildServersDat } = require('./nbt');
+const { buildServersDat, parseServersDat } = require('./nbt');
 
 function listServers() {
   const state = loadState();
@@ -18,11 +18,28 @@ function saveServers(servers) {
   return servers;
 }
 
+// Merge statt Ueberschreiben: Launcher-Eintraege sind fuehrend (Name/IP
+// bei gleicher IP gewinnen), Server die direkt im Spiel hinzugefuegt wurden
+// bleiben in der Instanz erhalten. In-Game-Server werden NIE in die
+// Launcher-Liste importiert.
+function mergeServers(managed, existing) {
+  const key = (s) => String((s && s.ip) || '').trim().toLowerCase();
+  const managedKeys = new Set((managed || []).map(key));
+  const extras = (existing || []).filter((s) => s && s.ip && !managedKeys.has(key(s)));
+  const clean = (s) => ({ name: String(s.name || ''), ip: String(s.ip || '') });
+  return [...(managed || []).map(clean), ...extras.map(clean)];
+}
+
 function syncToInstance(servers, root) {
   const list = servers || listServers();
   const dir = root || instanceDir();
   fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(path.join(dir, 'servers.dat'), buildServersDat(list));
+  const file = path.join(dir, 'servers.dat');
+  let existing = [];
+  try {
+    if (fs.existsSync(file)) existing = parseServersDat(fs.readFileSync(file));
+  } catch { /* unlesbar -> nur Launcher-Liste schreiben */ }
+  fs.writeFileSync(file, buildServersDat(mergeServers(list, existing)));
   return list;
 }
 

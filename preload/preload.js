@@ -51,9 +51,10 @@ contextBridge.exposeInMainWorld('mc', {
   getLoaders: (mc) => ipcRenderer.invoke('meta:loaders', { mc }),
 
   searchMods: (query, opts) => ipcRenderer.invoke('mods:search', { query, ...(opts || {}) }),
-  installMod: (projectId, versionId, instanceId, category) => ipcRenderer.invoke('mods:install', { projectId, versionId, instanceId, category }),
+  installMod: (projectId, versionId, instanceId, category, meta) => ipcRenderer.invoke('mods:install', { projectId, versionId, instanceId, category, meta }),
   listInstalledMods: (instanceId) => ipcRenderer.invoke('mods:list', { instanceId }),
   uninstallMod: (file, category, instanceId) => ipcRenderer.invoke('mods:uninstall', { file, category, instanceId }),
+  toggleContent: (file, category, instanceId) => ipcRenderer.invoke('mods:toggle', { file, category, instanceId }),
   uploadContent: (category, instanceId) => ipcRenderer.invoke('content:upload', { category, instanceId }),
   dropFiles: (category, paths, instanceId) => ipcRenderer.invoke('content:drop', { category, paths, instanceId }),
 
@@ -70,6 +71,7 @@ contextBridge.exposeInMainWorld('mc', {
   updateServer: (id, name, ip) => ipcRenderer.invoke('servers:update', { id, name, ip }),
   removeServer: (id) => ipcRenderer.invoke('servers:remove', { id }),
   moveServer: (id, direction) => ipcRenderer.invoke('servers:move', { id, direction }),
+  pingServer: (ip) => ipcRenderer.invoke('servers:ping', { ip }),
 
   appVersion: () => ipcRenderer.invoke('update:version'),
   checkForUpdates: () => ipcRenderer.invoke('update:check'),

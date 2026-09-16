@@ -313,24 +313,6 @@
             <div class="panel">
               <div class="panel-head">
                 <h3 class="panel-title">
-                  <i data-lucide="hard-drive" class="panel-icon"></i>
-                  <span>Installed content</span>
-                </h3>
-                <button type="button" class="btn btn-ghost btn-sm" id="detailReloadButton">
-                  <i data-lucide="rotate-ccw" class="btn-icon"></i>
-                  <span>Reload</span>
-                </button>
-              </div>
-              <h4 class="group-title">Mods</h4>
-              <ul class="installed-list" id="detail-mod"></ul>
-              <h4 class="group-title">Resource Packs</h4>
-              <ul class="installed-list" id="detail-resourcepack"></ul>
-              <h4 class="group-title">Shaders</h4>
-              <ul class="installed-list" id="detail-shader"></ul>
-            </div>
-            <div class="panel">
-              <div class="panel-head">
-                <h3 class="panel-title">
                   <i data-lucide="plus-circle" class="panel-icon"></i>
                   <span id="detailSearchTitle">Add content</span>
                 </h3>
@@ -357,6 +339,24 @@
                 </button>
               </div>
               <div class="mod-grid" id="detailResults"></div>
+            </div>
+            <div class="panel">
+              <div class="panel-head">
+                <h3 class="panel-title">
+                  <i data-lucide="hard-drive" class="panel-icon"></i>
+                  <span>Installed content</span>
+                </h3>
+                <button type="button" class="btn btn-ghost btn-sm" id="detailReloadButton">
+                  <i data-lucide="rotate-ccw" class="btn-icon"></i>
+                  <span>Reload</span>
+                </button>
+              </div>
+              <h4 class="group-title">Mods</h4>
+              <div class="content-grid" id="detail-mod"></div>
+              <h4 class="group-title">Resource Packs</h4>
+              <div class="content-grid" id="detail-resourcepack"></div>
+              <h4 class="group-title">Shaders</h4>
+              <div class="content-grid" id="detail-shader"></div>
             </div>
           </section>
 

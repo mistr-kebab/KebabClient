@@ -425,6 +425,85 @@
     loadBrowse();
   }
 
+  const installedProjectIds = new Set();
+
+  function contentCard(m, key) {
+    const card = el('article', 'content-card' + (m.disabled ? ' is-disabled' : ''));
+    const top = el('div', 'card-top');
+    if (m.icon) {
+      const img = document.createElement('img');
+      img.className = 'card-icon';
+      img.alt = '';
+      img.loading = 'lazy';
+      img.src = m.icon;
+      top.appendChild(img);
+    } else {
+      const fb = el('span', 'card-icon card-icon-fallback', '◈');
+      fb.setAttribute('aria-hidden', 'true');
+      top.appendChild(fb);
+    }
+    const main = el('div', 'card-main');
+    main.appendChild(el('h4', 'card-name', m.name || m.file));
+    main.appendChild(el('p', 'card-sub', m.file));
+    main.title = m.file;
+    top.appendChild(main);
+    card.appendChild(top);
+    const foot = el('div', 'card-foot');
+    const sw = el('label', 'switch');
+    const box = document.createElement('input');
+    box.type = 'checkbox';
+    box.checked = !m.disabled;
+    const switchLabel = (on) => `${on ? 'Disable' : 'Enable'} ${m.name || m.file}`;
+    box.title = m.disabled ? 'Enable' : 'Disable';
+    box.setAttribute('aria-label', switchLabel(!m.disabled));
+    box.addEventListener('change', async () => {
+      box.disabled = true;
+      try {
+        const res = await bridge().toggleContent(m.file, key, detailId);
+        m.file = res.file;
+        m.disabled = res.disabled;
+        card.classList.toggle('is-disabled', res.disabled);
+        box.checked = !res.disabled;
+        box.title = res.disabled ? 'Enable' : 'Disable';
+        box.setAttribute('aria-label', switchLabel(!res.disabled));
+        const sub = card.querySelector('.card-sub');
+        if (sub) sub.textContent = res.file;
+        main.title = res.file;
+        toast(res.disabled ? `Disabled ${m.name || res.file}.` : `Enabled ${m.name || res.file}.`, 'ok');
+      } catch (err) {
+        box.checked = !m.disabled;
+        toast(`Toggle failed: ${err.message}`, 'error');
+      } finally {
+        box.disabled = false;
+      }
+    });
+    const track = el('span', 'track');
+    track.setAttribute('aria-hidden', 'true');
+    sw.appendChild(box);
+    sw.appendChild(track);
+    foot.appendChild(sw);
+    const del = el('button', 'icon-btn icon-btn-tiny', '');
+    del.type = 'button';
+    del.title = `Delete ${m.name || m.file}`;
+    del.setAttribute('aria-label', `Delete ${m.name || m.file}`);
+    const trash = document.createElement('i');
+    trash.setAttribute('data-lucide', 'trash-2');
+    del.appendChild(trash);
+    del.addEventListener('click', async () => {
+      if (!window.confirm(`Delete "${m.name || m.file}" from this instance?`)) return;
+      try {
+        await bridge().uninstallMod(m.file, key, detailId);
+        toast(`Removed ${m.name || m.file}.`, 'ok');
+        await loadDetailInstalled();
+      } catch (err) {
+        toast(`Uninstall failed: ${err.message}`, 'error');
+      }
+    });
+    foot.appendChild(del);
+    card.appendChild(foot);
+    return card;
+  }
+
   async function loadDetailInstalled() {
     if (!detailId) return;
     let data = null;
@@ -434,6 +513,7 @@
       toast(`Could not list content: ${err.message}`, 'error');
       return;
     }
+    installedProjectIds.clear();
     const grouped = Array.isArray(data) ? { mod: data } : (data || {});
     for (const [key, listId, label] of DETAIL_GROUPS) {
       const list = document.getElementById(listId);
@@ -441,27 +521,15 @@
       list.textContent = '';
       const items = grouped[key] || [];
       if (!items.length) {
-        list.appendChild(el('li', 'installed-empty', `No ${label} installed.`));
+        list.appendChild(el('p', 'content-empty', `No ${label} installed.`));
         continue;
       }
       for (const m of items) {
-        const li = el('li', 'installed-item');
-        li.appendChild(el('span', '', m.file));
-        const btn = el('button', 'btn btn-ghost btn-sm', 'Uninstall');
-        btn.type = 'button';
-        btn.addEventListener('click', async () => {
-          try {
-            await bridge().uninstallMod(m.file, key, detailId);
-            toast(`Removed ${m.file}.`, 'ok');
-            await loadDetailInstalled();
-          } catch (err) {
-            toast(`Uninstall failed: ${err.message}`, 'error');
-          }
-        });
-        li.appendChild(btn);
-        list.appendChild(li);
+        if (m && m.projectId) installedProjectIds.add(m.projectId);
+        list.appendChild(contentCard(m, key));
       }
     }
+    if (window.refreshIcons) window.refreshIcons();
   }
 
   function renderDetailResults(results) {
@@ -511,20 +579,26 @@
       if (mod.author) meta.appendChild(el('span', '', `by ${mod.author}`));
       if (meta.childElementCount) foot.appendChild(meta);
       if (INSTALLABLE.includes(mod.projectType)) {
-        const btn = el('button', 'btn btn-primary btn-sm mod-install', 'Install');
+        const alreadyInstalled = installedProjectIds.has(mod.id);
+        const btn = el('button', 'btn btn-primary btn-sm mod-install', alreadyInstalled ? 'Installed' : 'Install');
         btn.type = 'button';
+        btn.disabled = alreadyInstalled;
         btn.addEventListener('click', async () => {
           btn.disabled = true;
+          let done = false;
           try {
-            const res = await bridge().installMod(mod.id, undefined, detailId, mod.projectType);
+            const res = await bridge().installMod(mod.id, undefined, detailId, mod.projectType, { title: mod.title, icon: mod.iconUrl });
             const extra = res?.dependencies?.length ? ` (+${res.dependencies.length} deps)` : '';
             const missing = res?.depProblems?.length ? ` Missing: ${res.depProblems.join('; ')}` : '';
             toast(`Installed ${res?.file || mod.title}${extra}.${missing}`, res?.depProblems?.length ? 'error' : 'ok');
+            installedProjectIds.add((res && res.projectId) || mod.id);
+            btn.textContent = 'Installed';
+            done = true;
             await loadDetailInstalled();
           } catch (err) {
             toast(`Install failed: ${err.message}`, 'error');
           } finally {
-            btn.disabled = false;
+            btn.disabled = done;
           }
         });
         foot.appendChild(btn);

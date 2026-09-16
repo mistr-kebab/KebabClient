@@ -10,22 +10,98 @@
     s.style.color = isError ? 'var(--danger)' : '';
   }
 
+  const statusByIp = new Map();
+  let lastServers = [];
+
+  function paintRowStatus(server) {
+    const li = document.querySelector(`#serverList [data-server-id="${CSS.escape(server.id)}"]`);
+    if (!li) return;
+    const st = statusByIp.get(server.ip);
+    const iconSlot = li.querySelector('.server-icon-slot');
+    if (iconSlot) {
+      iconSlot.textContent = '';
+      if (st && st.state === 'ok' && st.data && st.data.favicon) {
+        const img = document.createElement('img');
+        img.className = 'server-icon';
+        img.alt = '';
+        img.loading = 'lazy';
+        img.src = st.data.favicon;
+        iconSlot.appendChild(img);
+      } else {
+        const fb = el('span', 'server-icon server-icon-fallback', (server.name || '?').slice(0, 1).toUpperCase());
+        fb.setAttribute('aria-hidden', 'true');
+        iconSlot.appendChild(fb);
+      }
+    }
+    const motdEl = li.querySelector('.server-motd');
+    if (motdEl) {
+      if (!st || st.state === 'loading') motdEl.textContent = 'Pinging…';
+      else if (st.state === 'ok') motdEl.textContent = (st.data && st.data.motd) || 'No MOTD.';
+      else motdEl.textContent = 'Offline — ping failed.';
+    }
+    const subEl = li.querySelector('.server-sub');
+    if (subEl) {
+      subEl.textContent = '';
+      subEl.appendChild(el('span', '', server.ip));
+      if (st && st.state === 'ok' && st.data) {
+        if (st.data.playersOnline !== null && st.data.playersOnline !== undefined) {
+          subEl.appendChild(el('span', '', ` · ${st.data.playersOnline}/${st.data.playersMax ?? '?'} online`));
+        }
+        if (st.data.latencyMs !== null && st.data.latencyMs !== undefined) {
+          subEl.appendChild(el('span', '', ` · ${st.data.latencyMs} ms`));
+        }
+      }
+    }
+    const refreshBtn = li.querySelector('[data-refresh]');
+    if (refreshBtn) refreshBtn.disabled = !!(st && st.state === 'loading');
+  }
+
+  async function pingRow(server) {
+    statusByIp.set(server.ip, { state: 'loading' });
+    paintRowStatus(server);
+    try {
+      const res = await bridge().pingServer(server.ip);
+      statusByIp.set(server.ip, { state: 'ok', data: res });
+    } catch (err) {
+      statusByIp.set(server.ip, { state: 'off', error: err && err.message });
+    }
+    paintRowStatus(server);
+  }
+
+  function pingAll() {
+    for (const s of lastServers) void pingRow(s);
+  }
+
   function renderList(servers) {
+    lastServers = servers || [];
     const list = document.getElementById('serverList');
     if (!list) return;
     list.textContent = '';
-    if (!servers.length) {
+    if (!lastServers.length) {
       list.appendChild(el('li', 'installed-empty', 'No servers added yet.'));
       return;
     }
-    servers.forEach((server, index) => {
+    lastServers.forEach((server, index) => {
       const li = el('li', 'server-item');
+      li.dataset.serverId = server.id;
+      li.appendChild(el('span', 'server-icon-slot'));
       const meta = el('div', 'server-meta');
       meta.appendChild(el('span', 'server-name', server.name));
-      meta.appendChild(el('span', 'server-ip', server.ip));
+      meta.appendChild(el('span', 'server-motd', ''));
+      meta.appendChild(el('span', 'server-ip server-sub', ''));
       li.appendChild(meta);
 
       const actions = el('div', 'server-actions');
+
+      const refreshBtn = el('button', 'icon-btn icon-btn-tiny');
+      refreshBtn.type = 'button';
+      refreshBtn.title = 'Ping now';
+      refreshBtn.setAttribute('data-refresh', '1');
+      const refreshIcon = document.createElement('i');
+      refreshIcon.setAttribute('data-lucide', 'refresh-cw');
+      refreshBtn.appendChild(refreshIcon);
+      refreshBtn.addEventListener('click', () => pingRow(server));
+      actions.appendChild(refreshBtn);
 
       const upBtn = el('button', 'icon-btn icon-btn-tiny');
       upBtn.type = 'button';
@@ -40,7 +116,7 @@
       const downBtn = el('button', 'icon-btn icon-btn-tiny');
       downBtn.type = 'button';
       downBtn.title = 'Move down';
-      downBtn.disabled = index === servers.length - 1;
+      downBtn.disabled = index === lastServers.length - 1;
       const downIcon = document.createElement('i');
       downIcon.setAttribute('data-lucide', 'chevron-down');
       downBtn.appendChild(downIcon);
@@ -59,6 +135,7 @@
 
       li.appendChild(actions);
       list.appendChild(li);
+      paintRowStatus(server);
     });
     if (window.refreshIcons) window.refreshIcons();
   }
@@ -90,6 +167,7 @@
     try {
       const servers = await bridge().listServers();
       renderList(servers || []);
+      pingAll();
       document.dispatchEvent(new CustomEvent('servers:changed'));
     } catch (err) {
       formStatus(`Could not load servers: ${err.message}`, true);
@@ -150,6 +228,9 @@
         if (e.key === 'Enter') submit();
       });
     }
+    document.addEventListener('view:shown', (e) => {
+      if (e && e.detail && e.detail.view === 'servers') pingAll();
+    });
     reload();
   });
 })();

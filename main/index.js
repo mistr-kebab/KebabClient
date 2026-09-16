@@ -206,11 +206,12 @@ function registerIpc() {
   );
   ipcMain.handle('mods:install', async (_e, args) => {
     const res = await content.installMod(args?.projectId, args?.versionId, args?.instanceId, (s) =>
-      broadcast('game:progress', { phase: 'mods', ...s }), args?.category);
+      broadcast('game:progress', { phase: 'mods', ...s }), args?.category, args?.meta);
     return res;
   });
   ipcMain.handle('mods:list', async (_e, args) => content.listInstalled(args?.instanceId, args?.category));
   ipcMain.handle('mods:uninstall', async (_e, args) => content.uninstallMod(args?.file, args?.instanceId, args?.category));
+  ipcMain.handle('mods:toggle', async (_e, args) => content.toggleContent(args?.file, args?.instanceId, args?.category));
 
   ipcMain.handle('content:drop', async (_e, args) =>
     content.importContent(args?.category, args?.paths, args?.instanceId)
@@ -287,6 +288,7 @@ function registerIpc() {
   ipcMain.handle('servers:update', async (_e, args) => servers.updateServer(args?.id, args?.name, args?.ip));
   ipcMain.handle('servers:remove', async (_e, args) => servers.removeServer(args?.id));
   ipcMain.handle('servers:move', async (_e, args) => servers.moveServer(args?.id, args?.direction));
+  ipcMain.handle('servers:ping', async (_e, args) => require('./ping').pingServer(args?.ip));
 
   ipcMain.handle('update:version', async () => ({ version: updater.currentVersion() }));
   ipcMain.handle('update:check', async () => updater.checkNow(true));
