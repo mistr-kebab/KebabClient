@@ -12,7 +12,7 @@ Please do **not** open a public issue for security vulnerabilities.
 
 - Preferred: use **private vulnerability reporting** on GitHub
   (Security tab of this repository).
-- Alternative: mail to `antonio@disc-tools.de`.
+- Alternative: mail to `kitzelig_kebab@proton.me`.
 
 Include a description, affected version, and steps to reproduce if possible.
 We will confirm receipt and keep you updated on the fix.
