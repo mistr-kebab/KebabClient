@@ -102,67 +102,10 @@
     }
   }
 
-  function currentMode() {
-    const checked = document.querySelector('input[name="authMode"]:checked');
-    const v = checked ? checked.value : 'own';
-    return v === 'custom' || v === 'builtin' ? v : 'own';
-  }
-
-  function applyModeToInput() {
-    const input = document.getElementById('clientIdInput');
-    if (input) input.disabled = currentMode() !== 'custom';
-  }
-
-  async function loadClientId() {
-    const input = document.getElementById('clientIdInput');
-    const status = document.getElementById('clientIdStatus');
-    if (!input) return;
-    try {
-      const info = await bridge().getClientId();
-      const mode = info && (info.mode === 'custom' || info.mode === 'builtin') ? info.mode : 'own';
-      const radio = document.querySelector(`input[name="authMode"][value="${mode}"]`);
-      if (radio) radio.checked = true;
-      if (info && info.customValue) input.value = info.customValue;
-      applyModeToInput();
-      if (status) {
-        if (mode === 'builtin') status.textContent = 'Using built-in sign-in (fallback).';
-        else if (mode === 'own') status.textContent = 'Using KebabClient app sign-in.';
-        else if (info && info.customSource === 'env') status.textContent = 'Using MC_LAUNCHER_CLIENT_ID from environment.';
-        else status.textContent = 'Using own App ID from local settings.';
-      }
-    } catch (err) {
-      if (status) status.textContent = `Could not load: ${err.message}`;
-    }
-  }
-
-  async function onSaveClientId() {
-    const input = document.getElementById('clientIdInput');
-    const status = document.getElementById('clientIdStatus');
-    const btn = document.getElementById('saveClientIdButton');
-    if (!input) return;
-    const mode = currentMode();
-    if (btn) btn.disabled = true;
-    try {
-      await bridge().saveClientId(mode === 'custom' ? input.value : '', mode);
-      if (status) status.textContent = mode === 'builtin' ? 'Built-in sign-in selected.' : mode === 'own' ? 'KebabClient app selected.' : 'Own App ID saved.';
-      toast('Sign-in method saved.', 'ok');
-    } catch (err) {
-      if (status) status.textContent = err.message;
-      toast(`Save failed: ${err.message}`, 'error');
-    } finally {
-      if (btn) btn.disabled = false;
-    }
-  }
-
   document.addEventListener('DOMContentLoaded', () => {
     paintHeads();
     const btn = document.getElementById('authButton');
     if (btn) btn.addEventListener('click', onAuthButton);
-    const saveBtn = document.getElementById('saveClientIdButton');
-    if (saveBtn) saveBtn.addEventListener('click', onSaveClientId);
-    document.querySelectorAll('input[name="authMode"]').forEach((radio) => {
-      radio.addEventListener('change', applyModeToInput);
-    });
     const refreshBtn = document.getElementById('refreshSessionButton');
     if (refreshBtn) {
       refreshBtn.addEventListener('click', async () => {
@@ -202,7 +145,6 @@
       });
     } catch { /* noop */ }
     loadProfile();
-    loadClientId();
   });
 
   window.accountHeadshot = {

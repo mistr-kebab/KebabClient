@@ -37,26 +37,9 @@ npm run dev
 
 ## Sign-in
 
-- **KebabClient app (default):** our own approved Entra app, shipped with
-  the launcher like other launchers ship theirs. Works immediately —
-  just press Sign in.
-- **Built-in (fallback):** official Mojang-allowlisted public client ID.
-- **Own App ID (advanced):** register an app (see below), select
-  *Own App ID* in the app, and paste the ID — or provide it via `.env`.
-  Note: brand-new App IDs return HTTP 403 from Minecraft Services until
-  Mojang approves them — request approval at
-  `https://aka.ms/mce-reviewappid`.
-
-### Own Microsoft app registration
-
-1. Azure portal → Microsoft Entra ID → App registrations → New registration.
-2. Name e.g. `KebabClient`, account type **personal Microsoft accounts only**.
-3. Redirect URI **Public client / native (mobile & desktop)**:
-   `https://login.microsoftonline.com/common/oauth2/nativeclient`.
-4. No client secret needed (public client + PKCE).
-5. Copy the Application (client) ID into `.env` (see below). Only needed
-   for a separate *Own App ID* setup — the shipped KebabClient app ID is
-   already approved and works out of the box.
+Sign-in uses our own approved Entra app, shipped with the launcher like
+other launchers ship theirs. Works immediately — just press Sign in in the
+account drawer. No configuration needed.
 
 New App IDs return HTTP 403 from Minecraft Services until Mojang approves
 them — request approval at `https://aka.ms/mce-reviewappid`.
@@ -68,7 +51,6 @@ Real environment variables always win. `.env` is git-ignored — never commit it
 
 | Variable                | Purpose                                              |
 | ----------------------- | ---------------------------------------------------- |
-| `MC_LAUNCHER_CLIENT_ID` | Own Microsoft App ID (`AZURE_CLIENT_ID` also works)  |
 | `DISCORD_CLIENT_ID`     | Own Discord application ID for Rich Presence         |
 | `KEBAB_DATA_DIR`        | Custom data directory (absolute path)                |
 

@@ -216,6 +216,17 @@ function libraryArtifactPath(lib, librariesDir) {
   return path.join(librariesDir, art.path.replace(/\//g, path.sep));
 }
 
+function safeNativesTarget(nativesDir, entryName) {
+  const name = String(entryName || '').replace(/\\/g, '/');
+  if (!name || name.startsWith('/')) return null;
+  const norm = path.posix.normalize(name);
+  if (norm === '.' || norm.startsWith('..') || path.posix.isAbsolute(norm)) return null;
+  if (/^[a-zA-Z]:(\/|$)/.test(norm)) return null;
+  const target = path.join(nativesDir, norm);
+  if (target !== nativesDir && !target.startsWith(nativesDir + path.sep)) return null;
+  return target;
+}
+
 function extractNatives(versionJson, librariesDir, nativesDir) {
   let AdmZip;
   try { AdmZip = require('adm-zip'); }
@@ -232,8 +243,8 @@ function extractNatives(versionJson, librariesDir, nativesDir) {
       const zip = new AdmZip(jar);
       for (const zipEntry of zip.getEntries()) {
         if (zipEntry.isDirectory || zipEntry.entryName.startsWith('META-INF')) continue;
-        const target = path.join(nativesDir, zipEntry.entryName);
-        if (target !== nativesDir && !target.startsWith(nativesDir + path.sep)) continue;
+        const target = safeNativesTarget(nativesDir, zipEntry.entryName);
+        if (!target) continue;
         fs.mkdirSync(path.dirname(target), { recursive: true });
         fs.writeFileSync(target, zipEntry.getData());
       }

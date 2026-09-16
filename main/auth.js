@@ -2,50 +2,17 @@
 
 const crypto = require('node:crypto');
 const { BrowserWindow } = require('electron');
-const { URLS, microsoftClientId, msRedirectUri, BUILTIN_CLIENT_ID, BUILTIN_REDIRECT_URI, OWN_CLIENT_ID } = require('./config');
+const { URLS, msRedirectUri, OWN_CLIENT_ID } = require('./config');
 const { loadSecrets, saveSecrets, clearSecrets, loadState, saveState } = require('./store');
 
 const SCOPES = ['XboxLive.signin', 'offline_access', 'openid', 'profile', 'email'];
 
-function storedCustomId() {
-  const fromEnv = (microsoftClientId() || '').trim();
-  if (fromEnv) return { value: fromEnv, source: 'env' };
-  const stored = String(loadState().clientId || '').trim();
-  if (stored) return { value: stored, source: 'stored' };
-  return { value: '', source: null };
-}
-
 function resolveLoginConfig() {
-  const custom = storedCustomId();
-  let mode = loadState().authMode || null;
-  if (!mode) mode = custom.value ? 'custom' : 'own';
-  if (mode === 'custom') {
-    if (!custom.value) {
-      throw new Error('Custom App ID selected but no client ID configured. Enter it below or switch to the KebabClient app.');
-    }
-    return { mode, clientId: custom.value, redirectUri: msRedirectUri(), source: custom.source };
-  }
-  if (mode === 'builtin') {
-    return { mode, clientId: BUILTIN_CLIENT_ID, redirectUri: BUILTIN_REDIRECT_URI, source: 'builtin' };
-  }
   return { mode: 'own', clientId: OWN_CLIENT_ID, redirectUri: msRedirectUri(), source: 'own' };
 }
 
 function getClientIdInfo() {
-  const custom = storedCustomId();
-  let cfg;
-  try {
-    cfg = resolveLoginConfig();
-  } catch {
-    cfg = { mode: loadState().authMode || 'builtin', clientId: '', redirectUri: '', source: null };
-  }
-  return {
-    mode: cfg.mode,
-    customValue: custom.value,
-    customSource: custom.source,
-    effectiveSource: cfg.source,
-    ownClientId: OWN_CLIENT_ID
-  };
+  return { mode: 'own', customValue: '', customSource: null, effectiveSource: 'own', ownClientId: OWN_CLIENT_ID };
 }
 
 function base64url(buf) {

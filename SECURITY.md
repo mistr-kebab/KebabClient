@@ -20,6 +20,6 @@ We will confirm receipt and keep you updated on the fix.
 ## Handling of Secrets
 
 - Never commit `.env` files, tokens, or client secrets. `.env` is git-ignored.
-- The app reads `MC_LAUNCHER_CLIENT_ID` from the environment; local values
-  stay in your untracked `.env` only.
+- Optional local values (e.g. `DISCORD_CLIENT_ID`) stay in your untracked
+  `.env` only.
 - OAuth refresh tokens are stored encrypted via Electron `safeStorage`.
