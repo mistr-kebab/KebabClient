@@ -36,8 +36,6 @@ function isGameRunning() {
   }
 }
 
-// Folder scheme: <dataDir>/instances/<instanceName>/.
-// Fixes up older entries (random hex dirs) and keeps the folder in sync on rename.
 function migrateInstanceDirs(state) {
   const list = state.instances || [];
   if (!list.length) return state;
@@ -115,8 +113,6 @@ function ensureSeeded() {
   return migrateInstanceDirs(loadState());
 }
 
-// One-time move: the old single-instance layout kept shared data inside
-// instances/26.1.2/. New layout shares libraries/assets across instances.
 function migrateLegacy() {
   try {
     const legacyRoot = path.join(instancesRoot(), MC_VERSION);
@@ -134,7 +130,7 @@ function migrateLegacy() {
     if (fs.existsSync(oldMarker) && !fs.existsSync(newMarker)) {
       fs.renameSync(oldMarker, newMarker);
     }
-  } catch { /* best effort, verify will repair */ }
+  } catch {}
 }
 
 function listInstances() {
@@ -243,7 +239,7 @@ function deleteInstance(id) {
   persistInstances(rest, nextActive);
   try {
     fs.rmSync(path.join(instancesRoot(), entry.dir), { recursive: true, force: true });
-  } catch { /* best effort */ }
+  } catch {}
   return rest;
 }
 
@@ -255,7 +251,7 @@ function touchLastPlayed(id) {
       entry.lastPlayed = Date.now();
       persistInstances(instances);
     }
-  } catch { /* non-critical */ }
+  } catch {}
 }
 
 const ICON_EXTS = ['.png', '.jpg', '.jpeg', '.webp'];
@@ -286,7 +282,7 @@ function setInstanceIcon(id, srcPath) {
     if (old && path.resolve(old) !== path.resolve(path.join(instanceDir(entry), destName)) && fs.existsSync(old)) {
       fs.unlinkSync(old);
     }
-  } catch { /* noop */ }
+  } catch {}
   fs.copyFileSync(src, path.join(instanceDir(entry), destName));
   entry.icon = destName;
   persistInstances(instances);
@@ -300,7 +296,7 @@ function clearInstanceIcon(id) {
   try {
     const old = iconPathFor(entry);
     if (old && fs.existsSync(old)) fs.unlinkSync(old);
-  } catch { /* noop */ }
+  } catch {}
   entry.icon = null;
   persistInstances(instances);
   return entry;
@@ -339,7 +335,7 @@ function addPlaytime(id, ms) {
     if (!entry || !(ms > 0)) return;
     entry.totalPlayMs = (Number(entry.totalPlayMs) || 0) + Math.round(ms);
     persistInstances(instances);
-  } catch { /* non-critical */ }
+  } catch {}
 }
 
 module.exports = {

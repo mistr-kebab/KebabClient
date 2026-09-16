@@ -164,7 +164,7 @@ function dirSize(dir) {
       if (e.isDirectory()) walk(full);
       else if (e.isFile()) {
         files += 1;
-        try { total += fs.statSync(full).size; } catch { /* noop */ }
+        try { total += fs.statSync(full).size; } catch {}
       }
     }
   };

@@ -1,11 +1,5 @@
 'use strict';
 
-/* Telemetrie-Ping (First-Party, datensparsam):
-   Meldet 1x am Tag "Installation aktiv" an kebabdev.de, damit die Website
-   unter /api/stats.json "Aktive Nutzer" anzeigen kann. Uebertragen werden nur:
-   App-Name, App-Version und eine zufaellige Installations-ID (keine Personendaten,
-   kein Tracking ueber Dritte). Server-seitig wird nur gezaehlt (Nginx-Log).
-   Laeuft nur in paketierten Builds, nie im Dev-Modus. Fehler sind still. */
 
 const { app } = require('electron');
 const { randomUUID } = require('node:crypto');
@@ -29,7 +23,7 @@ function installId() {
     const id = randomUUID();
     try {
       saveState({ installId: id });
-    } catch { /* ignore */ }
+    } catch {}
     return id;
   } catch {
     return 'unknown';
@@ -68,14 +62,14 @@ function startTelemetry() {
     if (await pingOnce()) {
       try {
         saveState({ lastPing: Date.now() });
-      } catch { /* ignore */ }
+      } catch {}
     }
   }, 20000);
   setInterval(async () => {
     if (await pingOnce()) {
       try {
         saveState({ lastPing: Date.now() });
-      } catch { /* ignore */ }
+      } catch {}
     }
   }, DAY);
 }

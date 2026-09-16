@@ -278,7 +278,7 @@ function registerIpc() {
         const stat = fs.statSync(full);
         if (!stat.isFile() || stat.size > 8 * 1024 * 1024) continue;
         out.push({ name: file, dataUrl: `data:${MIME[ext]};base64,${fs.readFileSync(full).toString('base64')}` });
-      } catch { /* skip unreadable */ }
+      } catch {}
     }
     return out;
   });
@@ -324,7 +324,7 @@ if (!gotSingleInstanceLock) {
     createWindow();
     updater.initUpdater(broadcast);
     telemetry.startTelemetry();
-    try { require('./discord').showMenu(); } catch { /* noop */ }
+    try { require('./discord').showMenu(); } catch {}
     autoRefresh();
     try { servers.syncToAllInstances(); } catch (err) { console.error('Could not sync servers.dat:', err); }
     app.on('activate', () => {

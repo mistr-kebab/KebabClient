@@ -126,8 +126,8 @@ async function downloadToFile(url, dest) {
   try {
     for await (const chunk of res.body) out.write(chunk);
   } catch (e) {
-    try { out.close(); } catch { /* noop */ }
-    try { fs.unlinkSync(tmp); } catch { /* noop */ }
+    try { out.close(); } catch {}
+    try { fs.unlinkSync(tmp); } catch {}
     throw e;
   }
   await new Promise((resolve, reject) => out.end((err) => (err ? reject(err) : resolve())));
@@ -156,7 +156,7 @@ async function installMod(projectId, versionId, instanceId, onStep, category) {
     try {
       const v = await apiGet(`/version/${encodeURIComponent(versionId)}`);
       if (v && v.project_id === projectId && (v.files || []).length) return v;
-    } catch { /* fall through */ }
+    } catch {}
     return null;
   }
 

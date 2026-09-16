@@ -1,9 +1,5 @@
 'use strict';
 
-// Minecraft Server List Ping (Java Edition, modern 1.7+ Status-Protokoll):
-// Handshake -> Status-Request -> JSON-Response (+ Ping/Pong fuer Latenz).
-// Liefert MOTD (als Klartext), Spielerzahlen, Version, Favicon und Latenz.
-// Wirft bei Timeout/unerreichbar einen lesbaren Fehler (Renderer zeigt Offline).
 const dns = require('node:dns').promises;
 const net = require('node:net');
 
@@ -84,7 +80,6 @@ function readStringPacket(buf, ref) {
   return s;
 }
 
-// Chat-Komponente -> Klartext (rekursiv ueber text/extra, translate faellt auf Key zurueck).
 function chatToPlain(node) {
   if (node === null || node === undefined) return '';
   if (typeof node === 'string') return node;
@@ -137,7 +132,7 @@ async function resolveTarget(host, port) {
         const best = [...records].sort((a, b) => a.priority - b.priority || b.weight - a.weight)[0];
         if (best && best.name) return { host: best.name, port: best.port || 25565 };
       }
-    } catch { /* kein SRV -> direkt verbinden */ }
+    } catch {}
   }
   return { host, port: port === null ? 25565 : port };
 }
@@ -150,7 +145,7 @@ function pingOnce(host, port) {
     const fail = (err) => {
       if (settled) return;
       settled = true;
-      try { socket.destroy(); } catch { /* noop */ }
+      try { socket.destroy(); } catch {}
       reject(err);
     };
     const totalTimer = setTimeout(() => fail(new Error('Timed out.')), TOTAL_TIMEOUT_MS);
@@ -195,8 +190,8 @@ function pingOnce(host, port) {
           try {
             result.latencyMs = Math.max(0, Math.round(Number(process.hrtime.bigint() - pingSentAt) / 1e6));
           } catch { result.latencyMs = null; }
-          try { socket.end(); } catch { /* noop */ }
-          setTimeout(() => { try { socket.destroy(); } catch { /* noop */ } }, 250).unref?.();
+          try { socket.end(); } catch {}
+          setTimeout(() => { try { socket.destroy(); } catch {} }, 250).unref?.();
           resolve(result);
         }
       } catch (err) {

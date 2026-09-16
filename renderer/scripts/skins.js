@@ -27,7 +27,7 @@
     if (size < 40) return;
     try {
       if (Math.abs(viewer.width - size) >= 2) viewer.setSize(size, size);
-    } catch { /* keep current size */ }
+    } catch {}
   }
 
   function ensureViewer() {
@@ -53,7 +53,7 @@
         resizeObserver = new ResizeObserver(() => fitViewer());
         resizeObserver.observe(stage);
       }
-    } catch { /* fixed-size fallback */ }
+    } catch {}
     fitViewer();
     return viewer;
   }
@@ -94,15 +94,15 @@
         await v.loadCape(capeDataUrl);
       } catch (err) {
         capeError = err?.message || String(err);
-        try { v.resetCape(); } catch { /* noop */ }
+        try { v.resetCape(); } catch {}
       }
     } else {
-      try { v.resetCape(); } catch { /* noop */ }
+      try { v.resetCape(); } catch {}
     }
     return { skinOk: !!dataUrl && !skinError, skinError, capeError };
   }
 
-  function renderCapes(capes, activeId) {
+  function renderCapes(capes, activeId, skinDataUrl, model) {
     const list = document.getElementById('capeList');
     if (!list) return;
     list.textContent = '';
@@ -112,13 +112,16 @@
     }
     for (const cape of capes) {
       const li = el('li', 'cape-item' + (cape.id === activeId ? ' is-active' : ''));
+      const thumbSlot = el('span', 'cape-thumb-slot');
       if (cape.dataUrl) {
         const img = document.createElement('img');
         img.className = 'cape-thumb';
         img.alt = cape.alias || 'Cape';
         img.src = cape.dataUrl;
-        li.appendChild(img);
+        thumbSlot.appendChild(img);
+        if (skinDataUrl) void upgradeCapeThumb(thumbSlot, cape, skinDataUrl, model);
       }
+      li.appendChild(thumbSlot);
       const wrap = el('div', 'cape-meta');
       wrap.appendChild(el('div', 'cape-name', cape.alias || 'Cape'));
       wrap.appendChild(el('div', 'cape-id', cape.id));
@@ -140,6 +143,58 @@
     }
   }
 
+  const capeSnapCache = new Map();
+  let snapViewer = null;
+  let snapCanvas = null;
+
+  function getSnapViewer() {
+    if (snapViewer) return snapViewer;
+    if (!window.skinview3d) throw new Error('3D viewer library failed to load.');
+    snapCanvas = document.createElement('canvas');
+    snapCanvas.width = 96;
+    snapCanvas.height = 96;
+    snapViewer = new window.skinview3d.SkinViewer({
+      canvas: snapCanvas,
+      width: 96,
+      height: 96,
+      preserveDrawingBuffer: true,
+      renderPaused: true,
+      enableControls: false,
+      pixelRatio: 1,
+      zoom: 0.8
+    });
+    try {
+      snapViewer.playerWrapper.rotation.y = Math.PI;
+    } catch {}
+    return snapViewer;
+  }
+
+  async function snapshotCape(skinDataUrl, model, capeDataUrl) {
+    const v = getSnapViewer();
+    await v.loadSkin(skinDataUrl, { model: model === 'slim' ? 'slim' : 'default' });
+    await v.loadCape(capeDataUrl);
+    v.render();
+    return snapCanvas.toDataURL();
+  }
+
+  async function upgradeCapeThumb(slot, cape, skinDataUrl, model) {
+    try {
+      let shot = capeSnapCache.get(cape.id);
+      if (!shot) {
+        shot = await snapshotCape(skinDataUrl, model, cape.dataUrl);
+        if (!shot || shot.length < 1000) return;
+        capeSnapCache.set(cape.id, shot);
+      }
+      if (!slot.isConnected) return;
+      slot.textContent = '';
+      const img = document.createElement('img');
+      img.className = 'cape-thumb';
+      img.alt = cape.alias || 'Cape';
+      img.src = shot;
+      slot.appendChild(img);
+    } catch {}
+  }
+
   function renderHistory(history) {
     const row = document.getElementById('skinHistory');
     if (!row) return;
@@ -152,10 +207,22 @@
       const btn = el('button', 'history-thumb', '');
       btn.type = 'button';
       btn.title = `Wear this skin (${entry.variant || 'classic'})`;
-      const img = document.createElement('img');
-      img.alt = '';
-      img.src = entry.dataUrl;
-      btn.appendChild(img);
+      const canvas = document.createElement('canvas');
+      canvas.width = 56;
+      canvas.height = 56;
+      btn.appendChild(canvas);
+      try {
+        if (window.headshot) {
+          window.headshot.render(canvas, entry.dataUrl, 56).then((painted) => {
+            if (painted !== false || !btn.isConnected) return;
+            const img = document.createElement('img');
+            img.alt = '';
+            img.src = entry.dataUrl;
+            btn.textContent = '';
+            btn.appendChild(img);
+          }).catch(() => {});
+        }
+      } catch {}
       btn.addEventListener('click', async () => {
         try {
           await bridge().applySkinHistory(entry.id);
@@ -172,7 +239,7 @@
   async function loadHistory() {
     try {
       renderHistory(await bridge().skinsHistory());
-    } catch { /* history is optional */ }
+    } catch {}
   }
 
   let dataLoadedAt = 0;
@@ -188,7 +255,7 @@
       else if (preview?.skin?.variant === 'CLASSIC') variant = 'classic';
       syncVariantButtons();
       const shown = await showSkin(preview?.skin?.dataUrl, preview?.cape?.dataUrl);
-      renderCapes(preview?.capes || [], preview?.cape?.id);
+      renderCapes(preview?.capes || [], preview?.cape?.id, preview?.skin?.dataUrl, variant);
       if (statusEl) {
         if (!preview?.skin) {
           statusEl.textContent = 'No skin found on profile.';
@@ -215,7 +282,7 @@
     try {
       ensureViewer();
       fitViewer();
-    } catch { /* viewer bleibt optional */ }
+    } catch {}
     if (!dataLoadedAt || Date.now() - dataLoadedAt > 5 * 60 * 1000) reload();
   }
 

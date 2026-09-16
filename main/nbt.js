@@ -59,13 +59,9 @@ function buildServersDat(servers) {
     listPayload,
     Buffer.from([TAG_END])
   ]);
-  // servers.dat on disk is uncompressed NBT.
   return Buffer.concat([Buffer.from([TAG_COMPOUND]), nbtName(''), rootPayload]);
 }
 
-// Minimaler Reader nur fuer servers.dat (uncompressed NBT):
-// root-Compound -> "servers"-Liste aus Compounds mit name/ip-Strings.
-// Gibt bei jedem Fehler [] zurueck (tolerant, nie crashen).
 function createReader(buf) {
   let off = 0;
   function need(n) {

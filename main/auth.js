@@ -42,7 +42,7 @@ async function postForm(url, params) {
   });
   const text = await res.text();
   let json = null;
-  try { json = JSON.parse(text); } catch { /* keep text */ }
+  try { json = JSON.parse(text); } catch {}
   if (!res.ok) {
     const msg = (json && (json.error_description || json.error || json.message)) || text.slice(0, 500);
     throw new Error(`Token request failed (${res.status}): ${msg}`);
@@ -56,7 +56,7 @@ async function postJson(url, payload, token) {
   const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(payload) });
   const text = await res.text();
   let json = null;
-  try { json = JSON.parse(text); } catch { /* noop */ }
+  try { json = JSON.parse(text); } catch {}
   if (!res.ok) {
     throw new Error(`Request failed (${res.status}) ${url}: ${String(text).slice(0, 500)}`);
   }
@@ -88,7 +88,7 @@ function listenForAuthCode(parent, cfg) {
     const done = (err, code) => {
       if (settled) return;
       settled = true;
-      try { win.close(); } catch { /* noop */ }
+      try { win.close(); } catch {}
       if (err) reject(err);
       else resolve({ code, verifier });
     };
@@ -110,7 +110,7 @@ function listenForAuthCode(parent, cfg) {
           done(null, code);
           return;
         }
-      } catch { /* ignore parse errors */ }
+      } catch {}
       callback({});
     });
     win.webContents.on('will-redirect', (event, url) => {
@@ -125,7 +125,7 @@ function listenForAuthCode(parent, cfg) {
             else done(null, code);
           }
         }
-      } catch { /* noop */ }
+      } catch {}
     });
     win.loadURL(authUrl).catch((e) => done(e));
   });

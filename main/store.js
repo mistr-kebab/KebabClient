@@ -73,7 +73,7 @@ function loadSecrets() {
 function clearSecrets() {
   try {
     fs.unlinkSync(secretsFile());
-  } catch { /* noop */ }
+  } catch {}
 }
 
 module.exports = {

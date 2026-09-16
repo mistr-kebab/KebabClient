@@ -1,11 +1,5 @@
 'use strict';
 
-/* Discord Rich Presence: zeigt im Discord-Profil, dass KebabClient laeuft –
-   ob man im Menue ist, auf welchem Server man spielt und seit wann.
-   Spricht nur lokal per IPC mit dem laufenden Discord-Client (kein Tracking,
-   keine zusaetzlichen Datenabfluesse). Ohne Discord-Client oder ohne
-   konfigurierte Application ID bleibt es still deaktiviert.
-   Application ID: Discord Developer Portal -> .env DISCORD_CLIENT_ID=... */
 
 const { loadState } = require('./store');
 
@@ -33,7 +27,7 @@ function settingsOn() {
   try {
     const s = loadState().settings || {};
     if (s.discord && typeof s.discord.rpc === 'boolean') return s.discord.rpc;
-  } catch { /* noop */ }
+  } catch {}
   return true;
 }
 
@@ -90,7 +84,7 @@ async function ensureConnected() {
   if (connecting) {
     try {
       await connecting;
-    } catch { /* noop */ }
+    } catch {}
     return connected && !!rpc;
   }
   const id = discordClientId();
@@ -105,8 +99,6 @@ async function ensureConnected() {
   connecting = (async () => {
     const client = new Client({ transport: 'ipc' });
     client.on('ready', () => {
-      // Nur reagieren, wenn dieser Client auch der aktive ist (kein Sturm
-      // durch ready-Events, die noch waehrend login() feuern).
       if (rpc !== client) return;
       connected = true;
       if (current) apply().catch(() => {});
@@ -160,7 +152,13 @@ function handleGameLine(line) {
   const s = String(line || '');
   const m = s.match(/Connecting to ([^,\s]+)(?:,\s*(\d+))?/);
   if (m) {
-    showServer(m[1]);
+    const host = m[1];
+    const hasPort = !!m[2];
+    const isScheme = /^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(host);
+    const isVoice = /voice/i.test(host) || /voice[\s_-]?chat/i.test(s);
+    if (!isScheme && !isVoice && (hasPort || !current.server)) {
+      showServer(host);
+    }
     return;
   }
   if (/Starting integrated server/i.test(s)) {
@@ -178,7 +176,7 @@ async function refresh() {
     current = null;
     try {
       if (rpc) await rpc.destroy();
-    } catch { /* noop */ }
+    } catch {}
     rpc = null;
     connected = false;
     return { ok: true, enabled: false };
@@ -197,10 +195,10 @@ async function shutdown() {
     if (rpc) {
       try {
         await rpc.clearActivity();
-      } catch { /* noop */ }
+      } catch {}
       await rpc.destroy();
     }
-  } catch { /* noop */ }
+  } catch {}
   rpc = null;
   connected = false;
 }

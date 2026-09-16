@@ -9,7 +9,7 @@
         const v = window.i18n.t(key);
         if (v && v !== key) return v;
       }
-    } catch { /* noop */ }
+    } catch {}
     return fallback || key;
   }
 
@@ -19,7 +19,7 @@
   function paintHeads() {
     try {
       if (window.headshot) window.headshot.renderAll(headDataUrl);
-    } catch { /* decorative */ }
+    } catch {}
     document.querySelectorAll('[data-head-fallback]').forEach((node) => {
       node.hidden = !!headDataUrl;
     });
@@ -143,7 +143,7 @@
         setAccount(payload && payload.profile ? payload.profile : null);
         if (payload && payload.refreshError) toast(`Auto-refresh failed: ${payload.refreshError}`, 'error');
       });
-    } catch { /* noop */ }
+    } catch {}
     loadProfile();
   });
 

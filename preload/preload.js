@@ -4,7 +4,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 function on(channel, callback) {
   const sub = (_event, payload) => {
-    try { callback(payload); } catch { /* noop */ }
+    try { callback(payload); } catch {}
   };
   ipcRenderer.on(channel, sub);
   return () => ipcRenderer.removeListener(channel, sub);

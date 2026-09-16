@@ -18,10 +18,6 @@ function saveServers(servers) {
   return servers;
 }
 
-// Merge statt Ueberschreiben: Launcher-Eintraege sind fuehrend (Name/IP
-// bei gleicher IP gewinnen), Server die direkt im Spiel hinzugefuegt wurden
-// bleiben in der Instanz erhalten. In-Game-Server werden NIE in die
-// Launcher-Liste importiert.
 function mergeServers(managed, existing) {
   const key = (s) => String((s && s.ip) || '').trim().toLowerCase();
   const managedKeys = new Set((managed || []).map(key));
@@ -38,7 +34,7 @@ function syncToInstance(servers, root) {
   let existing = [];
   try {
     if (fs.existsSync(file)) existing = parseServersDat(fs.readFileSync(file));
-  } catch { /* unlesbar -> nur Launcher-Liste schreiben */ }
+  } catch {}
   fs.writeFileSync(file, buildServersDat(mergeServers(list, existing)));
   return list;
 }
@@ -52,7 +48,7 @@ function syncToAllInstances(servers) {
   for (const instance of instances) {
     try {
       syncToInstance(servers, dirsFor(instance).root);
-    } catch { /* best effort per instance */ }
+    } catch {}
   }
   return servers || listServers();
 }

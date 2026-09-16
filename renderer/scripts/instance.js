@@ -38,7 +38,7 @@
         const v = window.i18n.t(key);
         if (v && v !== key) return v;
       }
-    } catch { /* noop */ }
+    } catch {}
     return fallback;
   }
 
@@ -112,7 +112,7 @@
       const pathLabel = document.getElementById('instancePathLabel');
       if (pathLabel && s?.instanceDir) pathLabel.textContent = s.instanceDir;
       setRunning(!!s?.running, null);
-    } catch { /* show on demand */ }
+    } catch {}
   }
 
   async function pickBanner() {
@@ -120,13 +120,13 @@
       const banners = await bridge().getBanners();
       if (!banners || !banners.length) return;
       let last = null;
-      try { last = window.localStorage.getItem('kebabLastBanner'); } catch { /* noop */ }
+      try { last = window.localStorage.getItem('kebabLastBanner'); } catch {}
       let pool = banners.filter((b) => b.name !== last);
       if (!pool.length) pool = banners;
       const pick = pool[Math.floor(Math.random() * pool.length)];
       document.documentElement.style.setProperty('--hero-image', `url("${pick.dataUrl}")`);
-      try { window.localStorage.setItem('kebabLastBanner', pick.name); } catch { /* noop */ }
-    } catch { /* keep default banner */ }
+      try { window.localStorage.setItem('kebabLastBanner', pick.name); } catch {}
+    } catch {}
   }
 
   function applyActiveInstance(instance) {
@@ -177,7 +177,7 @@
       try {
         const s = await bridge().gameStatus();
         if (s?.instance) applyActiveInstance(s.instance);
-      } catch { /* fall through to hint */ }
+      } catch {}
     }
     if (!activeInstance) {
       toast('Create an instance first.', 'error');
@@ -267,7 +267,7 @@
         setProgress(ratio, `${p.phase || ''} — ${p.label || ''}`.trim());
         if (ratio >= 1) window.setTimeout(() => setProgress(null), 2500);
       });
-    } catch { /* bridge unavailable in static preview */ }
+    } catch {}
 
     document.addEventListener('instances:changed', () => {
       refreshStatus();

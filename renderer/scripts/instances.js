@@ -701,7 +701,7 @@
     };
     try {
       for (const f of (dt && dt.files) || []) push(f && f.path);
-    } catch { /* noop */ }
+    } catch {}
     try {
       const items = dt && dt.items ? [...dt.items] : [];
       for (const it of items) {
@@ -710,7 +710,7 @@
           push(f && f.path);
         }
       }
-    } catch { /* noop */ }
+    } catch {}
     return out;
   }
 
@@ -719,7 +719,7 @@
     try {
       const types = [...(dt?.types || [])].map((s) => String(s).toLowerCase());
       hasFiles = types.includes('files');
-    } catch { /* noop */ }
+    } catch {}
     if (hasFiles) {
       return 'Drop was blocked (Windows strips file drops when the app runs as administrator — restart it normally or use the file button).';
     }
@@ -743,7 +743,7 @@
         stop(e);
         try {
           if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
-        } catch { /* noop */ }
+        } catch {}
         zone.classList.add('is-drag');
       });
     });
@@ -834,10 +834,10 @@
     });
     try {
       bridge().onInstancesChanged(() => loadInstances());
-    } catch { /* noop */ }
+    } catch {}
     try {
       bridge().onProgress(onInstanceProgress);
-    } catch { /* noop */ }
+    } catch {}
     loadInstances();
   });
 })();

@@ -137,7 +137,7 @@ async function downloadFile(url, dest, expectedSha1, expectedSize, onProgress) {
       try {
         const actual = await sha1File(dest);
         if (actual.toLowerCase() === String(expectedSha1).toLowerCase()) return { skipped: true };
-      } catch { /* hash failed: re-download */ }
+      } catch {}
     } else if (sizeOk && !expectedSha1) {
       return { skipped: true };
     }
@@ -156,8 +156,8 @@ async function downloadFile(url, dest, expectedSha1, expectedSize, onProgress) {
       if (onProgress && total) onProgress(done / total);
     }
   } catch (e) {
-    try { out.close(); } catch { /* noop */ }
-    try { fs.unlinkSync(tmp); } catch { /* noop */ }
+    try { out.close(); } catch {}
+    try { fs.unlinkSync(tmp); } catch {}
     throw e;
   }
   await new Promise((resolve, reject) => {
@@ -197,8 +197,6 @@ function rulesAllow(rules, features) {
   return allowed;
 }
 
-// MVP: no demo mode, no custom resolution, no quick-play. All feature-gated
-// arguments (demo, quickPlay*, resolution) stay excluded.
 function launchFeatures() {
   return {
     is_demo_user: false,
@@ -349,9 +347,6 @@ async function ensureLoaderFiles(instance, layout, vanillaJson, progress, tally)
     instance = getInstance(instance.id);
   }
   const mavenBase = loaders.LOADERS[loader].maven;
-  // Profil-Libs VOR dem Merge normalisieren (downloads.artifact aufloesen),
-  // damit sie im gemergten JSON stehen. Sonst fehlen sie im Classpath und der
-  // Start stirbt mit ClassNotFoundException (z.B. KnotClient).
   const normalizedProfileLibs = [];
   for (const rawLib of profile.libraries || []) {
     if (!rulesAllow(rawLib.rules)) continue;
@@ -404,7 +399,7 @@ async function ensureClientInner(instance, onProgress) {
   const layout = dirsFor(instance);
   const progress = (phase, ratio, label) => {
     const payload = { phase, ratio, label, instanceId: instance.id, instanceName: instance.name };
-    try { onProgress && onProgress(payload); } catch { /* noop */ }
+    try { onProgress && onProgress(payload); } catch {}
     emit('game:progress', payload);
   };
   const tally = makeTally();
@@ -590,14 +585,14 @@ async function launchGame(instanceId) {
   touchLastPlayed(instance.id);
   const playStart = Date.now();
   const playId = instance.id;
-  try { require('./discord').showGame(instance.name); } catch { /* noop */ }
+  try { require('./discord').showGame(instance.name); } catch {}
   emit('game:status', { running: true, pid: child.pid || null });
 
   const pump = (stream) => (chunk) => {
     const text = chunk.toString('utf8');
     for (const line of text.split(/\r?\n/)) {
       if (line.length === 0) continue;
-      try { require('./discord').handleGameLine(line); } catch { /* noop */ }
+      try { require('./discord').handleGameLine(line); } catch {}
       emit('game:log', { stream, line: line.slice(0, 4000) });
     }
   };
@@ -611,8 +606,8 @@ async function launchGame(instanceId) {
   child.on('exit', (code, signal) => {
     try {
       require('./instances').addPlaytime(playId, Date.now() - playStart);
-    } catch { /* non-critical */ }
-    try { require('./discord').clearGame(); } catch { /* noop */ }
+    } catch {}
+    try { require('./discord').clearGame(); } catch {}
     emit('game:log', { stream: 'system', line: `Game exited (code=${code} signal=${signal || '-'})` });
     emit('game:status', { running: false, pid: null, code });
     child = null;
@@ -625,7 +620,7 @@ function stopGame() {
   try {
     if (process.platform === 'win32') child.kill();
     else child.kill('SIGTERM');
-  } catch { /* noop */ }
+  } catch {}
   return { stopped: true };
 }
 

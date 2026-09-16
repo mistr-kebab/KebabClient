@@ -9,14 +9,10 @@ let started = false;
 function emit(state, data) {
   try {
     send('update:state', { state, ...(data || {}) });
-  } catch { /* window may be gone */ }
+  } catch {}
 }
 
 function isSupported() {
-  // Nur geprueft: paketierte App oder nicht (im Dev-Modus gibt es keine Updates).
-  // Die Update-Quelle selbst (app-update.yml in resources/) prueft electron-updater
-  // beim Check – dessen Fehler reichen wir durch. Hinweis: package.json im asar
-  // enthaelt KEIN build.publish mehr, daher darf hier nicht darauf geprueft werden.
   try {
     return app.isPackaged === true;
   } catch {
@@ -74,13 +70,13 @@ function initUpdater(broadcast) {
 
 function later(fn, ms) {
   return setTimeout(() => {
-    try { fn(false); } catch { /* noop */ }
+    try { fn(false); } catch {}
   }, ms);
 }
 
 function repeat(fn, ms) {
   return setInterval(() => {
-    try { fn(false); } catch { /* noop */ }
+    try { fn(false); } catch {}
   }, ms);
 }
 

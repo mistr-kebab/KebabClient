@@ -1,8 +1,5 @@
 'use strict';
 
-/* About-Panel (Einstellungen): zeigt installierte Version, neueste Version
-   und Nutzerzahlen von kebabdev.de. First-Party, zustimmungsfrei
-   (nur Aggregate, keine Personendaten). */
 (function () {
   const { bridge } = window.launcherUtil;
 
@@ -12,7 +9,7 @@
         const v = window.i18n.t(key);
         if (v && v !== key) return v;
       }
-    } catch { /* noop */ }
+    } catch {}
     return fallback;
   }
 
@@ -20,7 +17,7 @@
     try {
       const l = document.documentElement.lang;
       if (l === 'de' || l === 'en') return l;
-    } catch { /* noop */ }
+    } catch {}
     return 'de';
   }
 
@@ -41,7 +38,7 @@
     try {
       const v = await bridge().appVersion();
       if (v && v.version) set('aboutVersion', 'v' + String(v.version).replace(/^v/, ''));
-    } catch { /* Bridge fehlt in statischer Vorschau */ }
+    } catch {}
     try {
       const res = await fetch('https://kebabdev.de/api/latest.json', {
         headers: { Accept: 'application/json' },
@@ -56,7 +53,7 @@
           box.hidden = false;
         }
       }
-    } catch { /* offline – Platzhalter bleiben */ }
+    } catch {}
     try {
       const res = await fetch('https://kebabdev.de/api/stats.json', {
         headers: { Accept: 'application/json' },
@@ -67,7 +64,7 @@
           set('aboutUsers', fmt(d.activeUsers));
         }
       }
-    } catch { /* offline – Platzhalter bleiben */ }
+    } catch {}
   }
 
   document.addEventListener('DOMContentLoaded', () => {
@@ -102,6 +99,6 @@
           set('aboutStatus', '');
         }
       });
-    } catch { /* Bridge fehlt in statischer Vorschau */ }
+    } catch {}
   });
 })();

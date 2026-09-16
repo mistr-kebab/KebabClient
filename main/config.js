@@ -8,7 +8,7 @@ function loadDotEnv() {
   const candidates = [];
   try {
     candidates.push(path.join(path.dirname(process.execPath), '.env'));
-  } catch { /* noop */ }
+  } catch {}
   candidates.push(path.join(__dirname, '..', '.env'));
   for (const file of candidates) {
     let text;
@@ -34,13 +34,9 @@ const MC_VERSION = '26.1.2';
 
 const APP_NAME = 'KebabClient';
 
-// Official, Mojang-allowlisted public client used by the vanilla launcher flow.
-// Fallback method, no approval needed. Used when the KebabClient app is deselected.
 const BUILTIN_CLIENT_ID = '00000000402B5328';
 const BUILTIN_REDIRECT_URI = 'https://login.live.com/oauth20_desktop.srf';
 
-// KebabDev's own approved Entra app (public client, no secret).
-// Default sign-in method. Shipped in the repo like other launchers ship theirs.
 const OWN_CLIENT_ID = 'b0be2e82-378f-4156-a4f5-c43506935142';
 
 function appDataRoot() {
@@ -61,7 +57,7 @@ function readBootstrapDir() {
   try {
     const raw = fs.readFileSync(bootstrapFile(), 'utf8').trim();
     if (raw && path.isAbsolute(raw)) return raw;
-  } catch { /* no bootstrap: use default */ }
+  } catch {}
   return '';
 }
 

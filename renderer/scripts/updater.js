@@ -13,7 +13,7 @@
         const v = window.i18n.t(key);
         if (v && v !== key) return v;
       }
-    } catch { /* noop */ }
+    } catch {}
     return fallback;
   }
 
@@ -93,7 +93,7 @@
         }
         paint();
       });
-    } catch { /* bridge unavailable in static preview */ }
+    } catch {}
     paint();
   });
 })();

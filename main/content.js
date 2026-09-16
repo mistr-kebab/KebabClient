@@ -24,8 +24,6 @@ const CATEGORIES = {
   shader: { dir: 'shaderpacks', exts: ['.zip'], label: 'shader' }
 };
 
-// Disabled-Suffix: Dateien mit .disabled werden vom Spiel ignoriert
-// (Funktioniert fuer Mods, Resource Packs und Shader).
 const DISABLED_SUFFIX = '.disabled';
 const META_FILE = '.kebab-meta.json';
 const META_VERSION = 2;
@@ -136,8 +134,8 @@ async function downloadToFile(url, dest) {
   try {
     for await (const chunk of res.body) out.write(chunk);
   } catch (e) {
-    try { out.close(); } catch { /* noop */ }
-    try { fs.unlinkSync(tmp); } catch { /* noop */ }
+    try { out.close(); } catch {}
+    try { fs.unlinkSync(tmp); } catch {}
     throw e;
   }
   await new Promise((resolve, reject) => out.end((err) => (err ? reject(err) : resolve())));
@@ -172,7 +170,7 @@ async function installMod(projectId, versionId, instanceId, onStep, category, me
       version: version.version_number || null
     };
     saveMeta(dir, dirMeta);
-  } catch { /* metadata is optional */ }
+  } catch {}
 
   const depResult = await installRequiredDeps(version, loaders, mc, dir, onStep);
   const installedDeps = depResult.installedDeps;
@@ -195,12 +193,10 @@ async function fetchPinnedVersion(projectId, versionId) {
   try {
     const v = await apiGet(`/version/${encodeURIComponent(versionId)}`);
     if (v && v.project_id === projectId && (v.files || []).length) return v;
-  } catch { /* fall through */ }
+  } catch {}
   return null;
 }
 
-// Modrinth-Version einer lokalen Datei anhand ihres sha512-Hash bestimmen.
-// Gibt null zurueck, wenn die Datei nicht auf Modrinth liegt (Custom-Mod).
 async function identifyVersionByHash(filePath) {
   let hash;
   try {
@@ -251,8 +247,6 @@ async function installRequiredDeps(version, loaders, mc, dir, onStep) {
   return { installedDeps, depProblems };
 }
 
-// Holt fehlende Pflicht-Abhaengigkeiten fuer bereits im Ordner liegende
-// Dateien (Drop/Upload) anhand ihres Modrinth-Hash nach.
 async function ensureDependenciesForFiles(filenames, instanceId, category, onStep) {
   const cat = categoryOf(category);
   const instance = resolveInstance(instanceId);
@@ -323,11 +317,9 @@ function saveMeta(dir, meta) {
       pruned[path.basename(String(file))] = entry;
     }
     fs.writeFileSync(path.join(dir, META_FILE), JSON.stringify(pruned), 'utf8');
-  } catch { /* metadata is optional */ }
+  } catch {}
 }
 
-// "cloth-config-26.2.155.jar" -> "Cloth Config". Fallback, wenn weder
-// Sidecar noch Jar-Metadaten einen Titel liefern.
 const PRETTIFY_ACRONYMS = new Set(['api', 'gui', 'hud', 'mc', 'fps', 'jei', 'rei', 'emi', 'rpg', 'ui', 'pvp', 'pve']);
 function prettifyFilename(filename) {
   const { base } = stripDisabled(filename);
@@ -363,8 +355,6 @@ function readZipEntry(zip, entryName) {
   }
 }
 
-// Titel + Icon aus dem Jar selbst (fabric.mod.json). Gilt auch fuer
-// deaktivierte Dateien (Endung ist beim Lesen egal).
 function parseJarMeta(full) {
   let AdmZip;
   try { AdmZip = require('adm-zip'); }
@@ -397,8 +387,6 @@ function parseJarMeta(full) {
   return Object.keys(out).length ? out : null;
 }
 
-// Titel + Icon aus Resource-Pack-Zips (pack.png). Die pack.mcmeta-
-// Beschreibung ist kein Titel (Versions-Fluff), Dateiname wird prettified.
 function parsePackMeta(full) {
   let AdmZip;
   try { AdmZip = require('adm-zip'); }
@@ -541,8 +529,6 @@ async function importContent(category, sourcePaths, instanceId) {
       failed.push({ file: safe, reason: err.message });
     }
   }
-  // Pflicht-Abhaengigkeiten fuer frisch hinzugefuegte Dateien nachholen
-  // (Hash-Lookup auf Modrinth; Custom-Mods werden uebersprungen).
   let installedDeps = [];
   let depProblems = [];
   if (added.length) {

@@ -50,9 +50,9 @@
     });
     if (window.matchMedia) {
       if (!systemQuery) systemQuery = window.matchMedia('(prefers-color-scheme: light)');
-      try { systemQuery.removeEventListener('change', onSystemChange); } catch { /* noop */ }
+      try { systemQuery.removeEventListener('change', onSystemChange); } catch {}
       if (currentMode === 'system') {
-        try { systemQuery.addEventListener('change', onSystemChange); } catch { /* noop */ }
+        try { systemQuery.addEventListener('change', onSystemChange); } catch {}
       }
     }
   }

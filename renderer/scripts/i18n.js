@@ -134,7 +134,7 @@
     try {
       const nav = String(navigator.language || '').toLowerCase();
       if (nav.startsWith('de')) return 'de';
-    } catch { /* noop */ }
+    } catch {}
     return 'de';
   }
 
@@ -174,9 +174,9 @@
       try {
         const b = window.launcherUtil && window.launcherUtil.bridge ? window.launcherUtil.bridge() : null;
         if (b && b.updateSettings) b.updateSettings({ language: v }).catch(() => {});
-      } catch { /* settings load later */ }
+      } catch {}
     }
-    try { window.localStorage.setItem('kebabLang', v); } catch { /* noop */ }
+    try { window.localStorage.setItem('kebabLang', v); } catch {}
     return v;
   }
 

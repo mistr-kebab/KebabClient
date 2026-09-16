@@ -607,6 +607,17 @@ select.input {
   border-radius: var(--radius-sm);
 }
 
+.cape-thumb-slot {
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+
+.history-thumb canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
 .skin-side {
   display: flex;
   flex-direction: column;
@@ -1229,7 +1240,6 @@ select.input {
   }
 }
 
-/* ---------- Instance-Tiles mit Banner ---------- */
 .instance-tile {
   padding: 0 0 var(--space-4);
   overflow: hidden;

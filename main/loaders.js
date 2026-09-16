@@ -76,8 +76,6 @@ function mavenArtifact(name, baseUrl) {
   return { path: rel, url: base + rel };
 }
 
-// Normalize a loader profile library entry into the same shape vanilla
-// libraries use (downloads.artifact), so the shared downloader applies.
 function normalizeProfileLibrary(lib, mavenBase) {
   const out = { ...lib };
   if (!out.downloads?.artifact && typeof out.name === 'string') {

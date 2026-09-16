@@ -99,11 +99,11 @@ async function rememberSkin(buffer, variant) {
     const keep = new Set(next.map((h) => `${h.id}.png`));
     for (const f of fs.readdirSync(skinsDir())) {
       if (f.endsWith('.png') && !keep.has(f)) {
-        try { fs.unlinkSync(path.join(skinsDir(), f)); } catch { /* noop */ }
+        try { fs.unlinkSync(path.join(skinsDir(), f)); } catch {}
       }
     }
     saveState({ skinHistory: next });
-  } catch { /* history is best-effort */ }
+  } catch {}
 }
 
 async function getHistory() {
@@ -114,7 +114,7 @@ async function getHistory() {
     try {
       const dataUrl = 'data:image/png;base64,' + fs.readFileSync(historyFile(h.id)).toString('base64');
       out.push({ id: h.id, variant: h.variant, addedAt: h.addedAt, dataUrl });
-    } catch { /* file gone: skip */ }
+    } catch {}
   }
   return out;
 }
@@ -141,7 +141,7 @@ async function getPreview() {
     const model = activeSkin?.variant === 'SLIM' ? 'slim' : 'classic';
     try {
       await rememberSkin(Buffer.from(skinDataUrl.split(',')[1], 'base64'), model);
-    } catch { /* noop */ }
+    } catch {}
   }
   const capes = await Promise.all((state.capes || []).map(async (c) => ({
     ...c,

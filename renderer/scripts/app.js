@@ -9,7 +9,7 @@
         const v = window.i18n.t(key);
         if (v && v !== key) return v;
       }
-    } catch { /* noop */ }
+    } catch {}
     return fallback || key;
   }
 
@@ -44,7 +44,7 @@
     if (crumb) crumb.textContent = crumbName(view);
     try {
       document.dispatchEvent(new CustomEvent('view:shown', { detail: { view } }));
-    } catch { /* noop */ }
+    } catch {}
   }
 
   function bindNav() {
@@ -115,17 +115,17 @@
     const maxBtn = document.getElementById('maxButton');
     const closeBtn = document.getElementById('closeButton');
     if (minBtn) minBtn.addEventListener('click', () => {
-      try { bridge().minimizeWindow(); } catch { /* noop */ }
+      try { bridge().minimizeWindow(); } catch {}
     });
     if (maxBtn) maxBtn.addEventListener('click', () => {
-      try { bridge().toggleMaximize(); } catch { /* noop */ }
+      try { bridge().toggleMaximize(); } catch {}
     });
     if (closeBtn) closeBtn.addEventListener('click', () => {
-      try { bridge().closeWindow(); } catch { /* noop */ }
+      try { bridge().closeWindow(); } catch {}
     });
     try {
       bridge().onMaxState((s) => setMaxIcon(!!(s && s.maximized)));
-    } catch { /* noop */ }
+    } catch {}
   }
 
   document.addEventListener('DOMContentLoaded', () => {
