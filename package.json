@@ -1,6 +1,6 @@
 {
   "name": "kebabclient",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "Minimal Electron Minecraft launcher (MVP): Microsoft auth, 26.1.2 instance, Modrinth mods, skins/capes.",
   "license": "MIT",
   "main": "main/index.js",
@@ -39,7 +39,10 @@
       "allowToChangeInstallationDirectory": true,
       "allowElevation": true,
       "multiLanguageInstaller": true,
-      "installerLanguages": ["de_DE", "en_US"],
+      "installerLanguages": [
+        "de_DE",
+        "en_US"
+      ],
       "language": "1031",
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
@@ -52,12 +55,12 @@
     }
   },
   "devDependencies": {
-    "electron": "^33.0.0",
+    "electron": "^39.8.10",
     "electron-builder": "^26.15.3"
   },
   "dependencies": {
     "adm-zip": "^0.6.1",
-    "electron-updater": "^6.8.9",
-    "discord-rpc": "^4.0.1"
+    "discord-rpc": "^4.0.1",
+    "electron-updater": "^6.8.9"
   }
 }
