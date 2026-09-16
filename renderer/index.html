@@ -298,6 +298,10 @@
                 <span class="instance-sub" id="detailSub"></span>
               </span>
               <span class="instance-actions">
+                <button type="button" class="btn btn-primary" id="detailAddContentButton">
+                  <i data-lucide="plus" class="btn-icon"></i>
+                  <span>Add content</span>
+                </button>
                 <button type="button" class="btn btn-play" id="detailPlayButton">
                   <i data-lucide="play" class="btn-icon"></i>
                   <span data-i18n="home.play">Spielen</span>
@@ -309,42 +313,6 @@
                   <i data-lucide="x" class="btn-icon"></i>
                 </button>
               </span>
-            </div>
-            <div class="panel">
-              <div class="panel-head">
-                <h3 class="panel-title">
-                  <i data-lucide="plus-circle" class="panel-icon"></i>
-                  <span id="detailSearchTitle">Add content</span>
-                </h3>
-              </div>
-              <div class="toolbar">
-                <div class="search-box">
-                  <i data-lucide="search" class="search-icon"></i>
-                  <input type="search" id="detailSearchInput" class="input" placeholder="Search Modrinth — type to search" autocomplete="off" spellcheck="false">
-                </div>
-                <button type="button" class="btn btn-primary" id="detailSearchButton">
-                  <i data-lucide="plus" class="btn-icon"></i>
-                  <span>Add Content</span>
-                </button>
-              </div>
-              <p class="status-line" id="detailSearchStatus">Type to search Modrinth for this instance.</p>
-              <div class="segment" role="group" aria-label="Content type" id="detailTabs">
-                <button type="button" class="segment-btn is-active" data-category="all">All</button>
-                <button type="button" class="segment-btn" data-category="mod">Mods</button>
-                <button type="button" class="segment-btn" data-category="resourcepack">Resource Packs</button>
-                <button type="button" class="segment-btn" data-category="shader">Shaders</button>
-              </div>
-              <div class="dropzone" id="detailDropZone">
-                <i data-lucide="file-plus-2" class="dropzone-icon"></i>
-                <span id="detailDropZoneText">Drop .jar files here to add them to this instance</span>
-                <span class="dropzone-or">or</span>
-                <button type="button" class="btn btn-primary btn-sm" id="detailUploadButton">
-                  <i data-lucide="upload" class="btn-icon"></i>
-                  <span>Upload files</span>
-                </button>
-              </div>
-              <div class="mod-grid" id="detailResults"></div>
-              <div id="detailSentinel" class="scroll-sentinel" aria-hidden="true"></div>
             </div>
             <div class="panel">
               <div class="panel-head">
@@ -366,6 +334,47 @@
             </div>
           </section>
 
+          <section class="view" id="view-add-content" aria-label="Add content">
+            <div class="row">
+              <button type="button" class="btn btn-ghost btn-sm" id="detailAddBackButton">
+                <i data-lucide="arrow-left" class="btn-icon"></i>
+                <span data-i18n="nav.instances">Instanzen</span>
+              </button>
+            </div>
+            <div class="panel">
+              <div class="panel-head">
+                <h3 class="panel-title">
+                  <i data-lucide="plus-circle" class="panel-icon"></i>
+                  <span id="detailSearchTitle">Add content</span>
+                </h3>
+              </div>
+              <div class="toolbar">
+                <div class="search-box">
+                  <i data-lucide="search" class="search-icon"></i>
+                  <input type="search" id="detailSearchInput" class="input" placeholder="Search Modrinth — type to search" autocomplete="off" spellcheck="false">
+                </div>
+              </div>
+              <p class="status-line" id="detailSearchStatus">Type to search Modrinth for this instance.</p>
+              <div class="segment" role="group" aria-label="Content type" id="detailTabs">
+                <button type="button" class="segment-btn is-active" data-category="all">All</button>
+                <button type="button" class="segment-btn" data-category="mod">Mods</button>
+                <button type="button" class="segment-btn" data-category="resourcepack">Resource Packs</button>
+                <button type="button" class="segment-btn" data-category="shader">Shaders</button>
+              </div>
+              <div class="dropzone" id="detailDropZone">
+                <i data-lucide="file-plus-2" class="dropzone-icon"></i>
+                <span id="detailDropZoneText">Drop .jar files here to add them to this instance</span>
+                <span class="dropzone-or">or</span>
+                <button type="button" class="btn btn-primary btn-sm" id="detailUploadButton">
+                  <i data-lucide="upload" class="btn-icon"></i>
+                  <span>Upload files</span>
+                </button>
+              </div>
+              <div class="mod-grid" id="detailResults"></div>
+              <div id="detailSentinel" class="scroll-sentinel" aria-hidden="true"></div>
+            </div>
+          </section>
+
           <section class="view" id="view-skins" aria-label="Skins">
             <h1 class="section-title" data-i18n="skins.title">Skin &amp; Cape</h1>
             <p class="page-sub">Live preview of the signed-in profile. Uploads go through Mojang's API.</p>
@@ -374,6 +383,10 @@
                 <i data-lucide="rotate-ccw" class="btn-icon"></i>
                 <span>Reload preview</span>
               </button>
+            </div>
+            <div class="segment" role="group" aria-label="Outfit category" id="outfitTabs">
+              <button type="button" class="segment-btn is-active" data-outfit="skins">Skins</button>
+              <button type="button" class="segment-btn" data-outfit="capes">Capes</button>
             </div>
             <div class="skin-layout">
               <div class="panel skin-preview-panel">
@@ -390,7 +403,7 @@
                       <option value="none">Static</option>
                     </select>
                     <label class="check-row" for="spinCheck">
-                      <input type="checkbox" id="spinCheck" checked>
+                      <input type="checkbox" id="spinCheck">
                       <span>Spin</span>
                     </label>
                   </div>
@@ -403,7 +416,7 @@
                   <span>Show cape in preview</span>
                 </label>
               </div>
-              <div class="skin-side">
+              <div class="skin-side" id="outfitSkins">
                 <div class="panel">
                   <h3 class="panel-title">
                     <i data-lucide="upload" class="panel-icon"></i>
@@ -432,14 +445,16 @@
                     <i data-lucide="history" class="panel-icon"></i>
                     <span>History</span>
                   </h3>
-                  <div class="history-row" id="skinHistory"></div>
+                  <div class="skin-grid" id="skinHistory"></div>
                 </div>
+              </div>
+              <div class="skin-side" id="outfitCapes" hidden>
                 <div class="panel">
                   <h3 class="panel-title">
                     <i data-lucide="flag" class="panel-icon"></i>
                     <span>Capes</span>
                   </h3>
-                  <ul class="cape-list" id="capeList"></ul>
+                  <div class="skin-grid" id="capeList"></div>
                 </div>
               </div>
             </div>

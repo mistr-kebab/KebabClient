@@ -153,6 +153,7 @@
         applyTheme(currentAccent, currentMode);
         try {
           await bridge().updateSettings({ language: next });
+          try { await bridge().refreshDiscord(); } catch {}
           toast(next === 'de' ? 'Sprache: Deutsch.' : 'Language: English.', 'ok');
         } catch (err) {
           toast(`Language failed: ${err.message}`, 'error');

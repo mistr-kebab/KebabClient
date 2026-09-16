@@ -72,6 +72,7 @@ contextBridge.exposeInMainWorld('mc', {
   removeServer: (id) => ipcRenderer.invoke('servers:remove', { id }),
   moveServer: (id, direction) => ipcRenderer.invoke('servers:move', { id, direction }),
   pingServer: (ip) => ipcRenderer.invoke('servers:ping', { ip }),
+  refreshDiscord: () => ipcRenderer.invoke('discord:refresh'),
 
   appVersion: () => ipcRenderer.invoke('update:version'),
   checkForUpdates: () => ipcRenderer.invoke('update:check'),

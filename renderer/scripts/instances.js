@@ -428,7 +428,6 @@
     refreshDetailDropText();
     window.showView('instance-detail');
     await loadDetailInstalled();
-    void fetchResults(true);
   }
 
   const installedProjectIds = new Set();
@@ -842,8 +841,17 @@
         }
       });
     }
-    const detailSearchButton = document.getElementById('detailSearchButton');
-    if (detailSearchButton) detailSearchButton.addEventListener('click', () => { void fetchResults(true); });
+    const detailAddContentButton = document.getElementById('detailAddContentButton');
+    if (detailAddContentButton) detailAddContentButton.addEventListener('click', () => {
+      if (!detailId) return;
+      window.showView('add-content');
+      void fetchResults(true);
+    });
+    const detailAddBackButton = document.getElementById('detailAddBackButton');
+    if (detailAddBackButton) detailAddBackButton.addEventListener('click', async () => {
+      window.showView('instance-detail');
+      await loadDetailInstalled();
+    });
     const sentinel = document.getElementById('detailSentinel');
     if (sentinel && window.IntersectionObserver) {
       new IntersectionObserver((entries) => {

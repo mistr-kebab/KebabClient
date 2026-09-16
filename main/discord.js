@@ -39,9 +39,36 @@ function appVersion() {
   }
 }
 
+function appLanguage() {
+  try {
+    const forced = String(process.env.KEBAB_LANG || '').trim().toLowerCase();
+    if (forced === 'en' || forced === 'de') return forced;
+    const s = loadState().settings || {};
+    return String(s.language || '').trim().toLowerCase() === 'en' ? 'en' : 'de';
+  } catch {
+    return 'de';
+  }
+}
+
+const RPC_STRINGS = {
+  de: {
+    singleplayer: 'Singleplayer-Welt',
+    menu: 'Im Menü',
+    playingOn: (server) => `Spielt auf ${server}`,
+    download: 'Herunterladen'
+  },
+  en: {
+    singleplayer: 'Singleplayer World',
+    menu: 'In Menu',
+    playingOn: (server) => `Playing on ${server}`,
+    download: 'Download'
+  }
+};
+
 function buildActivity() {
   if (!current) return null;
   const ver = appVersion();
+  const t = RPC_STRINGS[appLanguage()];
   const activity = {
     details: current.instance ? `KebabClient · ${current.instance}` : 'KebabClient',
     largeImageKey: 'logo',
@@ -49,12 +76,12 @@ function buildActivity() {
     instance: false
   };
   if (current.server) {
-    activity.state = current.server === 'singleplayer' ? 'Singleplayer World' : `Playing on ${current.server}`;
+    activity.state = current.server === 'singleplayer' ? t.singleplayer : t.playingOn(current.server);
   } else {
-    activity.state = 'In Menu';
+    activity.state = t.menu;
   }
   if (current.startedAt) activity.startTimestamp = current.startedAt;
-  activity.buttons = [{ label: 'Download', url: 'https://kebabdev.de/download/' }];
+  activity.buttons = [{ label: t.download, url: 'https://kebabdev.de/download/' }];
   return activity;
 }
 

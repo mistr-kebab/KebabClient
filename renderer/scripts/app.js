@@ -19,6 +19,7 @@
       play: tr('crumb.play', 'Play'),
       instances: tr('crumb.instances', 'Instances'),
       'instance-detail': tr('crumb.instance-detail', 'Instance'),
+      'add-content': tr('crumb.addContent', 'Add Content'),
       skins: tr('crumb.skins', 'Skins'),
       servers: tr('crumb.servers', 'Servers'),
       logs: tr('crumb.logs', 'Logs'),
@@ -30,10 +31,10 @@
   let currentView = 'home';
 
   function setView(name) {
-    const known = ['home', 'play', 'instances', 'instance-detail', 'skins', 'servers', 'logs', 'settings'];
+    const known = ['home', 'play', 'instances', 'instance-detail', 'add-content', 'skins', 'servers', 'logs', 'settings'];
     const view = known.includes(name) ? name : 'home';
     currentView = view;
-    const navKey = view === 'instance-detail' ? 'instances' : view;
+    const navKey = view === 'instance-detail' || view === 'add-content' ? 'instances' : view;
     document.querySelectorAll('#mainNav .nav-item, #settingsNav .nav-item').forEach((btn) => {
       btn.classList.toggle('is-active', btn.dataset.view === navKey);
     });

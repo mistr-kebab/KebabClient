@@ -44,7 +44,7 @@
       height: startSize
     });
     viewer.controls.enablePan = false;
-    viewer.autoRotate = true;
+    viewer.autoRotate = false;
     viewer.autoRotateSpeed = 1.0;
     applyAnimation();
     try {
@@ -107,26 +107,26 @@
     if (!list) return;
     list.textContent = '';
     if (!capes || !capes.length) {
-      list.appendChild(el('li', 'muted', 'No capes on this account.'));
+      list.appendChild(el('p', 'content-empty', 'No capes on this account.'));
       return;
     }
     for (const cape of capes) {
-      const li = el('li', 'cape-item' + (cape.id === activeId ? ' is-active' : ''));
-      const thumbSlot = el('span', 'cape-thumb-slot');
+      const card = el('article', 'skin-card' + (cape.id === activeId ? ' is-active' : ''));
+      const prev = el('span', 'skin-card-preview');
+      const thumbSlot = el('span', 'skin-card-slot');
       if (cape.dataUrl) {
         const img = document.createElement('img');
-        img.className = 'cape-thumb';
+        img.className = 'skin-card-img';
         img.alt = cape.alias || 'Cape';
         img.src = cape.dataUrl;
         thumbSlot.appendChild(img);
         if (skinDataUrl) void upgradeCapeThumb(thumbSlot, cape, skinDataUrl, model);
       }
-      li.appendChild(thumbSlot);
-      const wrap = el('div', 'cape-meta');
-      wrap.appendChild(el('div', 'cape-name', cape.alias || 'Cape'));
-      wrap.appendChild(el('div', 'cape-id', cape.id));
-      li.appendChild(wrap);
-      const btn = el('button', 'btn btn-ghost btn-sm', cape.id === activeId ? 'Equipped' : 'Equip');
+      prev.appendChild(thumbSlot);
+      card.appendChild(prev);
+      const foot = el('span', 'skin-card-foot');
+      foot.appendChild(el('span', 'skin-card-name', cape.alias || 'Cape'));
+      const btn = el('button', 'btn btn-ghost btn-sm btn-block', cape.id === activeId ? 'Equipped' : 'Equip');
       btn.type = 'button';
       btn.disabled = cape.id === activeId;
       btn.addEventListener('click', async () => {
@@ -138,14 +138,24 @@
           toast(`Equip failed: ${err.message}`, 'error');
         }
       });
-      li.appendChild(btn);
-      list.appendChild(li);
+      foot.appendChild(btn);
+      card.appendChild(foot);
+      list.appendChild(card);
     }
+    if (window.refreshIcons) window.refreshIcons();
   }
 
   const capeSnapCache = new Map();
+  const skinSnapCache = new Map();
   let snapViewer = null;
   let snapCanvas = null;
+  let snapQueue = Promise.resolve();
+
+  function withSnapViewer(fn) {
+    const run = snapQueue.then(fn, fn);
+    snapQueue = run.catch(() => {});
+    return run;
+  }
 
   function getSnapViewer() {
     if (snapViewer) return snapViewer;
@@ -170,11 +180,49 @@
   }
 
   async function snapshotCape(skinDataUrl, model, capeDataUrl) {
-    const v = getSnapViewer();
-    await v.loadSkin(skinDataUrl, { model: model === 'slim' ? 'slim' : 'default' });
-    await v.loadCape(capeDataUrl);
-    v.render();
-    return snapCanvas.toDataURL();
+    return withSnapViewer(async () => {
+      const v = getSnapViewer();
+      v.zoom = 0.8;
+      try { v.resetCameraPose(); } catch {}
+      v.playerWrapper.rotation.y = Math.PI;
+      await v.loadSkin(skinDataUrl, { model: model === 'slim' ? 'slim' : 'default' });
+      await v.loadCape(capeDataUrl);
+      v.render();
+      return snapCanvas.toDataURL();
+    });
+  }
+
+  async function snapshotSkin(skinDataUrl, model) {
+    return withSnapViewer(async () => {
+      const v = getSnapViewer();
+      v.zoom = 1.0;
+      try { v.resetCameraPose(); } catch {}
+      v.playerWrapper.rotation.y = 0;
+      await v.loadSkin(skinDataUrl, { model: model === 'slim' ? 'slim' : 'default' });
+      try { v.resetCape(); } catch {}
+      v.render();
+      return snapCanvas.toDataURL();
+    });
+  }
+
+  async function upgradeHistoryThumb(btn, entry) {
+    try {
+      let shot = skinSnapCache.get(entry.id);
+      if (!shot) {
+        shot = await snapshotSkin(entry.dataUrl, entry.variant);
+        if (!shot || shot.length < 1000) return;
+        skinSnapCache.set(entry.id, shot);
+      }
+      if (!btn.isConnected) return;
+      const prev = btn.querySelector('.skin-card-preview');
+      if (!prev) return;
+      prev.textContent = '';
+      const img = document.createElement('img');
+      img.className = 'skin-card-img';
+      img.alt = '';
+      img.src = shot;
+      prev.appendChild(img);
+    } catch { /* head render stays as fallback */ }
   }
 
   async function upgradeCapeThumb(slot, cape, skinDataUrl, model) {
@@ -190,7 +238,7 @@
       if (!slot.isConnected) return;
       slot.textContent = '';
       const img = document.createElement('img');
-      img.className = 'cape-thumb';
+      img.className = 'skin-card-img';
       img.alt = cape.alias || 'Cape';
       img.src = shot;
       slot.appendChild(img);
@@ -206,25 +254,26 @@
       return;
     }
     for (const entry of history) {
-      const btn = el('button', 'history-thumb', '');
+      const btn = el('button', 'skin-card', '');
       btn.type = 'button';
-      btn.title = `Wear this skin (${entry.variant || 'classic'})`;
+      const modelLabel = entry.variant === 'slim' ? 'Slim' : 'Classic';
+      btn.title = `Wear this skin (${modelLabel})`;
+      btn.setAttribute('aria-label', `Wear this skin (${modelLabel})`);
+      const prev = el('span', 'skin-card-preview');
       const canvas = document.createElement('canvas');
-      canvas.width = 56;
-      canvas.height = 56;
-      btn.appendChild(canvas);
+      canvas.width = 64;
+      canvas.height = 64;
+      prev.appendChild(canvas);
       try {
         if (window.headshot) {
-          window.headshot.render(canvas, entry.dataUrl, 56).then((painted) => {
-            if (painted !== false || !btn.isConnected) return;
-            const img = document.createElement('img');
-            img.alt = '';
-            img.src = entry.dataUrl;
-            btn.textContent = '';
-            btn.appendChild(img);
-          }).catch(() => {});
+          window.headshot.render(canvas, entry.dataUrl, 64).catch(() => {});
         }
       } catch {}
+      btn.appendChild(prev);
+      const foot = el('span', 'skin-card-foot');
+      foot.appendChild(el('span', 'skin-card-name', modelLabel));
+      btn.appendChild(foot);
+      if (entry.dataUrl) void upgradeHistoryThumb(btn, entry);
       btn.addEventListener('click', async () => {
         try {
           await bridge().applySkinHistory(entry.id);
@@ -297,6 +346,30 @@
   document.addEventListener('DOMContentLoaded', () => {
     const animSelect = document.getElementById('skinAnimSelect');
     if (animSelect) animSelect.addEventListener('change', applyAnimation);
+    document.querySelectorAll('#outfitTabs .segment-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const showCapes = btn.dataset.outfit === 'capes';
+        document.querySelectorAll('#outfitTabs .segment-btn').forEach((x) => {
+          x.classList.toggle('is-active', x === btn);
+        });
+        const skinsEl = document.getElementById('outfitSkins');
+        const capesEl = document.getElementById('outfitCapes');
+        if (skinsEl) skinsEl.hidden = showCapes;
+        if (capesEl) capesEl.hidden = !showCapes;
+        try {
+          const v = ensureViewer();
+          if (showCapes) {
+            const spinCheck = document.getElementById('spinCheck');
+            if (spinCheck) spinCheck.checked = false;
+            v.autoRotate = false;
+            v.playerWrapper.rotation.y = Math.PI;
+          } else {
+            v.playerWrapper.rotation.y = 0;
+            fitViewer();
+          }
+        } catch {}
+      });
+    });
     const spinCheck = document.getElementById('spinCheck');
     if (spinCheck) spinCheck.addEventListener('change', applySpin);
 

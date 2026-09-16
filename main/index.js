@@ -289,6 +289,7 @@ function registerIpc() {
   ipcMain.handle('servers:remove', async (_e, args) => servers.removeServer(args?.id));
   ipcMain.handle('servers:move', async (_e, args) => servers.moveServer(args?.id, args?.direction));
   ipcMain.handle('servers:ping', async (_e, args) => require('./ping').pingServer(args?.ip));
+  ipcMain.handle('discord:refresh', async () => require('./discord').refresh());
 
   ipcMain.handle('update:version', async () => ({ version: updater.currentVersion() }));
   ipcMain.handle('update:check', async () => updater.checkNow(true));
