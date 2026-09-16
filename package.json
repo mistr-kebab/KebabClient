@@ -23,10 +23,6 @@
     ],
     "win": {
       "icon": "renderer/assets/icon.ico",
-      "signtoolOptions": {
-        "certificateSubjectName": "KebabDev",
-        "rfc3161TimeStampServer": "http://timestamp.digicert.com"
-      },
       "target": [
         "portable"
       ]
