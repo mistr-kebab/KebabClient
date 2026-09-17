@@ -92,6 +92,11 @@ Lucide (`data-lucide`), vendored locally.
 See [SECURITY.md](SECURITY.md) for reporting vulnerabilities. Short version:
 no public issues for security bugs — use private vulnerability reporting.
 
+## Development
+
+KebabClient is built mainly with AI assistance (code, refactoring, releases),
+with humans handling direction, review, testing, and releases.
+
 ## License
 
 MIT © 2026 KebabDev — see [LICENSE](LICENSE).
