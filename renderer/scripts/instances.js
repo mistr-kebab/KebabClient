@@ -347,6 +347,8 @@
 
   let detailId = null;
   let detailName = '';
+  let installedTab = 'mod';
+  let detailContentData = null;
 
   const logBuffers = new Map();
   const LOG_BUFFER_MAX = 500;
@@ -412,12 +414,6 @@
     shader: { label: 'shaders', ext: '.zip' }
   };
 
-  const DETAIL_GROUPS = [
-    ['mod', 'detail-mod', 'mods'],
-    ['resourcepack', 'detail-resourcepack', 'resource packs'],
-    ['shader', 'detail-shader', 'shaders']
-  ];
-
   const INSTALLABLE = ['mod', 'resourcepack', 'shader'];
 
   function typeLabel(t) {
@@ -459,11 +455,10 @@
     const subEl = document.getElementById('detailSub');
     if (nameEl) nameEl.textContent = found.name;
     if (subEl) {
-      subEl.textContent = `${found.mc} · `;
-      subEl.appendChild(badge(found));
+      subEl.textContent = `${loaderLabel(found.loader)}, ${found.mc}`;
       if (found.playtimeText) subEl.appendChild(document.createTextNode(` · ${fmt(tr('inst.playedTime', '{t} played'), { t: found.playtimeText })}`));
     }
-    const iconBox = document.querySelector('.detail-head .instance-icon');
+    const iconBox = document.querySelector('#detailIconButton .detail-icon-img');
     if (iconBox) {
       iconBox.textContent = '';
       if (found.iconDataUrl) {
@@ -493,24 +488,12 @@
         }
       };
     }
-    const iconClearBtn = document.getElementById('detailIconClearButton');
-    if (iconClearBtn) {
-      iconClearBtn.hidden = !found.iconDataUrl;
-      iconClearBtn.onclick = async () => {
-        try {
-          await bridge().clearInstanceIcon(detailId);
-          toast(tr('inst.iconResetOk', 'Icon reset.'), 'ok');
-          await openDetail(detailId);
-          await loadInstances();
-        } catch (err) {
-          toast(fmt(tr('inst.iconResetFail', 'Reset failed: {msg}'), { msg: err.message }), 'error');
-        }
-      };
-    }
     const title = document.getElementById('detailSearchTitle');
     if (title) title.textContent = fmt(tr('detail.addTo', 'Add content to {name}'), { name: found.name });
     const input = document.getElementById('detailSearchInput');
     if (input) input.value = '';
+    installedTab = 'mod';
+    syncContentTabs();
     detailCategory = 'mod';
     searchFilter = 'all';
     document.querySelectorAll('#detailTabs .segment-btn').forEach((x) => {
@@ -601,6 +584,33 @@
     return card;
   }
 
+  function renderDetailGrid() {
+    const grid = document.getElementById('detailContentGrid');
+    const logPanel = document.getElementById('detailLogPanel');
+    const showLog = installedTab === 'logs';
+    if (grid) grid.hidden = showLog;
+    if (logPanel) logPanel.hidden = !showLog;
+    if (showLog) {
+      renderDetailLog();
+      return;
+    }
+    if (!grid) return;
+    grid.textContent = '';
+    const items = (detailContentData && detailContentData[installedTab]) || [];
+    if (!items.length) {
+      grid.appendChild(el('p', 'content-empty', tr(EMPTY_BY_CAT[installedTab] || 'inst.emptyMods', 'No content installed.')));
+    } else {
+      for (const m of items) grid.appendChild(contentCard(m, installedTab));
+    }
+    if (window.refreshIcons) window.refreshIcons();
+  }
+
+  function syncContentTabs() {
+    document.querySelectorAll('#detailContentTabs .segment-btn').forEach((x) => {
+      x.classList.toggle('is-active', x.dataset.contentTab === installedTab);
+    });
+  }
+
   async function loadDetailInstalled() {
     if (!detailId) return;
     let data = null;
@@ -612,21 +622,13 @@
     }
     installedProjectIds.clear();
     const grouped = Array.isArray(data) ? { mod: data } : (data || {});
-    for (const [key, listId, label] of DETAIL_GROUPS) {
-      const list = document.getElementById(listId);
-      if (!list) continue;
-      list.textContent = '';
-      const items = grouped[key] || [];
-      if (!items.length) {
-        list.appendChild(el('p', 'content-empty', tr(EMPTY_BY_CAT[key] || 'inst.emptyMods', `No ${label} installed.`)));
-        continue;
-      }
-      for (const m of items) {
+    detailContentData = grouped;
+    for (const key of ['mod', 'resourcepack', 'shader']) {
+      for (const m of grouped[key] || []) {
         if (m && m.projectId) installedProjectIds.add(m.projectId);
-        list.appendChild(contentCard(m, key));
       }
     }
-    if (window.refreshIcons) window.refreshIcons();
+    renderDetailGrid();
   }
 
   function resultCardCount() {
@@ -940,6 +942,33 @@
     if (backBtn) backBtn.addEventListener('click', () => window.showView('instances'));
     const detailReload = document.getElementById('detailReloadButton');
     if (detailReload) detailReload.addEventListener('click', loadDetailInstalled);
+    document.querySelectorAll('#detailContentTabs .segment-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        installedTab = btn.dataset.contentTab || 'mod';
+        syncContentTabs();
+        renderDetailGrid();
+      });
+    });
+    const detailDelete = document.getElementById('detailDeleteButton');
+    if (detailDelete) {
+      detailDelete.addEventListener('click', async () => {
+        if (!detailId) return;
+        const name = detailName || 'Instance';
+        if (!window.confirm(fmt(tr('inst.deleteConfirm', 'Delete instance “{name}” including its mods and worlds?'), { name }))) return;
+        try {
+          await bridge().deleteInstance(detailId);
+          toast(fmt(tr('inst.deleted', 'Deleted {name}.'), { name }), 'ok');
+          detailId = null;
+          detailName = '';
+          detailContentData = null;
+          notifyChanged();
+          window.showView('instances');
+          await loadInstances();
+        } catch (err) {
+          toast(fmt(tr('inst.deleteFail', 'Delete failed: {msg}'), { msg: err.message }), 'error');
+        }
+      });
+    }
     const detailInput = document.getElementById('detailSearchInput');
     if (detailInput) {
       detailInput.addEventListener('input', onDetailSearchInput);
@@ -995,6 +1024,20 @@
         if (typeof window.startActiveGame === 'function') window.startActiveGame();
       });
     }
+    const detailSelect = document.getElementById('detailSelectButton');
+    if (detailSelect) {
+      detailSelect.addEventListener('click', async () => {
+        if (!detailId) return;
+        try {
+          await bridge().setActiveInstance(detailId);
+          notifyChanged();
+          await loadInstances();
+          toast(fmt(tr('inst.selected', 'Selected {name}.'), { name: detailName || 'Instance' }), 'ok');
+        } catch (err) {
+          toast(fmt(tr('inst.selectFail', 'Select failed: {msg}'), { msg: err.message }), 'error');
+        }
+      });
+    }
     document.addEventListener('instances:changed', () => {
       if (detailId) loadDetailInstalled();
     });
@@ -1018,16 +1061,23 @@
     loadInstances();
   });
 
-  window.showInstanceDetail = async () => {
+  window.showInstanceDetail = async (tab) => {
     try {
-      if (detailId) {
-        window.showView('instance-detail');
-        return;
+      if (!detailId) {
+        const res = await bridge().listInstances();
+        const id = res?.activeId || (res?.instances && res.instances[0] && res.instances[0].id);
+        if (!id) {
+          window.showView('instances');
+          return;
+        }
+        await openDetail(id);
       }
-      const res = await bridge().listInstances();
-      const id = res?.activeId || (res?.instances && res.instances[0] && res.instances[0].id);
-      if (id) await openDetail(id);
-      else window.showView('instances');
+      if (tab === 'mod' || tab === 'resourcepack' || tab === 'shader' || tab === 'logs') {
+        installedTab = tab;
+        syncContentTabs();
+      }
+      window.showView('instance-detail');
+      renderDetailGrid();
     } catch {
       window.showView('instances');
     }

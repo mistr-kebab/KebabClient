@@ -447,6 +447,12 @@
   cursor: not-allowed;
 }
 
+.icon-btn-danger:hover:not(:disabled) {
+  border-color: var(--danger);
+  color: var(--danger);
+  background: rgba(229, 72, 77, 0.08);
+}
+
 .icon-btn svg {
   width: 16px;
   height: 16px;

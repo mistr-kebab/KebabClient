@@ -58,7 +58,7 @@
     });
     const gotoDetailLog = document.getElementById('gotoDetailLogButton');
     if (gotoDetailLog) gotoDetailLog.addEventListener('click', () => {
-      if (typeof window.showInstanceDetail === 'function') window.showInstanceDetail();
+      if (typeof window.showInstanceDetail === 'function') window.showInstanceDetail('logs');
       else setView('instances');
     });
     const gotoInstances = document.getElementById('homeGotoInstances');

@@ -297,49 +297,47 @@
               </button>
             </div>
             <div class="panel detail-head">
-              <span class="instance-icon" aria-hidden="true">
-                <i data-lucide="boxes"></i>
-              </span>
+              <button type="button" class="instance-icon" id="detailIconButton" title="Change icon" data-i18n-title="detail.changeIcon" aria-label="Change instance icon" data-i18n-aria="detail.changeIcon">
+                <span class="detail-icon-img"><i data-lucide="boxes"></i></span>
+                <span class="detail-icon-hover" aria-hidden="true"><i data-lucide="upload"></i></span>
+              </button>
               <span class="instance-meta">
                 <span class="instance-name" id="detailName">Instance</span>
                 <span class="instance-sub" id="detailSub"></span>
               </span>
               <span class="instance-actions">
+                <button type="button" class="btn btn-play btn-block" id="detailPlayButton">
+                  <i data-lucide="play" class="btn-icon"></i>
+                  <span data-i18n="home.play">Spielen</span>
+                </button>
+                <button type="button" class="btn btn-ghost btn-block" id="detailSelectButton">
+                  <span data-i18n="inst.select">Select</span>
+                </button>
+                <button type="button" class="btn btn-danger-ghost btn-block" id="detailDeleteButton">
+                  <i data-lucide="trash-2" class="btn-icon"></i>
+                  <span data-i18n="servers.remove">Remove</span>
+                </button>
+              </span>
+            </div>
+            <div class="detail-toolbar">
+              <div class="segment" role="group" aria-label="Installed content" id="detailContentTabs">
+                <button type="button" class="segment-btn is-active" data-content-tab="mod" data-i18n="detail.gMods">Mods</button>
+                <button type="button" class="segment-btn" data-content-tab="resourcepack" data-i18n="detail.gRp">Resource Packs</button>
+                <button type="button" class="segment-btn" data-content-tab="shader" data-i18n="detail.gShaders">Shaders</button>
+                <button type="button" class="segment-btn" data-content-tab="logs" data-i18n="nav.logs">Logs</button>
+              </div>
+              <span class="detail-toolbar-actions">
+                <button type="button" class="icon-btn" id="detailReloadButton" title="Reload" data-i18n-title="detail.reload" aria-label="Reload" data-i18n-aria="detail.reload">
+                  <i data-lucide="rotate-ccw" class="btn-icon"></i>
+                </button>
                 <button type="button" class="btn btn-primary" id="detailAddContentButton">
                   <i data-lucide="plus" class="btn-icon"></i>
                   <span data-i18n="detail.addContent">Add content</span>
                 </button>
-                <button type="button" class="btn btn-play" id="detailPlayButton">
-                  <i data-lucide="play" class="btn-icon"></i>
-                  <span data-i18n="home.play">Spielen</span>
-                </button>
-                <button type="button" class="icon-btn" id="detailIconButton" title="Change icon" data-i18n-title="detail.changeIcon" aria-label="Change instance icon" data-i18n-aria="detail.changeIcon">
-                  <i data-lucide="upload" class="btn-icon"></i>
-                </button>
-                <button type="button" class="icon-btn" id="detailIconClearButton" title="Reset icon" data-i18n-title="detail.resetIcon" aria-label="Reset instance icon" data-i18n-aria="detail.resetIcon" hidden>
-                  <i data-lucide="x" class="btn-icon"></i>
-                </button>
               </span>
             </div>
-            <div class="panel">
-              <div class="panel-head">
-                <h3 class="panel-title">
-                  <i data-lucide="hard-drive" class="panel-icon"></i>
-                  <span data-i18n="detail.installed">Installed content</span>
-                </h3>
-                <button type="button" class="btn btn-ghost btn-sm" id="detailReloadButton">
-                  <i data-lucide="rotate-ccw" class="btn-icon"></i>
-                  <span data-i18n="detail.reload">Reload</span>
-                </button>
-              </div>
-              <h4 class="group-title" data-i18n="detail.gMods">Mods</h4>
-              <div class="content-grid" id="detail-mod"></div>
-              <h4 class="group-title" data-i18n="detail.gRp">Resource Packs</h4>
-              <div class="content-grid" id="detail-resourcepack"></div>
-              <h4 class="group-title" data-i18n="detail.gShaders">Shaders</h4>
-              <div class="content-grid" id="detail-shader"></div>
-            </div>
-            <div class="panel">
+            <div class="content-grid" id="detailContentGrid"></div>
+            <div class="panel" id="detailLogPanel" hidden>
               <div class="panel-head">
                 <h3 class="panel-title">
                   <i data-lucide="terminal" class="panel-icon"></i>

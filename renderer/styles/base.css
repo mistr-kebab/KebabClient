@@ -41,6 +41,10 @@ input {
   outline-offset: 2px;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 ::selection {
   background: var(--accent-dim);
 }

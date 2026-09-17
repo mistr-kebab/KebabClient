@@ -53,6 +53,10 @@ function broadcast(channel, payload) {
 
 minecraft.setEmitter((channel, payload) => broadcast(channel, payload));
 
+try {
+  require('./discord').setLogger((text) => broadcast('game:log', { stream: 'system', line: text }));
+} catch {}
+
 function registerIpc() {
   ipcMain.handle('window:minimize', async () => {
     if (mainWindow && !mainWindow.isDestroyed()) mainWindow.minimize();

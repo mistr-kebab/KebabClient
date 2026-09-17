@@ -10,6 +10,18 @@ let connected = false;
 let connecting = null;
 let retryTimer = null;
 let current = null;
+let log = () => {};
+let notedDown = false;
+
+function setLogger(fn) {
+  if (typeof fn === 'function') log = fn;
+}
+
+function note(text) {
+  try {
+    log(`[discord] ${text}`);
+  } catch {}
+}
 
 function discordClientId() {
   try {
@@ -128,16 +140,34 @@ async function ensureConnected() {
     client.on('ready', () => {
       if (rpc !== client) return;
       connected = true;
+      if (notedDown) {
+        notedDown = false;
+        note('Rich Presence connected.');
+      }
       if (current) apply().catch(() => {});
     });
     client.on('disconnected', () => {
       if (rpc !== client) return;
       connected = false;
       rpc = null;
+      if (!notedDown) {
+        notedDown = true;
+        note('Rich Presence disconnected.');
+      }
     });
-    await client.login({ clientId: id });
+    try {
+      await client.login({ clientId: id });
+    } catch (err) {
+      if (!notedDown) {
+        notedDown = true;
+        note(`Connection failed (${err?.message || err}). Retrying in the background.`);
+      }
+      throw err;
+    }
     rpc = client;
     connected = true;
+    if (notedDown) notedDown = false;
+    note('Rich Presence connected.');
   })();
   try {
     await connecting;
@@ -206,10 +236,10 @@ async function refresh() {
     } catch {}
     rpc = null;
     connected = false;
-    return { ok: true, enabled: false };
+    return { ok: true, enabled: false, connected: false };
   }
   await apply();
-  return { ok: true, enabled: true };
+  return { ok: true, enabled: true, connected };
 }
 
 async function shutdown() {
@@ -231,6 +261,7 @@ async function shutdown() {
 }
 
 module.exports = {
+  setLogger,
   showMenu,
   showGame,
   showServer,
