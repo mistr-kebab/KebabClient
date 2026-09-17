@@ -13,6 +13,7 @@ const loaders = require('./loaders');
 let child = null;
 let emit = () => {};
 let tmpCounter = 0;
+let runningInstanceId = null;
 
 function setEmitter(fn) {
   emit = fn;
@@ -605,15 +606,16 @@ async function launchGame(instanceId) {
   const java = findJava();
   const args = [...jvmArgs, mainClass, ...gameArgs];
 
-  emit('game:status', { running: true, pid: null });
+  emit('game:status', { running: true, pid: null, instanceId: instance.id });
   emit('game:log', { stream: 'system', line: `Launching ${instance.name} (${variant}) as ${profile.name} [java: ${java}, Xmx: ${javaOpts.xmx}G]` });
 
   child = spawn(java, args, { cwd: inst, env: { ...process.env } });
   touchLastPlayed(instance.id);
+  runningInstanceId = instance.id;
   const playStart = Date.now();
   const playId = instance.id;
   try { require('./discord').showGame(instance.name); } catch {}
-  emit('game:status', { running: true, pid: child.pid || null });
+  emit('game:status', { running: true, pid: child.pid || null, instanceId: playId });
 
   const pump = (stream) => (chunk) => {
     const text = chunk.toString('utf8');
@@ -627,8 +629,9 @@ async function launchGame(instanceId) {
   child.stderr.on('data', pump('stderr'));
   child.on('error', (err) => {
     emit('game:log', { stream: 'system', line: `Failed to start Java: ${err.message}` });
-    emit('game:status', { running: false, pid: null, error: err.message });
+    emit('game:status', { running: false, pid: null, error: err.message, instanceId: playId });
     child = null;
+    runningInstanceId = null;
   });
   child.on('exit', (code, signal) => {
     try {
@@ -636,8 +639,9 @@ async function launchGame(instanceId) {
     } catch {}
     try { require('./discord').clearGame(); } catch {}
     emit('game:log', { stream: 'system', line: `Game exited (code=${code} signal=${signal || '-'})` });
-    emit('game:status', { running: false, pid: null, code });
+    emit('game:status', { running: false, pid: null, code, instanceId: playId });
     child = null;
+    runningInstanceId = null;
   });
   return { pid: child.pid || null };
 }
@@ -658,6 +662,7 @@ function gameDataDir() {
 module.exports = {
   setEmitter,
   isRunning,
+  runningInstanceId: () => runningInstanceId,
   ensureClient,
   launchGame,
   stopGame,

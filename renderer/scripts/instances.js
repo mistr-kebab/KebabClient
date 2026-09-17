@@ -4,6 +4,20 @@
   const { bridge, toast, el, formatDownloads } = window.launcherUtil;
   void formatDownloads;
 
+  function tr(key, fallback) {
+    try {
+      if (window.i18n) {
+        const v = window.i18n.t(key);
+        if (v && v !== key) return v;
+      }
+    } catch {}
+    return fallback;
+  }
+
+  function fmt(tpl, map) {
+    return String(tpl).replace(/\{(\w+)\}/g, (_, k) => (map && map[k] !== undefined ? map[k] : ''));
+  }
+
   const LOADER_LABELS = { vanilla: 'Vanilla', fabric: 'Fabric', quilt: 'Quilt', forge: 'Forge', neoforge: 'NeoForge' };
   let loaderMeta = null;
   const progressById = new Map();
@@ -85,9 +99,9 @@
       const ic = document.createElement('i');
       ic.setAttribute('data-lucide', 'boxes');
       empty.appendChild(ic);
-      empty.appendChild(el('h3', 'empty-title', 'No instances yet'));
-      empty.appendChild(el('p', 'muted', 'Create your first one to start playing.'));
-      const btn = el('button', 'btn btn-play btn-sm', 'Create instance');
+      empty.appendChild(el('h3', 'empty-title', tr('inst.emptyTitle', 'No instances yet')));
+      empty.appendChild(el('p', 'muted', tr('inst.emptySub', 'Create your first one to start playing.')));
+      const btn = el('button', 'btn btn-play btn-sm', tr('instances.createTitle', 'Create instance'));
       btn.type = 'button';
       btn.addEventListener('click', () => {
         const panel = document.getElementById('newInstancePanel');
@@ -105,7 +119,7 @@
       tile.tabIndex = 0;
       tile.dataset.instanceId = instance.id;
       tile.setAttribute('role', 'button');
-      tile.setAttribute('aria-label', `Select instance ${instance.name}`);
+      tile.setAttribute('aria-label', fmt(tr('inst.selectTile', 'Select instance {name}'), { name: instance.name }));
       const banner = el('div', 'tile-banner');
       banner.style.backgroundImage = `url("${String(tileBanner(instance)).replace(/"/g, '%22')}")`;
       banner.setAttribute('aria-hidden', 'true');
@@ -122,7 +136,7 @@
         const check = document.createElement('i');
         check.setAttribute('data-lucide', 'check');
         pill.appendChild(check);
-        pill.appendChild(el('span', null, 'Active'));
+        pill.appendChild(el('span', null, tr('inst.active', 'Active')));
         banner.appendChild(pill);
       }
       tile.appendChild(banner);
@@ -140,20 +154,20 @@
       if (instance.lastPlayed || instance.playtimeText) {
         const bits = [];
         if (instance.lastPlayed) {
-          bits.push(`Played ${new Date(instance.lastPlayed).toLocaleDateString()}`);
+          bits.push(fmt(tr('inst.playedOn', 'Played {date}'), { date: new Date(instance.lastPlayed).toLocaleDateString() }));
         }
-        if (instance.playtimeText) bits.push(`${instance.playtimeText} played`);
+        if (instance.playtimeText) bits.push(fmt(tr('inst.playedTime', '{t} played'), { t: instance.playtimeText }));
         tile.appendChild(el('span', 'tile-played', bits.join(' · ')));
       }
       const actions = el('span', 'tile-actions');
-      const playBtn = el('button', 'btn btn-play btn-sm-pill', 'Play');
+      const playBtn = el('button', 'btn btn-play btn-sm-pill', tr('home.play', 'Play'));
       playBtn.type = 'button';
       playBtn.addEventListener('click', async (e) => {
         e.stopPropagation();
         try {
           await bridge().setActiveInstance(instance.id);
         } catch (err) {
-          toast(`Select failed: ${err.message}`, 'error');
+          toast(fmt(tr('inst.selectFail', 'Select failed: {msg}'), { msg: err.message }), 'error');
           return;
         }
         notifyChanged();
@@ -162,26 +176,28 @@
       });
       const delBtn = el('button', 'icon-btn tile-delete', '');
       delBtn.type = 'button';
-      delBtn.title = `Delete ${instance.name}`;
+      delBtn.title = fmt(tr('inst.deleteTitle', 'Delete {name}'), { name: instance.name });
+      delBtn.setAttribute('aria-label', fmt(tr('inst.deleteTitle', 'Delete {name}'), { name: instance.name }));
       const trash = document.createElement('i');
       trash.setAttribute('data-lucide', 'trash-2');
       delBtn.appendChild(trash);
       delBtn.addEventListener('click', async (e) => {
         e.stopPropagation();
-        if (!window.confirm(`Delete instance "${instance.name}" including its mods and worlds?`)) return;
+        if (!window.confirm(fmt(tr('inst.deleteConfirm', 'Delete instance “{name}” including its mods and worlds?'), { name: instance.name }))) return;
         try {
           await bridge().deleteInstance(instance.id);
-          toast(`Deleted ${instance.name}.`, 'ok');
+          toast(fmt(tr('inst.deleted', 'Deleted {name}.'), { name: instance.name }), 'ok');
           notifyChanged();
           await loadInstances();
         } catch (err) {
-          toast(`Delete failed: ${err.message}`, 'error');
+          toast(fmt(tr('inst.deleteFail', 'Delete failed: {msg}'), { msg: err.message }), 'error');
         }
       });
       actions.appendChild(playBtn);
       const infoBtn = el('button', 'icon-btn tile-delete', '');
       infoBtn.type = 'button';
-      infoBtn.title = `Open ${instance.name} details`;
+      infoBtn.title = fmt(tr('inst.openDetails', 'Open {name} details'), { name: instance.name });
+      infoBtn.setAttribute('aria-label', fmt(tr('inst.openDetails', 'Open {name} details'), { name: instance.name }));
       const infoIcon = document.createElement('i');
       infoIcon.setAttribute('data-lucide', 'info');
       infoBtn.appendChild(infoIcon);
@@ -207,7 +223,7 @@
           notifyChanged();
           await loadInstances();
         } catch (err) {
-          toast(`Select failed: ${err.message}`, 'error');
+          toast(fmt(tr('inst.selectFail', 'Select failed: {msg}'), { msg: err.message }), 'error');
         }
       };
       tile.addEventListener('click', (e) => {
@@ -231,7 +247,7 @@
       const res = await bridge().listInstances();
       renderTiles(res?.instances || [], res?.activeId);
     } catch (err) {
-      toast(`Could not load instances: ${err.message}`, 'error');
+      toast(fmt(tr('inst.loadFail', 'Could not load instances: {msg}'), { msg: err.message }), 'error');
     }
   }
 
@@ -252,7 +268,7 @@
       opt.value = '26.1.2';
       opt.textContent = '26.1.2';
       select.appendChild(opt);
-      toast(`Version list unavailable, using 26.1.2: ${err.message}`, 'error');
+      toast(fmt(tr('inst.verFallback', 'Version list unavailable, using 26.1.2: {msg}'), { msg: err.message }), 'error');
     }
   }
 
@@ -263,11 +279,11 @@
     const mc = mcSelect ? mcSelect.value : '';
     if (!mc || !loaderSelect) return;
     loaderMeta = null;
-    if (note) note.textContent = 'Checking loader availability…';
+    if (note) note.textContent = tr('inst.checkingLoaders', 'Checking loader availability…');
     try {
       loaderMeta = await bridge().getLoaders(mc);
     } catch (err) {
-      if (note) note.textContent = `Loader check failed: ${err.message}`;
+      if (note) note.textContent = fmt(tr('inst.loaderCheckFail', 'Loader check failed: {msg}'), { msg: err.message });
       return;
     }
     for (const key of ['fabric', 'quilt']) {
@@ -279,7 +295,7 @@
       if (ok) {
         opt.textContent = `${LOADER_LABELS[key]} (${entry.versions[0].version})`;
       } else {
-        opt.textContent = `${LOADER_LABELS[key]} (no builds for ${mc})`;
+        opt.textContent = fmt(tr('inst.noBuildShort', '{name} (no builds for {mc})'), { name: LOADER_LABELS[key], mc });
         if (loaderSelect.value === key) loaderSelect.value = 'vanilla';
       }
     }
@@ -290,8 +306,8 @@
         if (entry && (entry.versions || []).length) parts.push(`${LOADER_LABELS[key]} ${entry.versions[0].version}`);
       }
       note.textContent = parts.length
-        ? `Latest stable loaders for ${mc}: ${parts.join(' · ')}.`
-        : `No Fabric/Quilt builds for ${mc} — Vanilla works.`;
+        ? fmt(tr('inst.latestLoaders', 'Latest stable loaders for {mc}: {parts}.'), { mc, parts: parts.join(' · ') })
+        : fmt(tr('inst.noBuilds', 'No Fabric/Quilt builds for {mc} — Vanilla works.'), { mc });
     }
   }
 
@@ -303,7 +319,7 @@
     const btn = document.getElementById('createInstanceButton');
     if (!mcSelect || !loaderSelect) return;
     if (btn) btn.disabled = true;
-    if (status) status.textContent = 'Creating…';
+    if (status) status.textContent = tr('inst.creating', 'Creating…');
     try {
       const created = await bridge().createInstance({
         name: nameInput ? nameInput.value : '',
@@ -314,7 +330,7 @@
       if (nameInput) nameInput.value = '';
       const panel = document.getElementById('newInstancePanel');
       if (panel) panel.hidden = true;
-      toast(`Created ${created.name}. Downloading files now…`, 'ok');
+      toast(fmt(tr('inst.created', 'Created {name}. Downloading files now…'), { name: created.name }), 'ok');
       notifyChanged();
       await loadInstances();
       window.showView('play');
@@ -323,13 +339,64 @@
       }
     } catch (err) {
       if (status) status.textContent = err.message;
-      toast(`Create failed: ${err.message}`, 'error');
+      toast(fmt(tr('inst.createFail', 'Create failed: {msg}'), { msg: err.message }), 'error');
     } finally {
       if (btn) btn.disabled = false;
     }
   }
 
   let detailId = null;
+  let detailName = '';
+
+  const logBuffers = new Map();
+  const LOG_BUFFER_MAX = 500;
+  const LOG_VIEW_MAX = 1000;
+
+  function detailLogView() {
+    return document.getElementById('detailLogView');
+  }
+
+  function appendDetailLogLine(stream, line) {
+    const view = detailLogView();
+    if (!view) return;
+    const div = document.createElement('div');
+    div.className = `log-line-${stream}`;
+    div.textContent = line;
+    view.appendChild(div);
+    while (view.children.length > LOG_VIEW_MAX) view.firstChild.remove();
+    view.scrollTop = view.scrollHeight;
+  }
+
+  function renderDetailLog() {
+    const view = detailLogView();
+    if (!view) return;
+    view.textContent = '';
+    const buf = (detailId && logBuffers.get(detailId)) || [];
+    for (const entry of buf.slice(-LOG_VIEW_MAX)) {
+      const div = document.createElement('div');
+      div.className = `log-line-${entry.stream}`;
+      div.textContent = entry.line;
+      view.appendChild(div);
+    }
+    view.scrollTop = view.scrollHeight;
+  }
+
+  function pushInstanceLog(instanceId, stream, line) {
+    if (!instanceId) return;
+    let buf = logBuffers.get(instanceId);
+    if (!buf) {
+      buf = [];
+      logBuffers.set(instanceId, buf);
+    }
+    buf.push({ stream, line });
+    if (buf.length > LOG_BUFFER_MAX) buf.splice(0, buf.length - LOG_BUFFER_MAX);
+    if (instanceId === detailId) appendDetailLogLine(stream, line);
+  }
+
+  document.addEventListener('game:log-line', (e) => {
+    const d = e && e.detail;
+    if (d) pushInstanceLog(d.instanceId, d.stream, d.line);
+  });
   let detailSearchTimer = null;
   let resultOffset = 0;
   let resultTotal = 0;
@@ -351,8 +418,27 @@
     ['shader', 'detail-shader', 'shaders']
   ];
 
-  const TYPE_LABELS = { mod: 'Mod', resourcepack: 'Resource Pack', shader: 'Shader', modpack: 'Modpack', datapack: 'Data Pack', plugin: 'Plugin' };
   const INSTALLABLE = ['mod', 'resourcepack', 'shader'];
+
+  function typeLabel(t) {
+    switch (t) {
+      case 'mod': return tr('inst.typeMod', 'Mod');
+      case 'resourcepack': return tr('inst.typeRp', 'Resource Pack');
+      case 'shader': return tr('inst.typeShader', 'Shader');
+      case 'modpack': return tr('inst.typeModpack', 'Modpack');
+      case 'datapack': return tr('inst.typeDatapack', 'Data Pack');
+      case 'plugin': return tr('inst.typePlugin', 'Plugin');
+      default: return tr('inst.typeContent', 'Content');
+    }
+  }
+
+  function groupLabel(cat) {
+    if (cat === 'resourcepack') return tr('detail.gRp', 'Resource Packs');
+    if (cat === 'shader') return tr('detail.gShaders', 'Shaders');
+    return tr('detail.gMods', 'Mods');
+  }
+
+  const EMPTY_BY_CAT = { mod: 'inst.emptyMods', resourcepack: 'inst.emptyRp', shader: 'inst.emptyShaders' };
 
   async function openDetail(id) {
     let found = null;
@@ -360,21 +446,22 @@
       const res = await bridge().listInstances();
       found = (res?.instances || []).find((i) => i.id === id) || null;
     } catch (err) {
-      toast(`Could not open instance: ${err.message}`, 'error');
+      toast(fmt(tr('inst.openFail', 'Could not open instance: {msg}'), { msg: err.message }), 'error');
       return;
     }
     if (!found) {
-      toast('Instance not found.', 'error');
+      toast(tr('inst.notFound', 'Instance not found.'), 'error');
       return;
     }
     detailId = id;
+    detailName = found.name;
     const nameEl = document.getElementById('detailName');
     const subEl = document.getElementById('detailSub');
     if (nameEl) nameEl.textContent = found.name;
     if (subEl) {
       subEl.textContent = `${found.mc} · `;
       subEl.appendChild(badge(found));
-      if (found.playtimeText) subEl.appendChild(document.createTextNode(` · ${found.playtimeText} played`));
+      if (found.playtimeText) subEl.appendChild(document.createTextNode(` · ${fmt(tr('inst.playedTime', '{t} played'), { t: found.playtimeText })}`));
     }
     const iconBox = document.querySelector('.detail-head .instance-icon');
     if (iconBox) {
@@ -397,12 +484,12 @@
         try {
           const res = await bridge().setInstanceIcon(detailId);
           if (res && !res.canceled) {
-            toast('Icon updated.', 'ok');
+            toast(tr('inst.iconOk', 'Icon updated.'), 'ok');
             await openDetail(detailId);
             await loadInstances();
           }
         } catch (err) {
-          toast(`Icon failed: ${err.message}`, 'error');
+          toast(fmt(tr('inst.iconFail', 'Icon failed: {msg}'), { msg: err.message }), 'error');
         }
       };
     }
@@ -412,16 +499,16 @@
       iconClearBtn.onclick = async () => {
         try {
           await bridge().clearInstanceIcon(detailId);
-          toast('Icon reset.', 'ok');
+          toast(tr('inst.iconResetOk', 'Icon reset.'), 'ok');
           await openDetail(detailId);
           await loadInstances();
         } catch (err) {
-          toast(`Reset failed: ${err.message}`, 'error');
+          toast(fmt(tr('inst.iconResetFail', 'Reset failed: {msg}'), { msg: err.message }), 'error');
         }
       };
     }
     const title = document.getElementById('detailSearchTitle');
-    if (title) title.textContent = `Add content to ${found.name}`;
+    if (title) title.textContent = fmt(tr('detail.addTo', 'Add content to {name}'), { name: found.name });
     const input = document.getElementById('detailSearchInput');
     if (input) input.value = '';
     detailCategory = 'mod';
@@ -432,6 +519,7 @@
     refreshDetailDropText();
     window.showView('instance-detail');
     await loadDetailInstalled();
+    renderDetailLog();
   }
 
   const installedProjectIds = new Set();
@@ -462,8 +550,8 @@
     const box = document.createElement('input');
     box.type = 'checkbox';
     box.checked = !m.disabled;
-    const switchLabel = (on) => `${on ? 'Disable' : 'Enable'} ${m.name || m.file}`;
-    box.title = m.disabled ? 'Enable' : 'Disable';
+    const switchLabel = (on) => fmt(tr(on ? 'inst.disable' : 'inst.enable', on ? 'Disable {name}' : 'Enable {name}'), { name: m.name || m.file });
+    box.title = m.disabled ? tr('inst.enableShort', 'Enable') : tr('inst.disableShort', 'Disable');
     box.setAttribute('aria-label', switchLabel(!m.disabled));
     box.addEventListener('change', async () => {
       box.disabled = true;
@@ -473,15 +561,15 @@
         m.disabled = res.disabled;
         card.classList.toggle('is-disabled', res.disabled);
         box.checked = !res.disabled;
-        box.title = res.disabled ? 'Enable' : 'Disable';
+        box.title = res.disabled ? tr('inst.enableShort', 'Enable') : tr('inst.disableShort', 'Disable');
         box.setAttribute('aria-label', switchLabel(!res.disabled));
         const sub = card.querySelector('.card-sub');
         if (sub) sub.textContent = res.file;
         main.title = res.file;
-        toast(res.disabled ? `Disabled ${m.name || res.file}.` : `Enabled ${m.name || res.file}.`, 'ok');
+        toast(fmt(tr(res.disabled ? 'inst.disabledToast' : 'inst.enabledToast', res.disabled ? 'Disabled {name}.' : 'Enabled {name}.'), { name: m.name || res.file }), 'ok');
       } catch (err) {
         box.checked = !m.disabled;
-        toast(`Toggle failed: ${err.message}`, 'error');
+        toast(fmt(tr('inst.toggleFail', 'Toggle failed: {msg}'), { msg: err.message }), 'error');
       } finally {
         box.disabled = false;
       }
@@ -493,19 +581,19 @@
     foot.appendChild(sw);
     const del = el('button', 'icon-btn icon-btn-tiny', '');
     del.type = 'button';
-    del.title = `Delete ${m.name || m.file}`;
-    del.setAttribute('aria-label', `Delete ${m.name || m.file}`);
+    del.title = fmt(tr('inst.deleteTitle', 'Delete {name}'), { name: m.name || m.file });
+    del.setAttribute('aria-label', fmt(tr('inst.deleteTitle', 'Delete {name}'), { name: m.name || m.file }));
     const trash = document.createElement('i');
     trash.setAttribute('data-lucide', 'trash-2');
     del.appendChild(trash);
     del.addEventListener('click', async () => {
-      if (!window.confirm(`Delete "${m.name || m.file}" from this instance?`)) return;
+      if (!window.confirm(fmt(tr('inst.delContentConfirm', 'Delete “{name}” from this instance?'), { name: m.name || m.file }))) return;
       try {
         await bridge().uninstallMod(m.file, key, detailId);
-        toast(`Removed ${m.name || m.file}.`, 'ok');
+        toast(fmt(tr('inst.removedToast', 'Removed {name}.'), { name: m.name || m.file }), 'ok');
         await loadDetailInstalled();
       } catch (err) {
-        toast(`Uninstall failed: ${err.message}`, 'error');
+        toast(fmt(tr('inst.uninstallFail', 'Uninstall failed: {msg}'), { msg: err.message }), 'error');
       }
     });
     foot.appendChild(del);
@@ -519,7 +607,7 @@
     try {
       data = await bridge().listInstalledMods(detailId);
     } catch (err) {
-      toast(`Could not list content: ${err.message}`, 'error');
+      toast(fmt(tr('inst.listFail', 'Could not list content: {msg}'), { msg: err.message }), 'error');
       return;
     }
     installedProjectIds.clear();
@@ -530,7 +618,7 @@
       list.textContent = '';
       const items = grouped[key] || [];
       if (!items.length) {
-        list.appendChild(el('p', 'content-empty', `No ${label} installed.`));
+        list.appendChild(el('p', 'content-empty', tr(EMPTY_BY_CAT[key] || 'inst.emptyMods', `No ${label} installed.`)));
         continue;
       }
       for (const m of items) {
@@ -550,7 +638,7 @@
     const grid = document.getElementById('detailResults');
     if (!grid || resultCardCount()) return;
     grid.textContent = '';
-    grid.appendChild(el('p', 'muted', resultTotal ? 'Everything here is already installed.' : 'No compatible content found.'));
+    grid.appendChild(el('p', 'muted', resultTotal ? tr('inst.allInstalled', 'Everything here is already installed.') : tr('inst.noContent', 'No compatible content found.')));
   }
 
   function pruneInstalledCards() {
@@ -585,11 +673,11 @@
       }
       const main = el('div', 'mod-main');
       main.appendChild(el('h4', 'mod-title', mod.title));
-      main.appendChild(el('p', 'mod-desc', mod.description || 'No description.'));
+      main.appendChild(el('p', 'mod-desc', mod.description || tr('inst.noDesc', 'No description.')));
       const badges = el('div', 'mod-badges');
       const typeBadge = el('span', 'ver-badge');
       typeBadge.appendChild(el('span', 'ver-dot'));
-      typeBadge.appendChild(document.createTextNode(TYPE_LABELS[mod.projectType] || 'Content'));
+      typeBadge.appendChild(document.createTextNode(typeLabel(mod.projectType)));
       badges.appendChild(typeBadge);
       main.appendChild(badges);
       top.appendChild(main);
@@ -604,22 +692,22 @@
         dl.textContent = formatDownloads(mod.downloads);
         meta.appendChild(dl);
       }
-      if (mod.author) meta.appendChild(el('span', '', `by ${mod.author}`));
+      if (mod.author) meta.appendChild(el('span', '', fmt(tr('inst.by', 'by {a}'), { a: mod.author })));
       if (meta.childElementCount) foot.appendChild(meta);
       if (INSTALLABLE.includes(mod.projectType)) {
-        const btn = el('button', 'btn btn-primary btn-sm mod-install', 'Install');
+        const btn = el('button', 'btn btn-primary btn-sm mod-install', tr('inst.install', 'Install'));
         btn.type = 'button';
         btn.addEventListener('click', async () => {
           btn.disabled = true;
           try {
             const res = await bridge().installMod(mod.id, undefined, detailId, mod.projectType, { title: mod.title, icon: mod.iconUrl });
-            const extra = res?.dependencies?.length ? ` (+${res.dependencies.length} deps)` : '';
-            const missing = res?.depProblems?.length ? ` Missing: ${res.depProblems.join('; ')}` : '';
-            toast(`Installed ${res?.file || mod.title}${extra}.${missing}`, res?.depProblems?.length ? 'error' : 'ok');
+            const extra = res?.dependencies?.length ? fmt(tr('inst.extraDeps', ' (+{n} deps)'), { n: res.dependencies.length }) : '';
+            const missing = res?.depProblems?.length ? fmt(tr('inst.missingDeps', ' Missing: {x}'), { x: res.depProblems.join('; ') }) : '';
+            toast(fmt(tr('inst.installed', 'Installed {file}{extra}.{missing}'), { file: res?.file || mod.title, extra, missing }), res?.depProblems?.length ? 'error' : 'ok');
             await loadDetailInstalled();
             pruneInstalledCards();
           } catch (err) {
-            toast(`Install failed: ${err.message}`, 'error');
+            toast(fmt(tr('inst.installFail', 'Install failed: {msg}'), { msg: err.message }), 'error');
             btn.disabled = false;
           }
         });
@@ -637,11 +725,11 @@
     if (!statusEl) return;
     const shown = resultCardCount();
     if (resultLoading && !shown) {
-      statusEl.textContent = resultQ ? `Searching for “${resultQ}”…` : 'Loading popular content…';
+      statusEl.textContent = resultQ ? fmt(tr('inst.searching', 'Searching for “{q}”…'), { q: resultQ }) : tr('inst.loadingPopular', 'Loading popular content…');
     } else if (resultTotal) {
-      statusEl.textContent = `${shown} of ${resultTotal} shown.`;
+      statusEl.textContent = fmt(tr('inst.shown', '{a} of {b} shown.'), { a: shown, b: resultTotal });
     } else {
-      statusEl.textContent = resultQ ? 'No results.' : 'Popular right now.';
+      statusEl.textContent = resultQ ? tr('inst.noResults', 'No results.') : tr('inst.popularNow', 'Popular right now.');
     }
   }
 
@@ -666,7 +754,9 @@
       resultOffset += (res.results || []).length;
     } catch (err) {
       const statusEl = document.getElementById('detailSearchStatus');
-      if (statusEl) statusEl.textContent = searching ? `Search failed: ${err.message}` : `Browse failed: ${err.message}`;
+      if (statusEl) statusEl.textContent = searching
+        ? fmt(tr('inst.searchFail', 'Search failed: {msg}'), { msg: err.message })
+        : fmt(tr('inst.browseFail', 'Browse failed: {msg}'), { msg: err.message });
     } finally {
       resultLoading = false;
       resultStatus();
@@ -687,23 +777,23 @@
   function refreshDetailDropText() {
     const text = document.getElementById('detailDropZoneText');
     const cat = DETAIL_CATS[detailCategory] || DETAIL_CATS.mod;
-    if (text) text.textContent = `Drop ${cat.ext} files here to add them to this instance`;
+    if (text) text.textContent = fmt(tr('detail.drop', 'Drop {ext} files here to add them to this instance'), { ext: cat.ext });
   }
 
   function summarizeImport(res, kind) {
     const parts = [];
-    if (res.added?.length) parts.push(`added ${res.added.join(', ')}`);
-    if (res.skipped?.length) parts.push(`already there: ${res.skipped.join(', ')}`);
-    if (!parts.length && !(res.failed?.length)) return `${kind}: nothing to do.`;
-    let msg = `${kind}: ${parts.join('; ') || 'done'}.`;
+    if (res.added?.length) parts.push(fmt(tr('inst.sumAdded', 'added {x}'), { x: res.added.join(', ') }));
+    if (res.skipped?.length) parts.push(fmt(tr('inst.sumSkipped', 'already there: {x}'), { x: res.skipped.join(', ') }));
+    if (!parts.length && !(res.failed?.length)) return fmt(tr('inst.nothingToDo', '{kind}: nothing to do.'), { kind });
+    let msg = `${kind}: ${parts.join('; ') || tr('inst.done', 'done')}.`;
     if (res.depProblems?.length) {
       res.failed = [...(res.failed || []), ...res.depProblems.map((d) => ({ file: 'dependency', reason: d }))];
     }
     if (res.installedDeps?.length) {
-      msg += ` Dependencies installed: ${res.installedDeps.join(', ')}.`;
+      msg += fmt(tr('inst.sumDeps', ' Dependencies installed: {x}.'), { x: res.installedDeps.join(', ') });
     }
     if (res.failed?.length) {
-      msg += ` Failed: ${res.failed.map((f) => `${f.file} (${f.reason})`).join('; ')}`;
+      msg += fmt(tr('inst.sumFailed', ' Failed: {x}'), { x: res.failed.map((f) => `${f.file} (${f.reason})`).join('; ') });
     }
     return msg;
   }
@@ -713,10 +803,10 @@
     try {
       const res = await bridge().uploadContent(detailCategory, detailId);
       if (res?.canceled) return;
-      toast(summarizeImport(res, DETAIL_CATS[detailCategory].label), res?.failed?.length ? 'error' : 'ok');
+      toast(summarizeImport(res, groupLabel(detailCategory)), res?.failed?.length ? 'error' : 'ok');
       await loadDetailInstalled();
     } catch (err) {
-      toast(`Upload failed: ${err.message}`, 'error');
+      toast(fmt(tr('inst.uploadFail', 'Upload failed: {msg}'), { msg: err.message }), 'error');
     }
   }
 
@@ -747,17 +837,43 @@
       hasFiles = types.includes('files');
     } catch {}
     if (hasFiles) {
-      return 'Drop was blocked (Windows strips file drops when the app runs as administrator — restart it normally or use the file button).';
+      return tr('inst.dropAdmin', 'Drop was blocked (Windows strips file drops when the app runs as administrator — restart it normally or use the file button).');
     }
-    return 'Drop files from Explorer (not browser content).';
+    return tr('inst.dropHint', 'Drop files from Explorer (not browser content).');
   }
 
   function bindDetailDropzone() {
     const zone = document.getElementById('detailDropZone');
-    const view = document.getElementById('view-instance-detail');
-    if (view) {
-      view.addEventListener('dragover', (e) => e.preventDefault());
-      view.addEventListener('drop', (e) => e.preventDefault());
+    for (const viewId of ['view-instance-detail', 'view-add-content']) {
+      const view = document.getElementById(viewId);
+      if (view) {
+        view.addEventListener('dragover', (e) => e.preventDefault());
+        view.addEventListener('drop', (e) => e.preventDefault());
+      }
+    }
+    const importDropped = async (files, dt) => {
+      if (!detailId) return;
+      if (!files.length) {
+        toast(dropErrorHint(dt), 'error');
+        return;
+      }
+      try {
+        const res = await bridge().dropFiles(detailCategory, files, detailId);
+        toast(summarizeImport(res, groupLabel(detailCategory)), res?.failed?.length ? 'error' : 'ok');
+        await loadDetailInstalled();
+      } catch (err) {
+        toast(fmt(tr('inst.dropFail', 'Drop failed: {msg}'), { msg: err.message }), 'error');
+      }
+    };
+    for (const viewId of ['view-instance-detail', 'view-add-content']) {
+      const view = document.getElementById(viewId);
+      if (view) {
+        view.addEventListener('drop', async (e) => {
+          if (!detailId) return;
+          if (e.target && e.target.closest && e.target.closest('#detailDropZone')) return;
+          await importDropped(collectDropPaths(e.dataTransfer), e.dataTransfer);
+        });
+      }
     }
     if (!zone) return;
     const stop = (e) => {
@@ -781,18 +897,7 @@
     });
     zone.addEventListener('drop', async (e) => {
       if (!detailId) return;
-      const files = collectDropPaths(e.dataTransfer);
-      if (!files.length) {
-        toast(dropErrorHint(e.dataTransfer), 'error');
-        return;
-      }
-      try {
-        const res = await bridge().dropFiles(detailCategory, files, detailId);
-        toast(summarizeImport(res, DETAIL_CATS[detailCategory].label), res?.failed?.length ? 'error' : 'ok');
-        await loadDetailInstalled();
-      } catch (err) {
-        toast(`Drop failed: ${err.message}`, 'error');
-      }
+      await importDropped(collectDropPaths(e.dataTransfer), e.dataTransfer);
     });
   }
 
@@ -864,6 +969,14 @@
     }
     const detailUploadBtn = document.getElementById('detailUploadButton');
     if (detailUploadBtn) detailUploadBtn.addEventListener('click', detailUpload);
+    const detailClearLog = document.getElementById('detailClearLogButton');
+    if (detailClearLog) {
+      detailClearLog.addEventListener('click', () => {
+        if (detailId) logBuffers.delete(detailId);
+        const view = detailLogView();
+        if (view) view.textContent = '';
+      });
+    }
     bindDetailTabs();
     bindDetailDropzone();
     refreshDetailDropText();
@@ -874,7 +987,7 @@
         try {
           await bridge().setActiveInstance(detailId);
         } catch (err) {
-          toast(`Select failed: ${err.message}`, 'error');
+          toast(fmt(tr('inst.selectFail', 'Select failed: {msg}'), { msg: err.message }), 'error');
           return;
         }
         notifyChanged();
@@ -885,6 +998,17 @@
     document.addEventListener('instances:changed', () => {
       if (detailId) loadDetailInstalled();
     });
+    document.addEventListener('i18n:applied', () => {
+      loadInstances().catch(() => {});
+      if (detailId) {
+        const title = document.getElementById('detailSearchTitle');
+        if (title && detailName) title.textContent = fmt(tr('detail.addTo', 'Add content to {name}'), { name: detailName });
+        refreshDetailDropText();
+        loadDetailInstalled().catch(() => {});
+        renderDetailLog();
+      }
+      resultStatus();
+    });
     try {
       bridge().onInstancesChanged(() => loadInstances());
     } catch {}
@@ -893,4 +1017,19 @@
     } catch {}
     loadInstances();
   });
+
+  window.showInstanceDetail = async () => {
+    try {
+      if (detailId) {
+        window.showView('instance-detail');
+        return;
+      }
+      const res = await bridge().listInstances();
+      const id = res?.activeId || (res?.instances && res.instances[0] && res.instances[0].id);
+      if (id) await openDetail(id);
+      else window.showView('instances');
+    } catch {
+      window.showView('instances');
+    }
+  };
 })();

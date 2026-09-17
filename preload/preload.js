@@ -59,6 +59,7 @@ contextBridge.exposeInMainWorld('mc', {
   dropFiles: (category, paths, instanceId) => ipcRenderer.invoke('content:drop', { category, paths, instanceId }),
 
   getSkinPreview: () => ipcRenderer.invoke('skins:preview'),
+  getSkinState: () => ipcRenderer.invoke('skins:state'),
   listCapes: () => ipcRenderer.invoke('skins:capes'),
   pickSkinFile: () => ipcRenderer.invoke('skins:pickFile'),
   uploadSkin: (dataBase64, variant) => ipcRenderer.invoke('skins:upload', { dataBase64, variant }),

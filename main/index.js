@@ -118,6 +118,7 @@ function registerIpc() {
     const active = instances.getActiveInstance();
     return {
       running: minecraft.isRunning(),
+      runningInstanceId: minecraft.runningInstanceId(),
       instance: active || null,
       instanceDir: active ? minecraft.dirsFor(active).root : null,
       profile: auth.getStoredProfile()
@@ -243,6 +244,7 @@ function registerIpc() {
   });
 
   ipcMain.handle('skins:preview', async () => skins.getPreview());
+  ipcMain.handle('skins:state', async () => skins.getSkinState());
   ipcMain.handle('skins:capes', async () => skins.getSkinState().then((s) => s.capes));
   ipcMain.handle('skins:upload', async (_e, args) => {
     const raw = String(args?.dataBase64 || '');

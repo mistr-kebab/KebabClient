@@ -13,6 +13,10 @@
     return fallback || key;
   }
 
+  function fmt(tpl, map) {
+    return String(tpl).replace(/\{(\w+)\}/g, (_, k) => (map && map[k] !== undefined ? map[k] : ''));
+  }
+
   function crumbName(view) {
     const map = {
       home: tr('crumb.home', 'Home'),
@@ -22,7 +26,7 @@
       'add-content': tr('crumb.addContent', 'Add Content'),
       skins: tr('crumb.skins', 'Skins'),
       servers: tr('crumb.servers', 'Servers'),
-      logs: tr('crumb.logs', 'Logs'),
+      friends: tr('crumb.friends', 'Friends'),
       settings: tr('crumb.settings', 'Settings')
     };
     return map[view] || view;
@@ -31,7 +35,7 @@
   let currentView = 'home';
 
   function setView(name) {
-    const known = ['home', 'play', 'instances', 'instance-detail', 'add-content', 'skins', 'servers', 'logs', 'settings'];
+    const known = ['home', 'play', 'instances', 'instance-detail', 'add-content', 'skins', 'servers', 'friends', 'settings'];
     const view = known.includes(name) ? name : 'home';
     currentView = view;
     const navKey = view === 'instance-detail' || view === 'add-content' ? 'instances' : view;
@@ -52,8 +56,11 @@
     document.querySelectorAll('#mainNav .nav-item, #settingsNav .nav-item').forEach((btn) => {
       btn.addEventListener('click', () => setView(btn.dataset.view));
     });
-    const gotoLogs = document.getElementById('gotoLogsButton');
-    if (gotoLogs) gotoLogs.addEventListener('click', () => setView('logs'));
+    const gotoDetailLog = document.getElementById('gotoDetailLogButton');
+    if (gotoDetailLog) gotoDetailLog.addEventListener('click', () => {
+      if (typeof window.showInstanceDetail === 'function') window.showInstanceDetail();
+      else setView('instances');
+    });
     const gotoInstances = document.getElementById('homeGotoInstances');
     if (gotoInstances) gotoInstances.addEventListener('click', () => setView('instances'));
     const homePlay = document.getElementById('homePlayButton');
@@ -68,7 +75,7 @@
       homeFolder.addEventListener('click', async () => {
         try { await bridge().openGameFolder(); }
         catch (err) {
-          if (window.launcherUtil) window.launcherUtil.toast(`Cannot open folder: ${err.message}`, 'error');
+          if (window.launcherUtil) window.launcherUtil.toast(fmt(tr('play.folderFail', 'Cannot open folder: {msg}'), { msg: err.message }), 'error');
         }
       });
     }
@@ -138,7 +145,7 @@
     bindWindowControls();
     setView('home');
     const status = document.getElementById('splashStatus');
-    const steps = ['Loading settings…', 'Checking account…', 'Loading instances…', 'Almost there…'];
+    const steps = [tr('app.load1', 'Loading settings…'), tr('app.load2', 'Checking account…'), tr('app.load3', 'Loading instances…'), tr('app.load4', 'Almost there…')];
     let i = 0;
     const timer = window.setInterval(() => {
       i += 1;

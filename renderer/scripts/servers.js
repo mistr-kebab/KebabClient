@@ -3,6 +3,20 @@
 (function () {
   const { bridge, toast, el } = window.launcherUtil;
 
+  function tr(key, fallback) {
+    try {
+      if (window.i18n) {
+        const v = window.i18n.t(key);
+        if (v && v !== key) return v;
+      }
+    } catch {}
+    return fallback;
+  }
+
+  function fmt(tpl, map) {
+    return String(tpl).replace(/\{(\w+)\}/g, (_, k) => (map && map[k] !== undefined ? map[k] : ''));
+  }
+
   function formStatus(text, isError) {
     const s = document.getElementById('serverFormStatus');
     if (!s) return;
@@ -35,9 +49,9 @@
     }
     const motdEl = li.querySelector('.server-motd');
     if (motdEl) {
-      if (!st || st.state === 'loading') motdEl.textContent = 'Pinging…';
-      else if (st.state === 'ok') motdEl.textContent = (st.data && st.data.motd) || 'No MOTD.';
-      else motdEl.textContent = 'Offline — ping failed.';
+      if (!st || st.state === 'loading') motdEl.textContent = tr('servers.pinging', 'Pinging…');
+      else if (st.state === 'ok') motdEl.textContent = (st.data && st.data.motd) || tr('servers.noMotd', 'No MOTD.');
+      else motdEl.textContent = tr('servers.offline', 'Offline — ping failed.');
     }
     const subEl = li.querySelector('.server-sub');
     if (subEl) {
@@ -78,7 +92,7 @@
     if (!list) return;
     list.textContent = '';
     if (!lastServers.length) {
-      list.appendChild(el('li', 'installed-empty', 'No servers added yet.'));
+      list.appendChild(el('li', 'installed-empty', tr('servers.empty', 'No servers added yet.')));
       return;
     }
     lastServers.forEach((server, index) => {
@@ -95,7 +109,8 @@
 
       const refreshBtn = el('button', 'icon-btn icon-btn-tiny');
       refreshBtn.type = 'button';
-      refreshBtn.title = 'Ping now';
+      refreshBtn.title = tr('servers.pingNow', 'Ping now');
+      refreshBtn.setAttribute('aria-label', tr('servers.pingNow', 'Ping now'));
       refreshBtn.setAttribute('data-refresh', '1');
       const refreshIcon = document.createElement('i');
       refreshIcon.setAttribute('data-lucide', 'refresh-cw');
@@ -105,7 +120,8 @@
 
       const upBtn = el('button', 'icon-btn icon-btn-tiny');
       upBtn.type = 'button';
-      upBtn.title = 'Move up';
+      upBtn.title = tr('servers.moveUp', 'Move up');
+      upBtn.setAttribute('aria-label', tr('servers.moveUp', 'Move up'));
       upBtn.disabled = index === 0;
       const upIcon = document.createElement('i');
       upIcon.setAttribute('data-lucide', 'chevron-up');
@@ -115,7 +131,8 @@
 
       const downBtn = el('button', 'icon-btn icon-btn-tiny');
       downBtn.type = 'button';
-      downBtn.title = 'Move down';
+      downBtn.title = tr('servers.moveDown', 'Move down');
+      downBtn.setAttribute('aria-label', tr('servers.moveDown', 'Move down'));
       downBtn.disabled = index === lastServers.length - 1;
       const downIcon = document.createElement('i');
       downIcon.setAttribute('data-lucide', 'chevron-down');
@@ -123,12 +140,12 @@
       downBtn.addEventListener('click', () => move(server.id, 'down'));
       actions.appendChild(downBtn);
 
-      const editBtn = el('button', 'btn btn-ghost btn-sm', 'Edit');
+      const editBtn = el('button', 'btn btn-ghost btn-sm', tr('servers.edit', 'Edit'));
       editBtn.type = 'button';
       editBtn.addEventListener('click', () => startEdit(server));
       actions.appendChild(editBtn);
 
-      const removeBtn = el('button', 'btn btn-danger-ghost btn-sm', 'Remove');
+      const removeBtn = el('button', 'btn btn-danger-ghost btn-sm', tr('servers.remove', 'Remove'));
       removeBtn.type = 'button';
       removeBtn.addEventListener('click', () => remove(server.id));
       actions.appendChild(removeBtn);
@@ -167,7 +184,7 @@
     if (nameInput) nameInput.value = server.name;
     if (ipInput) ipInput.value = server.ip;
     paintAddButton();
-    formStatus(`Editing “${server.name}”.`);
+    formStatus(fmt(tr('servers.editing', 'Editing “{name}”.'), { name: server.name }));
   }
 
   function resetForm() {
@@ -186,7 +203,7 @@
       pingAll();
       document.dispatchEvent(new CustomEvent('servers:changed'));
     } catch (err) {
-      formStatus(`Could not load servers: ${err.message}`, true);
+      formStatus(fmt(tr('servers.loadFail', 'Could not load servers: {msg}'), { msg: err.message }), true);
     }
   }
 
@@ -195,18 +212,18 @@
       await bridge().moveServer(id, direction);
       await reload();
     } catch (err) {
-      toast(`Reorder failed: ${err.message}`, 'error');
+      toast(fmt(tr('servers.reorderFail', 'Reorder failed: {msg}'), { msg: err.message }), 'error');
     }
   }
 
   async function remove(id) {
     try {
       await bridge().removeServer(id);
-      toast('Server removed.', 'ok');
+      toast(tr('servers.removed', 'Server removed.'), 'ok');
       if (editingId === id) resetForm();
       await reload();
     } catch (err) {
-      toast(`Remove failed: ${err.message}`, 'error');
+      toast(fmt(tr('servers.removeFail', 'Remove failed: {msg}'), { msg: err.message }), 'error');
     }
   }
 
@@ -216,16 +233,16 @@
     const name = nameInput ? nameInput.value.trim() : '';
     const ip = ipInput ? ipInput.value.trim() : '';
     if (!name || !ip) {
-      formStatus('Name and IP are both required.', true);
+      formStatus(tr('servers.needBoth', 'Name and IP are both required.'), true);
       return;
     }
     try {
       if (editingId) {
         await bridge().updateServer(editingId, name, ip);
-        toast('Server updated.', 'ok');
+        toast(tr('servers.updated', 'Server updated.'), 'ok');
       } else {
         await bridge().addServer(name, ip);
-        toast('Server added.', 'ok');
+        toast(tr('servers.added', 'Server added.'), 'ok');
       }
       resetForm();
       formStatus('');
@@ -247,7 +264,7 @@
     document.addEventListener('view:shown', (e) => {
       if (e && e.detail && e.detail.view === 'servers') pingAll();
     });
-    document.addEventListener('i18n:applied', () => paintAddButton());
+    document.addEventListener('i18n:applied', () => { renderList(lastServers); paintAddButton(); });
     reload();
   });
 })();

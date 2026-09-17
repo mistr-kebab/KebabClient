@@ -34,7 +34,6 @@ function sanitizeJava(j) {
   const customPath = String(j?.path || '').trim();
   if (customPath) {
     if (!path.isAbsolute(customPath)) throw new Error('Java path must be absolute.');
-    if (!fs.existsSync(customPath)) throw new Error(`Java not found: ${customPath}`);
     out.path = customPath;
   }
   const xmx = Number(j?.xmx);

@@ -287,6 +287,22 @@
   justify-content: space-between;
 }
 
+#authButton {
+  margin-top: auto;
+}
+
+#authButton:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent-strong);
+  background: var(--accent-dim);
+}
+
+#authButton.is-danger:hover:not(:disabled) {
+  border-color: var(--danger);
+  color: var(--danger);
+  background: rgba(229, 72, 77, 0.08);
+}
+
 .avatar-sm {
   width: 24px;
   height: 24px;
@@ -310,7 +326,7 @@
   width: 100%;
   height: 100%;
   display: block;
-  image-rendering: pixelated;
+  image-rendering: auto;
 }
 
 .headshot-sm {
@@ -379,7 +395,7 @@
 
 .view {
   display: none;
-  max-width: 1020px;
+  max-width: 1480px;
   margin: 0 auto;
   flex-direction: column;
   gap: var(--space-4);

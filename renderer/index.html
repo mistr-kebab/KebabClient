@@ -42,9 +42,9 @@
           <i data-lucide="server" class="nav-icon"></i>
           <span class="rail-label" data-i18n="nav.servers">Server</span>
         </button>
-        <button type="button" class="nav-item" data-view="logs" data-i18n-title="nav.logs" title="Logs">
-          <i data-lucide="terminal" class="nav-icon"></i>
-          <span class="rail-label" data-i18n="nav.logs">Logs</span>
+        <button type="button" class="nav-item" data-view="friends" data-i18n-title="nav.friends" title="Friends">
+          <i data-lucide="users" class="nav-icon"></i>
+          <span class="rail-label" data-i18n="nav.friends">Friends</span>
         </button>
       </nav>
       <div class="rail-foot">
@@ -68,7 +68,7 @@
         <div class="topbar-right">
           <span class="status-pill" id="runPill">
             <span class="pill-dot"></span>
-            <span id="runPillText">Keine Instanz aktiv</span>
+            <span id="runPillText" data-i18n="topbar.idle">Keine Instanz aktiv</span>
           </span>
           <button type="button" class="account-chip" id="accountChipButton">
             <span class="headshot headshot-sm">
@@ -125,7 +125,7 @@
                 <span class="home-active-sub" id="homeActiveSub">–</span>
                 <span class="status-pill" id="homeActivePill">
                   <span class="pill-dot"></span>
-                  <span id="homeActiveState">Idle</span>
+                  <span id="homeActiveState" data-i18n="status.idle">Idle</span>
                 </span>
                 <button type="button" class="btn btn-ghost btn-sm" id="homeGotoInstances">
                   <span data-i18n="home.gotoInstances">Zu den Instanzen</span>
@@ -160,14 +160,21 @@
                   <span data-i18n="home.cardSetup">Setup</span>
                 </h3>
                 <div class="mini-row">
-                  <span class="mini-key">Instances</span>
+                  <span class="mini-key" data-i18n="home.statInstances">Instances</span>
                   <span class="mini-val" id="homeStatsInstances">–</span>
                 </div>
                 <div class="mini-row">
-                  <span class="mini-key">Servers</span>
+                  <span class="mini-key" data-i18n="home.statServers">Servers</span>
                   <span class="mini-val" id="homeStatsServers">–</span>
                 </div>
                 <p class="muted small" data-i18n="home.tip">Tipp: Fabric / Quilt gibt es pro Instanz über die Detailansicht, inkl. Modrinth-Suche.</p>
+              </div>
+              <div class="panel home-card">
+                <h3 class="panel-title">
+                  <i data-lucide="history" class="panel-icon"></i>
+                  <span data-i18n="home.recent">Zuletzt gespielt</span>
+                </h3>
+                <div class="recent-list" id="homeRecentList"></div>
               </div>
             </div>
           </section>
@@ -179,7 +186,7 @@
                 <span class="ver-pill hero-ver" id="heroVer">Minecraft 26.1.2 &middot; Vanilla</span>
                 <span class="status-pill" id="heroStatusPill">
                   <span class="pill-dot"></span>
-                  <span id="heroStatusText">Idle</span>
+                  <span id="heroStatusText" data-i18n="status.idle">Idle</span>
                 </span>
               </div>
               <div class="hero-mid">
@@ -187,7 +194,7 @@
                   <i data-lucide="boxes"></i>
                 </span>
                 <h1 class="hero-title" id="activeName">KebabClient</h1>
-                <p class="hero-sub" id="instancePathLabel">Instance folder resolves on first download.</p>
+                <p class="hero-sub" id="instancePathLabel" data-i18n="play.resolves">Instance folder resolves on first download.</p>
               </div>
               <div class="hero-bottom">
                 <span class="progress hero-progress" id="dlProgressWrap" hidden>
@@ -225,7 +232,7 @@
                   <i data-lucide="activity" class="panel-icon"></i>
                   <span data-i18n="play.latest">Letzte Ausgabe</span>
                 </h3>
-                <button type="button" class="btn btn-ghost btn-sm" id="gotoLogsButton">
+                <button type="button" class="btn btn-ghost btn-sm" id="gotoDetailLogButton">
                   <span data-i18n="play.openLog">Vollständiges Log öffnen</span>
                   <i data-lucide="arrow-right" class="btn-icon"></i>
                 </button>
@@ -263,8 +270,8 @@
                     <option value="vanilla">Vanilla</option>
                     <option value="fabric">Fabric</option>
                     <option value="quilt">Quilt</option>
-                    <option value="forge" disabled>Forge (soon)</option>
-                    <option value="neoforge" disabled>NeoForge (soon)</option>
+                    <option value="forge" disabled data-i18n="inst.forgeSoon">Forge (soon)</option>
+                    <option value="neoforge" disabled data-i18n="inst.neoSoon">NeoForge (soon)</option>
                   </select>
                 </label>
               </div>
@@ -325,12 +332,25 @@
                   <span data-i18n="detail.reload">Reload</span>
                 </button>
               </div>
-              <h4 class="group-title">Mods</h4>
+              <h4 class="group-title" data-i18n="detail.gMods">Mods</h4>
               <div class="content-grid" id="detail-mod"></div>
-              <h4 class="group-title">Resource Packs</h4>
+              <h4 class="group-title" data-i18n="detail.gRp">Resource Packs</h4>
               <div class="content-grid" id="detail-resourcepack"></div>
-              <h4 class="group-title">Shaders</h4>
+              <h4 class="group-title" data-i18n="detail.gShaders">Shaders</h4>
               <div class="content-grid" id="detail-shader"></div>
+            </div>
+            <div class="panel">
+              <div class="panel-head">
+                <h3 class="panel-title">
+                  <i data-lucide="terminal" class="panel-icon"></i>
+                  <span data-i18n="inst.logTitle">Log</span>
+                </h3>
+                <button type="button" class="btn btn-ghost btn-sm" id="detailClearLogButton">
+                  <i data-lucide="trash-2" class="btn-icon"></i>
+                  <span data-i18n="logs.clear">Clear</span>
+                </button>
+              </div>
+              <div class="log-view log-view-compact" id="detailLogView" tabindex="0" data-i18n-aria="logs.output" aria-label="Game output"></div>
             </div>
           </section>
 
@@ -351,23 +371,23 @@
               <div class="toolbar">
                 <div class="search-box">
                   <i data-lucide="search" class="search-icon"></i>
-                  <input type="search" id="detailSearchInput" class="input" placeholder="Search Modrinth — type to search" autocomplete="off" spellcheck="false">
+                  <input type="search" id="detailSearchInput" class="input" placeholder="Search Modrinth — type to search" data-i18n-ph="detail.searchPh" autocomplete="off" spellcheck="false">
                 </div>
               </div>
-              <p class="status-line" id="detailSearchStatus">Type to search Modrinth for this instance.</p>
+              <p class="status-line" id="detailSearchStatus" data-i18n="detail.searchHint">Type to search Modrinth for this instance.</p>
               <div class="segment" role="group" aria-label="Content type" id="detailTabs">
-                <button type="button" class="segment-btn is-active" data-category="all">All</button>
-                <button type="button" class="segment-btn" data-category="mod">Mods</button>
-                <button type="button" class="segment-btn" data-category="resourcepack">Resource Packs</button>
-                <button type="button" class="segment-btn" data-category="shader">Shaders</button>
+                <button type="button" class="segment-btn is-active" data-category="all" data-i18n="detail.fAll">All</button>
+                <button type="button" class="segment-btn" data-category="mod" data-i18n="detail.gMods">Mods</button>
+                <button type="button" class="segment-btn" data-category="resourcepack" data-i18n="detail.gRp">Resource Packs</button>
+                <button type="button" class="segment-btn" data-category="shader" data-i18n="detail.gShaders">Shaders</button>
               </div>
               <div class="dropzone" id="detailDropZone">
                 <i data-lucide="file-plus-2" class="dropzone-icon"></i>
                 <span id="detailDropZoneText">Drop .jar files here to add them to this instance</span>
-                <span class="dropzone-or">or</span>
+                <span class="dropzone-or" data-i18n="detail.or">or</span>
                 <button type="button" class="btn btn-primary btn-sm" id="detailUploadButton">
                   <i data-lucide="upload" class="btn-icon"></i>
-                  <span>Upload files</span>
+                  <span data-i18n="detail.uploadFiles">Upload files</span>
                 </button>
               </div>
               <div class="mod-grid" id="detailResults"></div>
@@ -377,85 +397,76 @@
 
           <section class="view" id="view-skins" aria-label="Skins">
             <h1 class="section-title" data-i18n="skins.title">Skin &amp; Cape</h1>
-            <p class="page-sub">Live preview of the signed-in profile. Uploads go through Mojang's API.</p>
-            <div class="row">
-              <button type="button" class="btn btn-ghost btn-sm" id="reloadSkinButton">
-                <i data-lucide="rotate-ccw" class="btn-icon"></i>
-                <span>Reload preview</span>
-              </button>
-            </div>
-            <div class="segment" role="group" aria-label="Outfit category" id="outfitTabs">
-              <button type="button" class="segment-btn is-active" data-outfit="skins">Skins</button>
-              <button type="button" class="segment-btn" data-outfit="capes">Capes</button>
-            </div>
+            <p class="page-sub" data-i18n="skins.sub">Live preview of the signed-in profile. Uploads go through Mojang's API.</p>
             <div class="skin-layout">
-              <div class="panel skin-preview-panel">
-                <div class="panel-head">
-                  <h3 class="panel-title">
-                    <i data-lucide="person-standing" class="panel-icon"></i>
-                    <span id="skinPlayerLabel">Preview</span>
-                  </h3>
+              <div class="skin-leftcol">
+                <div class="panel skin-preview-panel">
+                  <div class="panel-head">
+                    <h3 class="panel-title">
+                      <i data-lucide="person-standing" class="panel-icon"></i>
+                      <span id="skinPlayerLabel" data-i18n="skins.preview">Preview</span>
+                    </h3>
+                  </div>
+                  <div class="skin-stage" id="skinStage">
+                    <canvas id="skinCanvas" class="skin-canvas" width="320" height="320"></canvas>
+                  </div>
+                  <label class="check-row" for="capeVisibleCheck">
+                    <input type="checkbox" id="capeVisibleCheck" checked>
+                    <span data-i18n="skins.showCape">Show cape in preview</span>
+                  </label>
+                </div>
+                <div class="panel skin-controls-panel">
                   <div class="row viewer-controls" role="group" aria-label="Preview controls">
                     <select id="skinAnimSelect" class="input input-plain input-sm" aria-label="Preview animation">
-                      <option value="idle" selected>Idle</option>
-                      <option value="walk">Walk</option>
-                      <option value="run">Run</option>
-                      <option value="none">Static</option>
+                      <option value="idle" data-i18n="skins.animIdle" selected>Idle</option>
+                      <option value="walk" data-i18n="skins.animWalk">Walk</option>
+                      <option value="run" data-i18n="skins.animRun">Run</option>
+                      <option value="none" data-i18n="skins.animStatic">Static</option>
                     </select>
                     <label class="check-row" for="spinCheck">
                       <input type="checkbox" id="spinCheck">
-                      <span>Spin</span>
+                      <span data-i18n="skins.spin">Spin</span>
                     </label>
-                  </div>
-                </div>
-                <div class="skin-stage" id="skinStage">
-                  <canvas id="skinCanvas" class="skin-canvas" width="320" height="320"></canvas>
-                </div>
-                <label class="check-row" for="capeVisibleCheck">
-                  <input type="checkbox" id="capeVisibleCheck" checked>
-                  <span>Show cape in preview</span>
-                </label>
-              </div>
-              <div class="skin-side" id="outfitSkins">
-                <div class="panel">
-                  <h3 class="panel-title">
-                    <i data-lucide="upload" class="panel-icon"></i>
-                    <span>Upload skin</span>
-                  </h3>
-                  <p class="muted">PNG only, 64&times;64 or 64&times;32.</p>
-                  <div class="row">
-                    <button type="button" class="btn btn-primary" id="pickSkinButton">
-                      <i data-lucide="file-image" class="btn-icon"></i>
-                      <span>Choose PNG</span>
-                    </button>
                     <div class="segment" role="group" aria-label="Skin model">
-                      <button type="button" class="segment-btn is-active" data-variant="classic">Classic</button>
-                      <button type="button" class="segment-btn" data-variant="slim">Slim</button>
+                      <button type="button" class="segment-btn is-active" data-variant="classic" data-i18n="skins.classic">Classic</button>
+                      <button type="button" class="segment-btn" data-variant="slim" data-i18n="skins.slim">Slim</button>
                     </div>
                   </div>
-                  <p class="status-line" id="skinPickedLabel">No file selected.</p>
-                  <button type="button" class="btn btn-play btn-sm" id="uploadSkinButton" disabled>
-                    <i data-lucide="cloud-upload" class="btn-icon"></i>
-                    <span>Upload to Mojang</span>
-                  </button>
-                  <p class="status-line" id="skinStatus"></p>
+                  <div class="row">
+                    <button type="button" class="btn btn-ghost btn-sm" id="reloadSkinButton">
+                      <i data-lucide="rotate-ccw" class="btn-icon"></i>
+                      <span data-i18n="skins.reload">Reload preview</span>
+                    </button>
+                  </div>
                 </div>
-                <div class="panel">
-                  <h3 class="panel-title">
-                    <i data-lucide="history" class="panel-icon"></i>
-                    <span>History</span>
-                  </h3>
+                <button type="button" class="btn btn-play btn-block" id="saveOutfitButton" disabled>
+                  <i data-lucide="check" class="btn-icon"></i>
+                  <span data-i18n="skins.save">Save</span>
+                </button>
+                <p class="status-line" id="skinStatus"></p>
+              </div>
+              <div class="skin-gallerycol">
+                <div class="skin-toolbar">
+                  <div class="search-box">
+                    <i data-lucide="search" class="search-icon"></i>
+                    <input type="search" id="outfitSearchInput" class="input" placeholder="Search skin/cape names" data-i18n-ph="skins.searchPh" autocomplete="off" spellcheck="false">
+                  </div>
+                  <div class="segment" role="group" aria-label="Outfit category" id="outfitTabs">
+                    <button type="button" class="segment-btn is-active" data-outfit="skins" data-i18n="skins.tabSkins">Skins</button>
+                    <button type="button" class="segment-btn" data-outfit="capes" data-i18n="skins.tabCapes">Capes</button>
+                  </div>
+                  <button type="button" class="btn btn-primary" id="outfitUploadButton">
+                    <i data-lucide="upload" class="btn-icon"></i>
+                    <span data-i18n="skins.toolbarUpload">Upload</span>
+                  </button>
+                </div>
+                <div id="outfitSkins">
                   <div class="skin-grid" id="skinHistory"></div>
                 </div>
-              </div>
-              <div class="skin-side" id="outfitCapes" hidden>
-                <div class="panel">
-                  <h3 class="panel-title">
-                    <i data-lucide="flag" class="panel-icon"></i>
-                    <span>Capes</span>
-                  </h3>
+                <div id="outfitCapes" hidden>
                   <div class="skin-grid" id="capeList"></div>
                 </div>
+                <p class="muted" id="galleryEmptyNote" data-i18n="skins.noMatch" hidden>No matches for this search.</p>
               </div>
             </div>
           </section>
@@ -469,8 +480,8 @@
                 <span data-i18n="servers.addTitle">Add server</span>
               </h3>
               <div class="server-form">
-                <input type="text" id="serverNameInput" class="input input-plain" placeholder="Server name" autocomplete="off" spellcheck="false">
-                <input type="text" id="serverIpInput" class="input input-plain" placeholder="IP or address:port" autocomplete="off" spellcheck="false">
+                <input type="text" id="serverNameInput" class="input input-plain" placeholder="Server name" data-i18n-ph="servers.namePh" autocomplete="off" spellcheck="false">
+                <input type="text" id="serverIpInput" class="input input-plain" placeholder="IP or address:port" data-i18n-ph="servers.ipPh" autocomplete="off" spellcheck="false">
                 <button type="button" class="btn btn-play btn-sm" id="serverAddButton">
                   <i data-lucide="plus" class="btn-icon"></i>
                   <span data-i18n="servers.add">Add</span>
@@ -481,9 +492,18 @@
             <ul class="server-list" id="serverList"></ul>
           </section>
 
+          <section class="view" id="view-friends" aria-label="Friends">
+            <h1 class="section-title" data-i18n="nav.friends">Friends</h1>
+            <div class="instance-empty">
+              <i data-lucide="users"></i>
+              <h3 class="empty-title" data-i18n="nav.friends">Friends</h3>
+              <p class="muted" data-i18n="friends.soon">Coming Soon</p>
+            </div>
+          </section>
+
           <section class="view" id="view-settings" aria-label="Settings">
             <h1 class="section-title" data-i18n="settings.title">Settings</h1>
-            <p class="page-sub">Theme, storage location, Java and downloads. Changes apply immediately, except the data directory (restart required).</p>
+            <p class="page-sub" data-i18n="settings.sub">Theme, storage location, Java and downloads. Changes apply immediately, except the data directory (restart required).</p>
 
             <div class="panel">
               <h3 class="panel-title">
@@ -499,14 +519,14 @@
             <div class="panel">
               <h3 class="panel-title">
                 <i data-lucide="palette" class="panel-icon"></i>
-                <span>Theme</span>
+                <span data-i18n="settings.theme">Theme</span>
               </h3>
-              <p class="muted">Appearance and accent color.</p>
+              <p class="muted" data-i18n="settings.appearance">Appearance and accent color.</p>
               <div class="segment" role="group" aria-label="Appearance" id="themeModeSegment">
                 <button type="button" class="segment-btn" data-theme-mode="oled">OLED</button>
-                <button type="button" class="segment-btn" data-theme-mode="dark">Dark</button>
-                <button type="button" class="segment-btn" data-theme-mode="light">Light</button>
-                <button type="button" class="segment-btn" data-theme-mode="system">System</button>
+                <button type="button" class="segment-btn" data-theme-mode="dark" data-i18n="settings.mDark">Dark</button>
+                <button type="button" class="segment-btn" data-theme-mode="light" data-i18n="settings.mLight">Light</button>
+                <button type="button" class="segment-btn" data-theme-mode="system" data-i18n="settings.mSystem">System</button>
               </div>
               <div class="swatch-row" id="accentSwatches" role="group" aria-label="Accent color"></div>
             </div>
@@ -514,27 +534,27 @@
             <div class="panel settings-panel">
               <h3 class="panel-title">
                 <i data-lucide="hard-drive" class="panel-icon"></i>
-                <span>Storage</span>
+                <span data-i18n="settings.storage">Storage</span>
               </h3>
-              <p class="muted">Current data directory:</p>
+              <p class="muted" data-i18n="settings.currentDir">Current data directory:</p>
               <p class="status-line" id="dataDirLabel">…</p>
               <div class="row">
                 <button type="button" class="btn btn-ghost btn-sm" id="openDataFolderButton">
                   <i data-lucide="folder-open" class="btn-icon"></i>
-                  <span>Open folder</span>
+                  <span data-i18n="settings.openFolder">Open folder</span>
                 </button>
               </div>
               <label class="form-field" for="dataDirInput">
-                <span>Move data to (absolute path, restart required)</span>
+                <span data-i18n="settings.moveLabel">Move data to (absolute path, restart required)</span>
                 <input type="text" id="dataDirInput" class="input input-plain" placeholder="D:\Games\KebabClient" autocomplete="off" spellcheck="false">
               </label>
               <div class="row">
                 <button type="button" class="btn btn-primary btn-sm" id="saveDataDirButton">
-                  <span>Save location</span>
+                  <span data-i18n="settings.saveLocation">Save location</span>
                 </button>
                 <button type="button" class="btn btn-ghost btn-sm" id="moveDataDirButton">
                   <i data-lucide="truck" class="btn-icon"></i>
-                  <span>Move everything here</span>
+                  <span data-i18n="settings.moveAll">Move everything here</span>
                 </button>
               </div>
               <p class="status-line" id="dataDirStatus"></p>
@@ -543,31 +563,31 @@
             <div class="panel settings-panel">
               <h3 class="panel-title">
                 <i data-lucide="coffee" class="panel-icon"></i>
-                <span>Java</span>
+                <span data-i18n="settings.java">Java</span>
               </h3>
               <label class="form-field" for="javaPathInput">
-                <span>Java executable (empty = auto-detect)</span>
+                <span data-i18n="settings.javaPath">Java executable (empty = auto-detect)</span>
                 <input type="text" id="javaPathInput" class="input input-plain" placeholder="auto-detect" autocomplete="off" spellcheck="false">
               </label>
               <div class="row">
                 <button type="button" class="btn btn-ghost btn-sm" id="browseJavaButton">
                   <i data-lucide="folder-search" class="btn-icon"></i>
-                  <span>Browse…</span>
+                  <span data-i18n="settings.browse">Browse…</span>
                 </button>
               </div>
               <div class="form-grid">
                 <label class="form-field" for="javaRamSelect">
-                  <span>Max memory (Xmx)</span>
+                  <span data-i18n="settings.maxMem">Max memory (Xmx)</span>
                   <select id="javaRamSelect" class="input input-plain"></select>
                 </label>
               </div>
               <label class="form-field" for="javaArgsInput">
-                <span>Extra JVM arguments</span>
+                <span data-i18n="settings.extraArgs">Extra JVM arguments</span>
                 <input type="text" id="javaArgsInput" class="input input-plain" placeholder="-XX:+UseG1GC" autocomplete="off" spellcheck="false">
               </label>
               <div class="row">
                 <button type="button" class="btn btn-primary btn-sm" id="saveJavaButton">
-                  <span>Save Java settings</span>
+                  <span data-i18n="settings.saveJava">Save Java settings</span>
                 </button>
               </div>
               <p class="status-line" id="javaStatus"></p>
@@ -576,17 +596,17 @@
             <div class="panel settings-panel">
               <h3 class="panel-title">
                 <i data-lucide="download" class="panel-icon"></i>
-                <span>Downloads</span>
+                <span data-i18n="settings.downloads">Downloads</span>
               </h3>
               <div class="form-grid">
                 <label class="form-field" for="threadSelect">
-                  <span>Parallel asset downloads</span>
+                  <span data-i18n="settings.parallel">Parallel asset downloads</span>
                   <select id="threadSelect" class="input input-plain"></select>
                 </label>
               </div>
               <div class="row">
                 <button type="button" class="btn btn-primary btn-sm" id="saveDownloadsButton">
-                  <span>Save</span>
+                  <span data-i18n="settings.save">Save</span>
                 </button>
               </div>
               <p class="status-line" id="downloadsStatus"></p>
@@ -605,10 +625,6 @@
                 <span class="mini-key" data-i18n="about.latest">Neueste Version</span>
                 <span class="mini-val" id="aboutLatest">…</span>
               </div>
-              <div class="mini-row">
-                <span class="mini-key" data-i18n="about.users">Aktive Nutzer</span>
-                <span class="mini-val" id="aboutUsers">…</span>
-              </div>
               <p class="muted" id="aboutChangelog" hidden></p>
               <div class="row">
                 <button type="button" class="btn btn-ghost btn-sm" id="aboutCheckButton">
@@ -620,39 +636,23 @@
             </div>
           </section>
 
-          <section class="view" id="view-logs" aria-label="Logs">
-            <h1 class="section-title">Game log</h1>
-            <p class="page-sub">stdout / stderr streamed from the child process. Scroll up to pause follow.</p>
-            <div class="row">
-              <label class="check-row" for="followCheck">
-                <input type="checkbox" id="followCheck" checked>
-                <span>Follow</span>
-              </label>
-              <button type="button" class="btn btn-ghost btn-sm" id="clearLogButton">
-                <i data-lucide="trash-2" class="btn-icon"></i>
-                <span>Clear</span>
-              </button>
-            </div>
-            <div class="panel log-panel">
-              <div class="log-view" id="logView" tabindex="0" aria-label="Game output"></div>
-            </div>
           </section>
         </main>
       </div>
     </div>
 
     <div class="drawer-backdrop" id="drawerBackdrop" hidden></div>
-    <aside class="drawer" id="accountDrawer" role="dialog" aria-modal="true" aria-label="Account and instance" hidden>
+    <aside class="drawer" id="accountDrawer" role="dialog" aria-modal="true" data-i18n-aria="drawer.title" aria-label="Account and instance" hidden>
       <div class="drawer-head">
         <h3 class="panel-title">
           <i data-lucide="user" class="panel-icon"></i>
-          <span>Account</span>
+          <span data-i18n="drawer.title">Account</span>
         </h3>
-        <button type="button" class="icon-btn" id="drawerCloseButton" title="Close">
+        <button type="button" class="icon-btn" id="drawerCloseButton" title="Close" data-i18n-title="actions.close" data-i18n-aria="actions.close" aria-label="Close">
           <i data-lucide="x"></i>
         </button>
       </div>
-      <p class="side-label">Playing as</p>
+      <p class="side-label" data-i18n="drawer.playingAs">Playing as</p>
       <div class="account-card" id="accountCard">
         <span class="headshot">
           <canvas data-headshot="72" width="72" height="72" aria-hidden="true"></canvas>
@@ -663,21 +663,21 @@
           <span class="account-state" id="accountState">Microsoft only</span>
         </span>
       </div>
+      <p class="side-label" data-i18n="drawer.instance">Instance</p>
+          <div class="panel instance-mini">
+            <div class="mini-row">
+              <span class="mini-key" data-i18n="drawer.instance">Instance</span>
+              <span class="mini-val" id="sideInstance">26.1.2 vanilla</span>
+            </div>
+        <div class="mini-row">
+          <span class="mini-key" data-i18n="drawer.status">Status</span>
+          <span class="mini-val" id="sideStatus" data-i18n="status.idle">Idle</span>
+        </div>
+      </div>
       <button type="button" class="btn btn-ghost btn-block" id="authButton">
         <i data-lucide="log-in" class="btn-icon"></i>
         <span>Sign in</span>
       </button>
-      <p class="side-label">Instance</p>
-          <div class="panel instance-mini">
-            <div class="mini-row">
-              <span class="mini-key">Instance</span>
-              <span class="mini-val" id="sideInstance">26.1.2 vanilla</span>
-            </div>
-        <div class="mini-row">
-          <span class="mini-key">Status</span>
-          <span class="mini-val" id="sideStatus">Idle</span>
-        </div>
-      </div>
     </aside>
   </div>
 

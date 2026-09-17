@@ -3,13 +3,33 @@
 (function () {
   const { bridge, toast, el } = window.launcherUtil;
 
+  function tr(key, fallback) {
+    try {
+      if (window.i18n) {
+        const v = window.i18n.t(key);
+        if (v && v !== key) return v;
+      }
+    } catch {}
+    return fallback;
+  }
+
+  function fmt(tpl, map) {
+    return String(tpl).replace(/\{(\w+)\}/g, (_, k) => (map && map[k] !== undefined ? map[k] : ''));
+  }
+
   let viewer = null;
   let resizeObserver = null;
   let variant = 'classic';
-  let pickedBase64 = null;
   let currentSkin = null;
   let currentCape = null;
   let capeVisible = true;
+  let lastPlayerName = '';
+  let pending = null;
+
+  function updateSaveButton() {
+    const btn = document.getElementById('saveOutfitButton');
+    if (btn) btn.disabled = !pending;
+  }
 
   function viewerModel() {
     return variant === 'slim' ? 'slim' : 'default';
@@ -33,10 +53,10 @@
   function ensureViewer() {
     if (viewer) return viewer;
     if (!window.skinview3d) {
-      throw new Error('3D viewer library failed to load.');
+      throw new Error(tr('skins.libFail', '3D viewer library failed to load.'));
     }
     const canvas = document.getElementById('skinCanvas');
-    if (!canvas) throw new Error('Preview canvas not found.');
+    if (!canvas) throw new Error(tr('skins.noCanvas', 'Preview canvas not found.'));
     const startSize = stageSize() || 320;
     viewer = new window.skinview3d.SkinViewer({
       canvas,
@@ -78,7 +98,7 @@
 
   async function showSkin(dataUrl, capeDataUrl) {
     const v = ensureViewer();
-    currentSkin = dataUrl || null;
+    if (dataUrl) currentSkin = dataUrl;
     currentCape = capeDataUrl || null;
     let skinError = null;
     let capeError = null;
@@ -102,40 +122,62 @@
     return { skinOk: !!dataUrl && !skinError, skinError, capeError };
   }
 
+  function modelLabel(value) {
+    return value === 'slim' ? tr('skins.slim', 'Slim') : tr('skins.classic', 'Classic');
+  }
+
   function renderCapes(capes, activeId, skinDataUrl, model) {
     const list = document.getElementById('capeList');
     if (!list) return;
     list.textContent = '';
     if (!capes || !capes.length) {
-      list.appendChild(el('p', 'content-empty', 'No capes on this account.'));
+      list.appendChild(el('p', 'content-empty', tr('skins.noCapes', 'No capes on this account.')));
       return;
     }
     for (const cape of capes) {
-      const card = el('article', 'skin-card' + (cape.id === activeId ? ' is-active' : ''));
+      const isActive = cape.id === activeId;
+      const card = el('article', 'skin-card' + (isActive ? ' is-active' : ''));
+      card.dataset.search = cape.alias || '';
       const prev = el('span', 'skin-card-preview');
       const thumbSlot = el('span', 'skin-card-slot');
       if (cape.dataUrl) {
         const img = document.createElement('img');
         img.className = 'skin-card-img';
-        img.alt = cape.alias || 'Cape';
+        img.alt = cape.alias || tr('skins.capesTitle', 'Capes');
         img.src = cape.dataUrl;
         thumbSlot.appendChild(img);
-        if (skinDataUrl) void upgradeCapeThumb(thumbSlot, cape, skinDataUrl, model);
+        if (skinDataUrl) void upgradeCapeThumb(thumbSlot, cape, skinDataUrl, model, false);
       }
       prev.appendChild(thumbSlot);
       card.appendChild(prev);
       const foot = el('span', 'skin-card-foot');
-      foot.appendChild(el('span', 'skin-card-name', cape.alias || 'Cape'));
-      const btn = el('button', 'btn btn-ghost btn-sm btn-block', cape.id === activeId ? 'Equipped' : 'Equip');
+      foot.appendChild(el('span', 'skin-card-name', cape.alias || tr('skins.capesTitle', 'Capes')));
+      const btn = el('button', 'btn btn-ghost btn-sm btn-block', isActive ? tr('skins.equipped', 'Equipped') : tr('skins.previewBtn', 'Preview'));
       btn.type = 'button';
-      btn.disabled = cape.id === activeId;
+      btn.disabled = isActive;
       btn.addEventListener('click', async () => {
+        if (!cape.dataUrl) {
+          toast(fmt(tr('skins.capePreviewFail', 'Cape preview failed: {msg}'), { msg: 'missing texture' }), 'error');
+          return;
+        }
+        if (!currentSkin) {
+          toast(fmt(tr('skins.previewFail', 'Preview failed: {msg}'), { msg: 'missing skin' }), 'error');
+          return;
+        }
+        btn.disabled = true;
         try {
-          await bridge().equipCape(cape.id);
-          toast(`Equipped ${cape.alias || 'cape'}.`, 'ok');
-          await reload();
+          if (!capeVisible) {
+            capeVisible = true;
+            const check = document.getElementById('capeVisibleCheck');
+            if (check) check.checked = true;
+          }
+          await showSkin(currentSkin, cape.dataUrl);
+          pending = isActive ? null : { kind: 'cape', capeId: cape.id, alias: cape.alias };
+          updateSaveButton();
         } catch (err) {
-          toast(`Equip failed: ${err.message}`, 'error');
+          toast(fmt(tr('skins.previewFail', 'Preview failed: {msg}'), { msg: err.message }), 'error');
+        } finally {
+          btn.disabled = isActive;
         }
       });
       foot.appendChild(btn);
@@ -143,6 +185,7 @@
       list.appendChild(card);
     }
     if (window.refreshIcons) window.refreshIcons();
+    applyGalleryFilter();
   }
 
   const capeSnapCache = new Map();
@@ -159,7 +202,7 @@
 
   function getSnapViewer() {
     if (snapViewer) return snapViewer;
-    if (!window.skinview3d) throw new Error('3D viewer library failed to load.');
+    if (!window.skinview3d) throw new Error(tr('skins.libFail', '3D viewer library failed to load.'));
     snapCanvas = document.createElement('canvas');
     snapCanvas.width = 96;
     snapCanvas.height = 96;
@@ -206,6 +249,7 @@
   }
 
   async function upgradeHistoryThumb(btn, entry) {
+    await Promise.resolve();
     try {
       let shot = skinSnapCache.get(entry.id);
       if (!shot) {
@@ -225,24 +269,32 @@
     } catch { /* head render stays as fallback */ }
   }
 
-  async function upgradeCapeThumb(slot, cape, skinDataUrl, model) {
+  async function upgradeCapeThumb(slot, cape, skinDataUrl, model, isRetry) {
+    await Promise.resolve();
     try {
-      const skinKey = skinDataUrl ? `${skinDataUrl.length}:${skinDataUrl.slice(0, 32)}:${skinDataUrl.slice(-32)}` : 'noskin';
+      if (!skinDataUrl) return;
+      const skinKey = `${skinDataUrl.length}:${skinDataUrl.slice(0, 32)}:${skinDataUrl.slice(-32)}`;
       const cacheKey = `${cape.id}|${skinKey}`;
       let shot = capeSnapCache.get(cacheKey);
       if (!shot) {
         shot = await snapshotCape(skinDataUrl, model, cape.dataUrl);
-        if (!shot || shot.length < 1000) return;
+        if (!shot || shot.length < 1000) throw new Error('empty snapshot');
         capeSnapCache.set(cacheKey, shot);
       }
       if (!slot.isConnected) return;
       slot.textContent = '';
       const img = document.createElement('img');
       img.className = 'skin-card-img';
-      img.alt = cape.alias || 'Cape';
+      img.alt = cape.alias || tr('skins.capesTitle', 'Capes');
       img.src = shot;
       slot.appendChild(img);
-    } catch {}
+    } catch {
+      if (!isRetry && skinDataUrl && slot.isConnected) {
+        setTimeout(() => {
+          if (slot.isConnected) void upgradeCapeThumb(slot, cape, skinDataUrl, model, true);
+        }, 2500);
+      }
+    }
   }
 
   function renderHistory(history) {
@@ -250,15 +302,16 @@
     if (!row) return;
     row.textContent = '';
     if (!history || !history.length) {
-      row.appendChild(el('p', 'muted small', 'No previous skins yet. Upload one above.'));
+      row.appendChild(el('p', 'muted small', tr('skins.noHistory', 'No previous skins yet. Upload one above.')));
       return;
     }
     for (const entry of history) {
       const btn = el('button', 'skin-card', '');
       btn.type = 'button';
-      const modelLabel = entry.variant === 'slim' ? 'Slim' : 'Classic';
-      btn.title = `Wear this skin (${modelLabel})`;
-      btn.setAttribute('aria-label', `Wear this skin (${modelLabel})`);
+      const label = modelLabel(entry.variant);
+      btn.title = fmt(tr('skins.wear', 'Wear this skin ({model})'), { model: label });
+      btn.setAttribute('aria-label', fmt(tr('skins.wear', 'Wear this skin ({model})'), { model: label }));
+      btn.dataset.search = `${label} ${entry.variant || ''} ${entry.addedAt ? new Date(entry.addedAt).toLocaleString() : ''}`;
       const prev = el('span', 'skin-card-preview');
       const canvas = document.createElement('canvas');
       canvas.width = 64;
@@ -266,25 +319,30 @@
       prev.appendChild(canvas);
       try {
         if (window.headshot) {
-          window.headshot.render(canvas, entry.dataUrl, 64).catch(() => {});
+          window.headshot.render(canvas, entry.dataUrl, 64, entry.variant).catch(() => {});
         }
       } catch {}
       btn.appendChild(prev);
       const foot = el('span', 'skin-card-foot');
-      foot.appendChild(el('span', 'skin-card-name', modelLabel));
+      foot.appendChild(el('span', 'skin-card-name', label));
       btn.appendChild(foot);
       if (entry.dataUrl) void upgradeHistoryThumb(btn, entry);
       btn.addEventListener('click', async () => {
         try {
-          await bridge().applySkinHistory(entry.id);
-          toast('Skin applied from history.', 'ok');
-          await reload();
+          const b64 = (entry.dataUrl || '').split(',')[1] || '';
+          if (!b64) throw new Error('empty texture');
+          variant = entry.variant === 'slim' ? 'slim' : 'classic';
+          syncVariantButtons();
+          await showSkin(entry.dataUrl, currentCape);
+          pending = { kind: 'skin', base64: b64 };
+          updateSaveButton();
         } catch (err) {
-          toast(`Apply failed: ${err.message}`, 'error');
+          toast(fmt(tr('skins.previewFail', 'Preview failed: {msg}'), { msg: err.message }), 'error');
         }
       });
       row.appendChild(btn);
     }
+    applyGalleryFilter();
   }
 
   async function loadHistory() {
@@ -295,37 +353,101 @@
 
   let dataLoadedAt = 0;
 
+  function skinsFingerprint(state) {
+    try {
+      return (state.skins || []).map((s) => `${s.id}:${s.state}`).join('|');
+    } catch { return ''; }
+  }
+
+  function galleryQuery() {
+    const input = document.getElementById('outfitSearchInput');
+    return input ? input.value.trim().toLowerCase() : '';
+  }
+
+  function applyGalleryFilter() {
+    const q = galleryQuery();
+    const capesEl = document.getElementById('outfitCapes');
+    const activeGrid = (capesEl && !capesEl.hidden)
+      ? document.getElementById('capeList')
+      : document.getElementById('skinHistory');
+    let visible = 0;
+    document.querySelectorAll('#skinHistory .skin-card, #capeList .skin-card').forEach((card) => {
+      const show = !q || (card.dataset.search || '').toLowerCase().includes(q);
+      card.style.display = show ? '' : 'none';
+      if (show && activeGrid && activeGrid.contains(card)) visible += 1;
+    });
+    const note = document.getElementById('galleryEmptyNote');
+    if (note) note.hidden = !(q && visible === 0);
+  }
+
+  function setSkinStatus(text) {
+    const node = document.getElementById('skinStatus');
+    if (node) node.textContent = text;
+  }
+
+  function paintPlayerLabel() {
+    const label = document.getElementById('skinPlayerLabel');
+    if (!label) return;
+    label.textContent = lastPlayerName
+      ? `${tr('skins.preview', 'Preview')} — ${lastPlayerName}`
+      : tr('skins.preview', 'Preview');
+  }
+
+  async function waitForSkinState(expect, timeoutMs = 12000) {
+    const start = Date.now();
+    for (;;) {
+      try {
+        const st = await bridge().getSkinState();
+        if (expect.capeId && (st.capes || []).some((c) => c.id === expect.capeId && c.state === 'ACTIVE')) return true;
+        if (expect.skinFp !== undefined && skinsFingerprint(st) !== expect.skinFp) return true;
+      } catch {}
+      if (Date.now() - start > timeoutMs) return false;
+      await new Promise((r) => setTimeout(r, 1500));
+    }
+  }
+
+  function displayVariant(raw) {
+    if (raw === 'SLIM' || raw === 'slim') return tr('skins.slim', 'Slim');
+    if (raw === 'CLASSIC' || raw === 'classic') return tr('skins.classic', 'Classic');
+    return raw || variant;
+  }
+
   async function reload() {
     const statusEl = document.getElementById('skinStatus');
-    const label = document.getElementById('skinPlayerLabel');
     try {
-      if (statusEl) statusEl.textContent = 'Loading preview…';
+      if (statusEl) statusEl.textContent = tr('skins.loading', 'Loading preview…');
       const preview = await bridge().getSkinPreview();
-      if (label) label.textContent = preview?.playerName ? `Preview — ${preview.playerName}` : 'Preview';
+      lastPlayerName = preview?.playerName || '';
+      paintPlayerLabel();
+      pending = null;
+      updateSaveButton();
       if (preview?.skin?.variant === 'SLIM') variant = 'slim';
       else if (preview?.skin?.variant === 'CLASSIC') variant = 'classic';
       syncVariantButtons();
       const shown = await showSkin(preview?.skin?.dataUrl, preview?.cape?.dataUrl);
-      renderCapes(preview?.capes || [], preview?.cape?.id, preview?.skin?.dataUrl, variant);
+      renderCapes(preview?.capes || [], preview?.cape?.id, preview?.skin?.dataUrl || currentSkin, variant);
       if (statusEl) {
         if (!preview?.skin) {
-          statusEl.textContent = 'No skin found on profile.';
+          statusEl.textContent = tr('skins.noSkin', 'No skin found on profile.');
         } else if (!preview.skin.dataUrl) {
-          statusEl.textContent = `Skin texture download failed (${preview.skin.variant || variant}) — check connection, then Reload preview.`;
+          statusEl.textContent = fmt(tr('skins.texFail', 'Skin texture download failed ({variant}) — check connection, then Reload preview.'), { variant: displayVariant(preview.skin.variant) });
         } else if (shown.skinError) {
-          statusEl.textContent = `Skin preview error: ${shown.skinError}`;
+          statusEl.textContent = fmt(tr('skins.skinErr', 'Skin preview error: {msg}'), { msg: shown.skinError });
         } else {
-          statusEl.textContent = `Skin: ${preview.skin.variant || variant} · Cape: ${preview?.cape?.alias || 'none'}`;
+          statusEl.textContent = fmt(tr('skins.status', 'Skin: {skin} · Cape: {cape}'), {
+            skin: displayVariant(preview.skin.variant),
+            cape: preview?.cape?.alias || tr('skins.none', 'none')
+          });
         }
-        if (shown.capeError) statusEl.textContent += ` (cape: ${shown.capeError})`;
+        if (shown.capeError) statusEl.textContent += fmt(tr('skins.capeErr', ' (cape: {msg})'), { msg: shown.capeError });
       }
       if (preview?.skin && (!preview.skin.dataUrl || shown.skinError)) {
-        toast('Skin texture failed to load — check connection, then Reload preview.', 'error');
+        toast(fmt(tr('skins.texFail', 'Skin texture download failed ({variant}) — check connection, then Reload preview.'), { variant: displayVariant(preview.skin.variant) }), 'error');
       }
       await loadHistory();
       dataLoadedAt = Date.now();
     } catch (err) {
-      if (statusEl) statusEl.textContent = `Preview unavailable: ${err.message}`;
+      if (statusEl) statusEl.textContent = fmt(tr('skins.unavailable', 'Preview unavailable: {msg}'), { msg: err.message });
     }
   }
 
@@ -368,8 +490,11 @@
             fitViewer();
           }
         } catch {}
+        applyGalleryFilter();
       });
     });
+    const searchInput = document.getElementById('outfitSearchInput');
+    if (searchInput) searchInput.addEventListener('input', applyGalleryFilter);
     const spinCheck = document.getElementById('spinCheck');
     if (spinCheck) spinCheck.addEventListener('change', applySpin);
 
@@ -383,7 +508,7 @@
             await v.loadSkin(currentSkin, { model: viewerModel() });
             if (capeVisible && currentCape) await v.loadCape(currentCape);
           }
-          catch (err) { toast(`Preview failed: ${err.message}`, 'error'); }
+          catch (err) { toast(fmt(tr('skins.previewFail', 'Preview failed: {msg}'), { msg: err.message }), 'error'); }
         }
       });
     });
@@ -395,7 +520,7 @@
         try {
           if (capeVisible && currentCape) await viewer.loadCape(currentCape);
           else viewer.resetCape();
-        } catch (err) { toast(`Cape preview failed: ${err.message}`, 'error'); }
+        } catch (err) { toast(fmt(tr('skins.capePreviewFail', 'Cape preview failed: {msg}'), { msg: err.message }), 'error'); }
       });
     }
 
@@ -403,40 +528,56 @@
     if (reloadBtn) reloadBtn.addEventListener('click', reload);
     document.addEventListener('skin:reload', reload);
 
-    const pickBtn = document.getElementById('pickSkinButton');
-    const uploadBtn = document.getElementById('uploadSkinButton');
-    const pickedLabel = document.getElementById('skinPickedLabel');
-    if (pickBtn) {
-      pickBtn.addEventListener('click', async () => {
+    const upBtn = document.getElementById('outfitUploadButton');
+    if (upBtn) {
+      upBtn.addEventListener('click', async () => {
         try {
           const res = await bridge().pickSkinFile();
           if (res?.canceled) return;
-          pickedBase64 = res.dataBase64;
-          if (pickedLabel) pickedLabel.textContent = `${res.fileName} (${res.width}x${res.height})`;
-          if (uploadBtn) uploadBtn.disabled = false;
-          try {
-            const shown = await showSkin(`data:image/png;base64,${pickedBase64}`, currentCape);
-            if (!shown.skinOk) toast(`Preview failed: ${shown.skinError || 'invalid texture'}`, 'error');
-          } catch (err) { toast(`Preview failed: ${err.message}`, 'error'); }
+          const shown = await showSkin(`data:image/png;base64,${res.dataBase64}`, currentCape);
+          pending = { kind: 'skin', base64: res.dataBase64 };
+          updateSaveButton();
+          if (!shown.skinOk) toast(fmt(tr('skins.previewFail', 'Preview failed: {msg}'), { msg: shown.skinError || 'invalid texture' }), 'error');
         } catch (err) {
-          toast(`Invalid skin: ${err.message}`, 'error');
+          toast(fmt(tr('skins.invalidSkin', 'Invalid skin: {msg}'), { msg: err.message }), 'error');
         }
       });
     }
-    if (uploadBtn) {
-      uploadBtn.addEventListener('click', async () => {
-        if (!pickedBase64) return;
-        uploadBtn.disabled = true;
+    const saveBtn = document.getElementById('saveOutfitButton');
+    if (saveBtn) {
+      saveBtn.addEventListener('click', async () => {
+        if (!pending) {
+          toast(tr('skins.nothingPending', 'Nothing to apply — pick a skin or cape first.'));
+          return;
+        }
+        const job = pending;
+        saveBtn.disabled = true;
         try {
-          await bridge().uploadSkin(pickedBase64, variant);
-          toast('Skin uploaded.', 'ok');
-          pickedBase64 = null;
-          if (pickedLabel) pickedLabel.textContent = 'No file selected.';
-          await reload();
+          if (job.kind === 'skin') {
+            const before = await bridge().getSkinState().then(skinsFingerprint, () => '');
+            await bridge().uploadSkin(job.base64, variant);
+            pending = null;
+            setSkinStatus(tr('skins.waiting', 'Saving… waiting for Mojang…'));
+            const reflected = await waitForSkinState({ skinFp: before });
+            updateSaveButton();
+            await reload();
+            toast(reflected
+              ? tr('skins.uploadedOk', 'Skin uploaded.')
+              : tr('skins.slowSkin', 'Applied. Mojang is slow — use Reload preview if the skin is missing.'));
+          } else {
+            await bridge().equipCape(job.capeId);
+            pending = null;
+            setSkinStatus(tr('skins.waiting', 'Saving… waiting for Mojang…'));
+            const reflected = await waitForSkinState({ capeId: job.capeId });
+            updateSaveButton();
+            await reload();
+            toast(reflected
+              ? fmt(tr('skins.equippedOk', 'Equipped {name}.'), { name: job.alias || tr('skins.capesTitle', 'Capes') })
+              : tr('skins.slowCape', 'Equipped. Mojang is slow — use Reload preview if the cape is missing.'));
+          }
         } catch (err) {
-          toast(`Upload failed: ${err.message}`, 'error');
-        } finally {
-          uploadBtn.disabled = !pickedBase64;
+          toast(fmt(tr(job.kind === 'cape' ? 'skins.equipFail' : 'skins.uploadFail', job.kind === 'cape' ? 'Equip failed: {msg}' : 'Upload failed: {msg}'), { msg: err.message }), 'error');
+          updateSaveButton();
         }
       });
     }
@@ -444,8 +585,11 @@
       ensureViewer();
     } catch (err) {
       const statusEl = document.getElementById('skinStatus');
-      if (statusEl) statusEl.textContent = `3D preview unavailable: ${err.message}`;
+      if (statusEl) statusEl.textContent = fmt(tr('skins.no3d', '3D preview unavailable: {msg}'), { msg: err.message });
     }
+    document.addEventListener('i18n:applied', () => {
+      reload().catch(() => {});
+    });
     document.addEventListener('view:shown', (e) => {
       if (e && e.detail && e.detail.view === 'skins') onSkinsShown();
     });

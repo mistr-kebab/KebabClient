@@ -2,10 +2,9 @@
 
 (function () {
   const { bridge, toast, el } = window.launcherUtil;
-  let follow = true;
-  let userScrolledUp = false;
   let wasRunning = false;
   let activeInstance = null;
+  let runningId = null;
 
   const LOADER_LABELS = { vanilla: 'Vanilla', fabric: 'Fabric', quilt: 'Quilt', forge: 'Forge', neoforge: 'NeoForge' };
 
@@ -13,23 +12,18 @@
     return LOADER_LABELS[loader] || loader || 'Vanilla';
   }
 
-  function logView() {
-    return document.getElementById('logView');
-  }
-
   function miniLog() {
     return document.getElementById('miniLog');
   }
 
-  function appendLine(container, stream, line, fullClass) {
+  function appendLine(container, stream, line) {
     if (!container) return;
     const div = document.createElement('div');
-    div.className = fullClass ? `log-line-${stream}` : `line-${stream}`;
+    div.className = `line-${stream}`;
     div.textContent = line;
     container.appendChild(div);
     while (container.children.length > 2000) container.firstChild.remove();
-    const shouldStick = fullClass ? (follow && !userScrolledUp) : true;
-    if (shouldStick) container.scrollTop = container.scrollHeight;
+    container.scrollTop = container.scrollHeight;
   }
 
   function tr(key, fallback) {
@@ -40,6 +34,10 @@
       }
     } catch {}
     return fallback;
+  }
+
+  function fmt(tpl, map) {
+    return String(tpl).replace(/\{(\w+)\}/g, (_, k) => (map && map[k] !== undefined ? map[k] : ''));
   }
 
   function setRunning(running, pid) {
@@ -61,7 +59,7 @@
     if (heroText) heroText.textContent = running ? tr('status.running', 'Running') : tr('status.idle', 'Idle');
     const homeState = document.getElementById('homeActiveState');
     if (homeState) homeState.textContent = running ? tr('status.running', 'Running') : tr('status.idle', 'Idle');
-    if (running && !wasRunning) toast(`Game running${pid ? ` (pid ${pid})` : ''}.`, 'ok');
+    if (running && !wasRunning) toast(fmt(tr('play.running', 'Game running{pid}.'), { pid: pid ? ` (pid ${pid})` : '' }), 'ok');
     wasRunning = !!running;
   }
 
@@ -94,12 +92,12 @@
     const launchBtn = document.getElementById('launchButton');
     const homePlay = document.getElementById('homePlayButton');
     if (nameEl) nameEl.textContent = 'KebabClient';
-    if (verEl) verEl.textContent = 'No instance yet';
+    if (verEl) verEl.textContent = tr('play.noInstance', 'No instance yet');
     if (sideEl) sideEl.textContent = '—';
     if (railVer) railVer.textContent = '—';
     if (homeName) homeName.textContent = tr('home.noInstance', 'Noch keine Instanz');
     if (homeSub) homeSub.textContent = '—';
-    if (pathLabel) pathLabel.textContent = 'Create an instance to get started.';
+    if (pathLabel) pathLabel.textContent = tr('play.getStarted', 'Create an instance to get started.');
     if (launchBtn) launchBtn.disabled = true;
     if (homePlay) homePlay.disabled = true;
   }
@@ -111,6 +109,7 @@
       else setNoActiveInstance();
       const pathLabel = document.getElementById('instancePathLabel');
       if (pathLabel && s?.instanceDir) pathLabel.textContent = s.instanceDir;
+      runningId = s?.running ? (s?.runningInstanceId || runningId) : null;
       setRunning(!!s?.running, null);
     } catch {}
   }
@@ -153,11 +152,11 @@
     const playBtn = document.getElementById('launchButton');
     if (ensureBtn) ensureBtn.disabled = true;
     if (playBtn) playBtn.disabled = true;
-    setProgress(0, 'Starting download…');
+    setProgress(0, tr('play.starting', 'Starting download…'));
     try {
       const res = await bridge().ensureClient();
-      setProgress(1, `Verified (${res?.cached || 0} cached, ${res?.downloaded || 0} downloaded).`);
-      toast(`Verified: ${res?.cached || 0} cached, ${res?.downloaded || 0} downloaded. You can press Play now.`, 'ok');
+      setProgress(1, fmt(tr('play.verified', 'Verified ({c} cached, {d} downloaded).'), { c: res?.cached || 0, d: res?.downloaded || 0 }));
+      toast(fmt(tr('play.verifiedToast', 'Verified: {c} cached, {d} downloaded. You can press Play now.'), { c: res?.cached || 0, d: res?.downloaded || 0 }), 'ok');
       const pathLabel = document.getElementById('instancePathLabel');
       if (pathLabel && res?.instanceDir) pathLabel.textContent = res.instanceDir;
       if (res?.instance) applyActiveInstance(res.instance);
@@ -165,7 +164,7 @@
       return true;
     } catch (err) {
       setProgress(null);
-      toast(`Download failed: ${err.message}`, 'error');
+      toast(fmt(tr('play.dlFail', 'Download failed: {msg}'), { msg: err.message }), 'error');
       return false;
     } finally {
       if (ensureBtn) ensureBtn.disabled = false;
@@ -181,7 +180,7 @@
       } catch {}
     }
     if (!activeInstance) {
-      toast('Create an instance first.', 'error');
+      toast(tr('play.needInstance', 'Create an instance first.'), 'error');
       if (typeof window.showView === 'function') window.showView('instances');
       return;
     }
@@ -191,7 +190,7 @@
       const res = await bridge().launch();
       setRunning(true, res?.pid);
     } catch (err) {
-      toast(`Launch failed: ${err.message}`, 'error');
+      toast(fmt(tr('play.launchFail', 'Launch failed: {msg}'), { msg: err.message }), 'error');
     }
   }
 
@@ -200,29 +199,6 @@
     const launchBtn = document.getElementById('launchButton');
     const stopBtn = document.getElementById('stopButton');
     const openFolderBtn = document.getElementById('openFolderButton');
-    const clearBtn = document.getElementById('clearLogButton');
-    const followCheck = document.getElementById('followCheck');
-    const view = logView();
-
-    if (view) {
-      view.addEventListener('scroll', () => {
-        const distance = view.scrollHeight - view.scrollTop - view.clientHeight;
-        userScrolledUp = distance > 120;
-      });
-    }
-    if (followCheck) {
-      followCheck.addEventListener('change', () => {
-        follow = followCheck.checked;
-        if (follow && view) view.scrollTop = view.scrollHeight;
-      });
-    }
-    if (clearBtn) {
-      clearBtn.addEventListener('click', () => {
-        if (view) view.textContent = '';
-        const mini = miniLog();
-        if (mini) mini.textContent = '';
-      });
-    }
 
     if (ensureBtn) {
       ensureBtn.addEventListener('click', ensureActive);
@@ -237,7 +213,7 @@
         try {
           await bridge().stopGame();
         } catch (err) {
-          toast(`Stop failed: ${err.message}`, 'error');
+          toast(fmt(tr('play.stopFail', 'Stop failed: {msg}'), { msg: err.message }), 'error');
         }
       });
     }
@@ -247,17 +223,22 @@
         try {
           await bridge().openGameFolder();
         } catch (err) {
-          toast(`Cannot open folder: ${err.message}`, 'error');
+          toast(fmt(tr('play.folderFail', 'Cannot open folder: {msg}'), { msg: err.message }), 'error');
         }
       });
     }
 
     try {
       bridge().onLog((msg) => {
-        appendLine(logView(), msg?.stream || 'stdout', msg?.line || '', true);
-        appendLine(miniLog(), msg?.stream || 'stdout', msg?.line || '', false);
+        appendLine(miniLog(), msg?.stream || 'stdout', msg?.line || '');
+        document.dispatchEvent(new CustomEvent('game:log-line', {
+          detail: { stream: msg?.stream || 'stdout', line: msg?.line || '', instanceId: runningId }
+        }));
       });
-      bridge().onGameStatus((s) => setRunning(!!s?.running, s?.pid));
+      bridge().onGameStatus((s) => {
+        runningId = s?.running ? (s?.instanceId || runningId) : null;
+        setRunning(!!s?.running, s?.pid);
+      });
       bridge().onProgress((p) => {
         if (!p) return;
         if (p.phase === 'mods' || p.phase === 'settings') {

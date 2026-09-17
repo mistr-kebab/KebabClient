@@ -3,6 +3,20 @@
 (function () {
   const { bridge, toast, el } = window.launcherUtil;
 
+  function tr(key, fallback) {
+    try {
+      if (window.i18n) {
+        const v = window.i18n.t(key);
+        if (v && v !== key) return v;
+      }
+    } catch {}
+    return fallback;
+  }
+
+  function fmt(tpl, map) {
+    return String(tpl).replace(/\{(\w+)\}/g, (_, k) => (map && map[k] !== undefined ? map[k] : ''));
+  }
+
   const ACCENTS = {
     amber: { label: 'Amber', accent: '#e8a020', strong: '#f5b93c', rgb: '232, 160, 32', ink: '#1a1204' },
     crimson: { label: 'Crimson', accent: '#e5484d', strong: '#f2555a', rgb: '229, 72, 77', ink: '#1c0607' },
@@ -86,9 +100,9 @@
         try {
           await bridge().updateSettings({ theme: { accent: key, mode: currentMode } });
           applyTheme(key, currentMode);
-          toast(`Theme: ${p.label}.`, 'ok');
+          toast(fmt(tr('settings.themeSet', 'Theme: {name}.'), { name: p.label }), 'ok');
         } catch (err) {
-          toast(`Theme failed: ${err.message}`, 'error');
+          toast(fmt(tr('settings.themeFail', 'Theme failed: {msg}'), { msg: err.message }), 'error');
         }
       });
       row.appendChild(btn);
@@ -100,7 +114,7 @@
     try {
       data = await bridge().getSettings();
     } catch (err) {
-      toast(`Could not load settings: ${err.message}`, 'error');
+      toast(fmt(tr('settings.loadFail', 'Could not load settings: {msg}'), { msg: err.message }), 'error');
       return;
     }
     try {
@@ -128,7 +142,7 @@
       const dirInput = document.getElementById('dataDirInput');
       if (dirInput && data.dataDir && data.dataDir.custom) dirInput.value = data.dataDir.custom;
     } catch (err) {
-      toast(`Could not apply settings: ${err.message}`, 'error');
+      toast(fmt(tr('settings.applyFail', 'Could not apply settings: {msg}'), { msg: err.message }), 'error');
     }
   }
 
@@ -145,9 +159,9 @@
         try {
           await bridge().updateSettings({ theme: { accent: currentAccent, mode } });
           applyTheme(currentAccent, mode);
-          toast(`Appearance: ${mode}.`, 'ok');
+          toast(fmt(tr('settings.appearanceSet', 'Appearance: {mode}.'), { mode }), 'ok');
         } catch (err) {
-          toast(`Theme failed: ${err.message}`, 'error');
+          toast(fmt(tr('settings.themeFail', 'Theme failed: {msg}'), { msg: err.message }), 'error');
         }
       });
     });
@@ -162,7 +176,7 @@
           try { await bridge().refreshDiscord(); } catch {}
           toast(next === 'de' ? 'Sprache: Deutsch.' : 'Language: English.', 'ok');
         } catch (err) {
-          toast(`Language failed: ${err.message}`, 'error');
+          toast(fmt(tr('settings.langFail', 'Language failed: {msg}'), { msg: err.message }), 'error');
         }
       });
     });
@@ -180,11 +194,11 @@
               extraArgs: argsInput ? argsInput.value : ''
             }
           });
-          setStatus('javaStatus', 'Saved. Applies to the next launch.');
-          toast('Java settings saved.', 'ok');
+          setStatus('javaStatus', tr('settings.javaApplies', 'Saved. Applies to the next launch.'));
+          toast(tr('settings.javaSaved', 'Java settings saved.'), 'ok');
         } catch (err) {
           setStatus('javaStatus', err.message);
-          toast(`Save failed: ${err.message}`, 'error');
+          toast(fmt(tr('settings.saveFail', 'Save failed: {msg}'), { msg: err.message }), 'error');
         }
       });
     }
@@ -197,7 +211,7 @@
           const pathInput = document.getElementById('javaPathInput');
           if (pathInput) pathInput.value = res.path;
         } catch (err) {
-          toast(`Browse failed: ${err.message}`, 'error');
+          toast(fmt(tr('settings.browseFail', 'Browse failed: {msg}'), { msg: err.message }), 'error');
         }
       });
     }
@@ -209,11 +223,11 @@
           await bridge().updateSettings({
             downloads: { threads: threadSelect ? Number(threadSelect.value) : 8 }
           });
-          setStatus('downloadsStatus', 'Saved. Applies to the next download.');
-          toast('Download settings saved.', 'ok');
+          setStatus('downloadsStatus', tr('settings.dlApplies', 'Saved. Applies to the next download.'));
+          toast(tr('settings.dlSaved', 'Download settings saved.'), 'ok');
         } catch (err) {
           setStatus('downloadsStatus', err.message);
-          toast(`Save failed: ${err.message}`, 'error');
+          toast(fmt(tr('settings.saveFail', 'Save failed: {msg}'), { msg: err.message }), 'error');
         }
       });
     }
@@ -223,11 +237,12 @@
         const dirInput = document.getElementById('dataDirInput');
         try {
           const res = await bridge().setDataDir(dirInput ? dirInput.value : '');
-          setStatus('dataDirStatus', `Saved (${res.bootstrapFile}). Restart the app to use it. Nothing is moved automatically — use “Move everything here” to move now.`);
-          toast('Data directory saved. Restart to apply.', 'ok');
+          setStatus('dataDirStatus', fmt(tr('settings.dirSavedStatus', 'Saved ({file}). Restart the app to use it. Nothing is moved automatically — use “Move everything here” to move now.'), { file: res.bootstrapFile }));
+          toast(tr('settings.dirSaved', 'Data directory saved. Restart to apply.'), 'ok');
+          load().catch(() => {});
         } catch (err) {
           setStatus('dataDirStatus', err.message);
-          toast(`Save failed: ${err.message}`, 'error');
+          toast(fmt(tr('settings.saveFail', 'Save failed: {msg}'), { msg: err.message }), 'error');
         }
       });
     }
@@ -237,7 +252,7 @@
         try {
           await bridge().openDataFolder();
         } catch (err) {
-          toast(`Cannot open folder: ${err.message}`, 'error');
+          toast(fmt(tr('settings.openFail', 'Cannot open folder: {msg}'), { msg: err.message }), 'error');
         }
       });
     }
@@ -247,23 +262,23 @@
         const dirInput = document.getElementById('dataDirInput');
         const target = dirInput ? dirInput.value.trim() : '';
         if (!target) {
-          setStatus('dataDirStatus', 'Enter a destination path first.');
+          setStatus('dataDirStatus', tr('settings.needTarget', 'Enter a destination path first.'));
           return;
         }
-        if (!window.confirm(`Move ALL launcher data to\n${target}\nand switch over? The app must be restarted afterwards. Do not start the game during the move.`)) {
+        if (!window.confirm(fmt(tr('settings.moveConfirm', 'Move ALL launcher data to\n{target}\nand switch over? The app must be restarted afterwards. Do not start the game during the move.'), { target }))) {
           return;
         }
         moveDir.disabled = true;
-        setStatus('dataDirStatus', 'Moving data… do not close the app.');
+        setStatus('dataDirStatus', tr('settings.moving', 'Moving data… do not close the app.'));
         try {
           const res = await bridge().moveDataDir(target);
           const mb = Math.round((res.movedBytes || 0) / 1048576);
-          setStatus('dataDirStatus', `Moved ${res.movedFiles} files (${mb} MB) to ${res.dir}. Restart the app to use it.`);
-          toast(`Moved ${res.movedFiles} files. Restart to apply.`, 'ok');
+          setStatus('dataDirStatus', fmt(tr('settings.moved', 'Moved {n} files ({mb} MB) to {dir}. Restart the app to use it.'), { n: res.movedFiles, mb, dir: res.dir }));
+          toast(fmt(tr('settings.movedToast', 'Moved {n} files. Restart to apply.'), { n: res.movedFiles }), 'ok');
           load().catch(() => {});
         } catch (err) {
           setStatus('dataDirStatus', err.message);
-          toast(`Move failed: ${err.message}`, 'error');
+          toast(fmt(tr('settings.moveFail', 'Move failed: {msg}'), { msg: err.message }), 'error');
         } finally {
           moveDir.disabled = false;
         }

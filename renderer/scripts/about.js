@@ -21,14 +21,6 @@
     return 'de';
   }
 
-  function fmt(n) {
-    try {
-      return Number(n).toLocaleString(uiLang() === 'en' ? 'en-US' : 'de-DE');
-    } catch {
-      return String(n);
-    }
-  }
-
   function set(id, value) {
     const node = document.getElementById(id);
     if (node) node.textContent = value;
@@ -67,12 +59,6 @@
       }
     } else {
       set('aboutLatest', t('about.failed', 'Versionsabfrage fehlgeschlagen'));
-    }
-    const stats = await fetchJsonTimeout('https://kebabdev.de/api/stats.json');
-    if (stats && stats.activeUsers !== null && stats.activeUsers !== undefined) {
-      set('aboutUsers', fmt(stats.activeUsers));
-    } else {
-      set('aboutUsers', '–');
     }
   }
 
