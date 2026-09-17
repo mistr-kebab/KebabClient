@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https:; connect-src https:;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https:; connect-src https:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';">
   <title>KebabClient</title>
   <link rel="stylesheet" href="./styles/theme.css">
   <link rel="stylesheet" href="./styles/base.css">
@@ -36,7 +36,7 @@
         </button>
         <button type="button" class="nav-item" data-view="skins" data-i18n-title="nav.skins" title="Skins">
           <i data-lucide="shirt" class="nav-icon"></i>
-          <span class="rail-label">Skins</span>
+          <span class="rail-label" data-i18n="nav.skins">Skins</span>
         </button>
         <button type="button" class="nav-item" data-view="servers" data-i18n-title="nav.servers" title="Server">
           <i data-lucide="server" class="nav-icon"></i>
@@ -44,7 +44,7 @@
         </button>
         <button type="button" class="nav-item" data-view="logs" data-i18n-title="nav.logs" title="Logs">
           <i data-lucide="terminal" class="nav-icon"></i>
-          <span class="rail-label">Logs</span>
+          <span class="rail-label" data-i18n="nav.logs">Logs</span>
         </button>
       </nav>
       <div class="rail-foot">
@@ -83,13 +83,13 @@
             <span id="updateButtonLabel">Update</span>
           </button>
           <div class="window-controls" role="group" aria-label="Window">
-            <button type="button" class="titlebar-btn" id="minButton" title="Minimize">
+            <button type="button" class="titlebar-btn" id="minButton" title="Minimize" aria-label="Minimize">
               <i data-lucide="minus"></i>
             </button>
-            <button type="button" class="titlebar-btn" id="maxButton" title="Maximize">
+            <button type="button" class="titlebar-btn" id="maxButton" title="Maximize" aria-label="Maximize">
               <i data-lucide="square" id="maxButtonIcon"></i>
             </button>
-            <button type="button" class="titlebar-btn titlebar-close" id="closeButton" title="Close">
+            <button type="button" class="titlebar-btn titlebar-close" id="closeButton" title="Close" aria-label="Close">
               <i data-lucide="x"></i>
             </button>
           </div>
@@ -195,14 +195,14 @@
                 </span>
                 <span class="progress-label" id="dlProgressLabel"></span>
                 <div class="hero-actions">
-                  <button type="button" class="icon-btn" id="ensureButton" data-i18n-title="play.download" title="Client laden / prüfen">
+                  <button type="button" class="icon-btn" id="ensureButton" data-i18n-title="play.download" title="Client laden / prüfen" aria-label="Download or verify client" data-i18n-aria="play.download">
                     <i data-lucide="download"></i>
                   </button>
                   <button type="button" class="btn btn-play btn-hero" id="launchButton">
                     <i data-lucide="play" class="btn-icon"></i>
                     <span data-i18n="home.play">Spielen</span>
                   </button>
-                  <button type="button" class="icon-btn" id="stopButton" data-i18n-title="play.stop" title="Spiel stoppen" disabled>
+                  <button type="button" class="icon-btn" id="stopButton" data-i18n-title="play.stop" title="Spiel stoppen" aria-label="Stop game" data-i18n-aria="play.stop" disabled>
                     <i data-lucide="square"></i>
                   </button>
                 </div>
@@ -246,19 +246,19 @@
             <div class="panel" id="newInstancePanel" hidden>
               <h3 class="panel-title">
                 <i data-lucide="plus-circle" class="panel-icon"></i>
-                <span>Create instance</span>
+                <span data-i18n="instances.createTitle">Create instance</span>
               </h3>
               <div class="form-grid">
                 <label class="form-field" for="newInstanceName">
-                  <span>Name (optional — default: loader + version)</span>
+                  <span data-i18n="instances.nameLabel">Name (optional — default: loader + version)</span>
                   <input type="text" id="newInstanceName" class="input input-plain" placeholder="Empty = e.g. Fabric 1.21" autocomplete="off" spellcheck="false" maxlength="48">
                 </label>
                 <label class="form-field" for="newInstanceMc">
-                  <span>Minecraft version</span>
+                  <span data-i18n="instances.mcLabel">Minecraft version</span>
                   <select id="newInstanceMc" class="input input-plain"></select>
                 </label>
                 <label class="form-field" for="newInstanceLoader">
-                  <span>Loader</span>
+                  <span data-i18n="instances.loaderLabel">Loader</span>
                   <select id="newInstanceLoader" class="input input-plain">
                     <option value="vanilla">Vanilla</option>
                     <option value="fabric">Fabric</option>
@@ -268,13 +268,13 @@
                   </select>
                 </label>
               </div>
-              <p class="status-line" id="newInstanceNote">Fabric/Quilt install the latest stable loader for the chosen version.</p>
+              <p class="status-line" id="newInstanceNote" data-i18n="instances.note">Fabric/Quilt install the latest stable loader for the chosen version.</p>
               <div class="row">
                 <button type="button" class="btn btn-play btn-sm" id="createInstanceButton">
-                  <span>Create</span>
+                  <span data-i18n="instances.create">Create</span>
                 </button>
                 <button type="button" class="btn btn-ghost btn-sm" id="cancelInstanceButton">
-                  <span>Cancel</span>
+                  <span data-i18n="instances.cancel">Cancel</span>
                 </button>
               </div>
               <p class="status-line" id="newInstanceStatus"></p>
@@ -300,16 +300,16 @@
               <span class="instance-actions">
                 <button type="button" class="btn btn-primary" id="detailAddContentButton">
                   <i data-lucide="plus" class="btn-icon"></i>
-                  <span>Add content</span>
+                  <span data-i18n="detail.addContent">Add content</span>
                 </button>
                 <button type="button" class="btn btn-play" id="detailPlayButton">
                   <i data-lucide="play" class="btn-icon"></i>
                   <span data-i18n="home.play">Spielen</span>
                 </button>
-                <button type="button" class="icon-btn" id="detailIconButton" title="Change icon">
+                <button type="button" class="icon-btn" id="detailIconButton" title="Change icon" data-i18n-title="detail.changeIcon" aria-label="Change instance icon" data-i18n-aria="detail.changeIcon">
                   <i data-lucide="upload" class="btn-icon"></i>
                 </button>
-                <button type="button" class="icon-btn" id="detailIconClearButton" title="Reset icon" hidden>
+                <button type="button" class="icon-btn" id="detailIconClearButton" title="Reset icon" data-i18n-title="detail.resetIcon" aria-label="Reset instance icon" data-i18n-aria="detail.resetIcon" hidden>
                   <i data-lucide="x" class="btn-icon"></i>
                 </button>
               </span>
@@ -318,11 +318,11 @@
               <div class="panel-head">
                 <h3 class="panel-title">
                   <i data-lucide="hard-drive" class="panel-icon"></i>
-                  <span>Installed content</span>
+                  <span data-i18n="detail.installed">Installed content</span>
                 </h3>
                 <button type="button" class="btn btn-ghost btn-sm" id="detailReloadButton">
                   <i data-lucide="rotate-ccw" class="btn-icon"></i>
-                  <span>Reload</span>
+                  <span data-i18n="detail.reload">Reload</span>
                 </button>
               </div>
               <h4 class="group-title">Mods</h4>
@@ -338,14 +338,14 @@
             <div class="row">
               <button type="button" class="btn btn-ghost btn-sm" id="detailAddBackButton">
                 <i data-lucide="arrow-left" class="btn-icon"></i>
-                <span data-i18n="nav.instances">Instanzen</span>
+                <span data-i18n="crumb.instance-detail">Instanz</span>
               </button>
             </div>
             <div class="panel">
               <div class="panel-head">
                 <h3 class="panel-title">
                   <i data-lucide="plus-circle" class="panel-icon"></i>
-                  <span id="detailSearchTitle">Add content</span>
+                  <span id="detailSearchTitle" data-i18n="addContent.title">Add content</span>
                 </h3>
               </div>
               <div class="toolbar">
@@ -462,18 +462,18 @@
 
           <section class="view" id="view-servers" aria-label="Servers">
             <h1 class="section-title" data-i18n="servers.title">Server</h1>
-            <p class="page-sub">Added servers are written into every instance's server list automatically, before every launch.</p>
+            <p class="page-sub" data-i18n="servers.sub">Added servers are written into every instance's server list automatically, before every launch.</p>
             <div class="panel server-form-panel">
               <h3 class="panel-title">
                 <i data-lucide="plus-circle" class="panel-icon"></i>
-                <span>Add server</span>
+                <span data-i18n="servers.addTitle">Add server</span>
               </h3>
               <div class="server-form">
                 <input type="text" id="serverNameInput" class="input input-plain" placeholder="Server name" autocomplete="off" spellcheck="false">
                 <input type="text" id="serverIpInput" class="input input-plain" placeholder="IP or address:port" autocomplete="off" spellcheck="false">
                 <button type="button" class="btn btn-play btn-sm" id="serverAddButton">
                   <i data-lucide="plus" class="btn-icon"></i>
-                  <span>Add</span>
+                  <span data-i18n="servers.add">Add</span>
                 </button>
               </div>
               <p class="status-line" id="serverFormStatus"></p>
@@ -642,7 +642,7 @@
     </div>
 
     <div class="drawer-backdrop" id="drawerBackdrop" hidden></div>
-    <aside class="drawer" id="accountDrawer" aria-label="Account and instance" hidden>
+    <aside class="drawer" id="accountDrawer" role="dialog" aria-modal="true" aria-label="Account and instance" hidden>
       <div class="drawer-head">
         <h3 class="panel-title">
           <i data-lucide="user" class="panel-icon"></i>

@@ -231,6 +231,7 @@ function deleteInstance(id) {
   const instances = listInstances();
   const entry = instances.find((i) => i.id === id);
   if (!entry) throw new Error('Instance not found.');
+  if (isGameRunning()) throw new Error('Stop the game before deleting the instance.');
   const rest = instances.filter((i) => i.id !== id);
   const state = loadState();
   const nextActive = state.activeInstanceId === id

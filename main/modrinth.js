@@ -117,6 +117,16 @@ function pickVersion(versions, preferredLoaders) {
   return ranked.find(matches) || ranked[0] || null;
 }
 
+function sanitizeContentFilename(filename, exts) {
+  const base = path.basename(String(filename || ''));
+  if (!base || base === '.' || base === '..') throw new Error('Invalid content filename.');
+  if (base.includes('\0')) throw new Error('Invalid content filename.');
+  const lower = base.toLowerCase();
+  const ok = (exts || []).some((e) => lower.endsWith(e.toLowerCase()));
+  if (!ok) throw new Error(`Unexpected file extension: ${base}`);
+  return base;
+}
+
 async function downloadToFile(url, dest) {
   fs.mkdirSync(path.dirname(dest), { recursive: true });
   const res = await fetch(url, { headers: { 'User-Agent': clientUA() } });
@@ -148,8 +158,9 @@ async function installMod(projectId, versionId, instanceId, onStep, category) {
   if (!primary?.url) throw new Error(`Selected ${cat.label} version has no downloadable file.`);
 
   const dir = contentDir(instance.id, cat.key);
-  const dest = path.join(dir, primary.filename);
-  onStep && onStep({ phase: 'download', label: `Downloading ${primary.filename}` });
+  const safeName = sanitizeContentFilename(primary.filename, cat.exts);
+  const dest = path.join(dir, safeName);
+  onStep && onStep({ phase: 'download', label: `Downloading ${safeName}` });
   await downloadToFile(primary.url, dest);
 
   async function fetchPinnedVersion(projectId, versionId) {
@@ -181,18 +192,19 @@ async function installMod(projectId, versionId, instanceId, onStep, category) {
         depProblems.push(`${dep.project_id}: no downloadable file`);
         continue;
       }
-      const depDest = path.join(dir, depFile.filename);
+      const depSafe = sanitizeContentFilename(depFile.filename, cat.exts);
+      const depDest = path.join(dir, depSafe);
       if (!fs.existsSync(depDest)) {
-        onStep && onStep({ phase: 'dependency', label: `Installing dependency ${depFile.filename}` });
+        onStep && onStep({ phase: 'dependency', label: `Installing dependency ${depSafe}` });
         await downloadToFile(depFile.url, depDest);
-        installedDeps.push(depFile.filename);
+        installedDeps.push(depSafe);
       }
     } catch (err) {
       depProblems.push(`${dep.project_id}: ${err.message}`);
     }
   }
 
-  return { file: primary.filename, version: version.version_number, dependencies: installedDeps, depProblems };
+  return { file: safeName, version: version.version_number, dependencies: installedDeps, depProblems };
 }
 
 function listDir(dir, exts) {
@@ -202,14 +214,19 @@ function listDir(dir, exts) {
   } catch {
     return [];
   }
-  return entries
-    .filter((f) => exts.some((e) => f.toLowerCase().endsWith(e)))
-    .map((f) => {
-      const full = path.join(dir, f);
+  const out = [];
+  for (const f of entries) {
+    if (!exts.some((e) => f.toLowerCase().endsWith(e))) continue;
+    const full = path.join(dir, f);
+    try {
       const stat = fs.statSync(full);
-      return { file: f, size: stat.size, mtime: stat.mtimeMs };
-    })
-    .sort((a, b) => a.file.localeCompare(b.file));
+      if (!stat.isFile()) continue;
+      out.push({ file: f, size: stat.size, mtime: stat.mtimeMs });
+    } catch {
+      continue;
+    }
+  }
+  return out.sort((a, b) => a.file.localeCompare(b.file));
 }
 
 function listInstalled(instanceId, category) {

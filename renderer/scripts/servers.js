@@ -7,7 +7,7 @@
     const s = document.getElementById('serverFormStatus');
     if (!s) return;
     s.textContent = text;
-    s.style.color = isError ? 'var(--danger)' : '';
+    s.classList.toggle('is-error', !!isError);
   }
 
   const statusByIp = new Map();
@@ -142,14 +142,31 @@
 
   let editingId = null;
 
+  function tr(key, fallback) {
+    try {
+      if (window.i18n) {
+        const v = window.i18n.t(key);
+        if (v && v !== key) return v;
+      }
+    } catch {}
+    return fallback;
+  }
+
+  function paintAddButton() {
+    const addBtn = document.getElementById('serverAddButton');
+    const span = addBtn ? addBtn.querySelector('span') : null;
+    if (!span) return;
+    if (editingId) span.textContent = tr('servers.save', 'Save changes');
+    else span.textContent = tr('servers.add', 'Add');
+  }
+
   function startEdit(server) {
     editingId = server.id;
     const nameInput = document.getElementById('serverNameInput');
     const ipInput = document.getElementById('serverIpInput');
-    const addBtn = document.getElementById('serverAddButton');
     if (nameInput) nameInput.value = server.name;
     if (ipInput) ipInput.value = server.ip;
-    if (addBtn) addBtn.querySelector('span').textContent = 'Save changes';
+    paintAddButton();
     formStatus(`Editing “${server.name}”.`);
   }
 
@@ -157,10 +174,9 @@
     editingId = null;
     const nameInput = document.getElementById('serverNameInput');
     const ipInput = document.getElementById('serverIpInput');
-    const addBtn = document.getElementById('serverAddButton');
     if (nameInput) nameInput.value = '';
     if (ipInput) ipInput.value = '';
-    if (addBtn) addBtn.querySelector('span').textContent = 'Add';
+    paintAddButton();
   }
 
   async function reload() {
@@ -231,6 +247,7 @@
     document.addEventListener('view:shown', (e) => {
       if (e && e.detail && e.detail.view === 'servers') pingAll();
     });
+    document.addEventListener('i18n:applied', () => paintAddButton());
     reload();
   });
 })();

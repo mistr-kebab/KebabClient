@@ -15,6 +15,7 @@
 
   let headDataUrl = null;
   let headRequested = false;
+  let signedIn = false;
 
   function paintHeads() {
     try {
@@ -53,12 +54,14 @@
     const initial = profile && profile.name ? profile.name.slice(0, 1).toUpperCase() : '?';
     avatarEls.forEach((avatarEl) => { avatarEl.textContent = initial; });
     if (profile && profile.name) {
+      signedIn = true;
       nameEl.textContent = profile.name;
       stateEl.textContent = 'Microsoft connected';
       if (chipNameEl) chipNameEl.textContent = profile.name;
       if (btnLabel) btnLabel.textContent = 'Sign out';
       refreshHeadshot();
     } else {
+      signedIn = false;
       nameEl.textContent = t('topbar.signin', 'Not signed in');
       stateEl.textContent = 'Microsoft only';
       if (chipNameEl) chipNameEl.textContent = t('topbar.signin', 'Not signed in');
@@ -80,8 +83,6 @@
 
   async function onAuthButton() {
     const btn = document.getElementById('authButton');
-    const label = btn ? btn.querySelector('span:last-child') : null;
-    const signedIn = label && label.textContent === 'Sign out';
     if (btn) btn.disabled = true;
     try {
       if (signedIn) {

@@ -2,3 +2,9 @@ node_modules/
 dist/
 .env
 *.log
+*.exe
+*.blockmap
+latest*.yml
+secrets.bin
+launcher-state.json
+.datadir

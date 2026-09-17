@@ -35,6 +35,10 @@ function createWindow() {
       preload: path.join(__dirname, '..', 'preload', 'preload.js')
     }
   });
+  mainWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    if (!url.startsWith('file://')) event.preventDefault();
+  });
   mainWindow.loadFile(path.join(__dirname, '..', 'renderer', 'index.html'));
   mainWindow.on('closed', () => { mainWindow = null; });
   mainWindow.on('maximize', () => broadcast('window:maxState', { maximized: true }));
@@ -169,11 +173,19 @@ function registerIpc() {
   });
 
   ipcMain.handle('meta:mcVersions', async () => {
-    const manifest = await (await fetch(config.URLS.pistonMetaManifest)).json();
-    return (manifest.versions || [])
-      .filter((v) => v.type === 'release')
-      .slice(0, 40)
-      .map((v) => v.id);
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 15000);
+    try {
+      const res = await fetch(config.URLS.pistonMetaManifest, { signal: ctrl.signal });
+      if (!res.ok) throw new Error(`Version manifest failed (${res.status}).`);
+      const manifest = await res.json();
+      return (manifest.versions || [])
+        .filter((v) => v.type === 'release')
+        .slice(0, 40)
+        .map((v) => v.id);
+    } finally {
+      clearTimeout(timer);
+    }
   });
   ipcMain.handle('meta:loaders', async (_e, args) => {
     const mc = String(args?.mc || '').trim();
@@ -233,8 +245,12 @@ function registerIpc() {
   ipcMain.handle('skins:preview', async () => skins.getPreview());
   ipcMain.handle('skins:capes', async () => skins.getSkinState().then((s) => s.capes));
   ipcMain.handle('skins:upload', async (_e, args) => {
-    const buf = Buffer.from(args?.dataBase64 || '', 'base64');
+    const raw = String(args?.dataBase64 || '');
+    if (!raw.length) throw new Error('No skin data received.');
+    if (raw.length > 7 * 1024 * 1024) throw new Error('Skin data is too large (max ~5 MB).');
+    const buf = Buffer.from(raw, 'base64');
     if (!buf.length) throw new Error('No skin data received.');
+    if (buf.length > 5 * 1024 * 1024) throw new Error('Skin file is too large (max 5 MB).');
     return skins.uploadSkin(buf, args?.variant || 'classic');
   });
   ipcMain.handle('skins:pickFile', async () => {

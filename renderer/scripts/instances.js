@@ -107,7 +107,7 @@
       tile.setAttribute('role', 'button');
       tile.setAttribute('aria-label', `Select instance ${instance.name}`);
       const banner = el('div', 'tile-banner');
-      banner.style.backgroundImage = `url("${tileBanner(instance)}")`;
+      banner.style.backgroundImage = `url("${String(tileBanner(instance)).replace(/"/g, '%22')}")`;
       banner.setAttribute('aria-hidden', 'true');
       banner.appendChild(badge(instance));
       if (instance.iconDataUrl) {
@@ -210,8 +210,12 @@
           toast(`Select failed: ${err.message}`, 'error');
         }
       };
-      tile.addEventListener('click', select);
+      tile.addEventListener('click', (e) => {
+        if (e.target && e.target.closest && e.target.closest('button')) return;
+        select();
+      });
       tile.addEventListener('keydown', (e) => {
+        if (e.target !== tile) return;
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           select();

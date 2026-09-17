@@ -63,7 +63,11 @@ function readBootstrapDir() {
 
 function dataDir() {
   const fromEnv = (process.env.KEBAB_DATA_DIR || '').trim();
-  if (fromEnv && path.isAbsolute(fromEnv)) return fromEnv;
+  if (fromEnv && path.isAbsolute(fromEnv)) {
+    const resolved = path.resolve(fromEnv);
+    const root = path.parse(resolved).root;
+    if (resolved !== root) return resolved;
+  }
   return readBootstrapDir() || defaultDataDir();
 }
 

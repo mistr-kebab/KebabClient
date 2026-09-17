@@ -125,6 +125,16 @@ function pickVersion(versions, preferredLoaders) {
   return ranked.find(matches) || ranked[0] || null;
 }
 
+function sanitizeContentFilename(filename, exts) {
+  const base = path.basename(String(filename || ''));
+  if (!base || base === '.' || base === '..') throw new Error('Invalid content filename.');
+  if (base.includes('\0')) throw new Error('Invalid content filename.');
+  const lower = base.toLowerCase();
+  const ok = (exts || []).some((e) => lower.endsWith(e.toLowerCase()));
+  if (!ok) throw new Error(`Unexpected file extension: ${base}`);
+  return base;
+}
+
 async function downloadToFile(url, dest) {
   fs.mkdirSync(path.dirname(dest), { recursive: true });
   const res = await fetch(url, { headers: { 'User-Agent': clientUA() } });
@@ -142,6 +152,15 @@ async function downloadToFile(url, dest) {
   fs.renameSync(tmp, dest);
 }
 
+async function verifySha512(file, expected) {
+  if (!expected) return;
+  const actual = await sha512File(file);
+  if (actual.toLowerCase() !== String(expected).toLowerCase()) {
+    try { fs.unlinkSync(file); } catch {}
+    throw new Error(`Checksum mismatch for ${path.basename(file)} (expected sha512).`);
+  }
+}
+
 async function installMod(projectId, versionId, instanceId, onStep, category, meta) {
   const cat = categoryOf(category);
   const instance = resolveInstance(instanceId);
@@ -155,16 +174,18 @@ async function installMod(projectId, versionId, instanceId, onStep, category, me
   const primary = (version.files || []).find((f) => f.primary) || version.files[0];
   if (!primary?.url) throw new Error(`Selected ${cat.label} version has no downloadable file.`);
 
+  const safeName = sanitizeContentFilename(primary.filename, cat.exts);
   const dir = contentDir(instance.id, cat.key);
-  const dest = path.join(dir, primary.filename);
-  onStep && onStep({ phase: 'download', label: `Downloading ${primary.filename}` });
+  const dest = path.join(dir, safeName);
+  onStep && onStep({ phase: 'download', label: `Downloading ${safeName}` });
   await downloadToFile(primary.url, dest);
+  await verifySha512(dest, primary.hashes?.sha512);
 
   try {
     const dirMeta = loadMeta(dir);
-    dirMeta[primary.filename] = {
+    dirMeta[safeName] = {
       v: META_VERSION,
-      title: (meta && meta.title) || prettifyFilename(primary.filename),
+      title: (meta && meta.title) || prettifyFilename(safeName),
       icon: (meta && meta.icon) || null,
       projectId,
       version: version.version_number || null
@@ -176,7 +197,7 @@ async function installMod(projectId, versionId, instanceId, onStep, category, me
   const installedDeps = depResult.installedDeps;
   const depProblems = depResult.depProblems;
 
-  return { file: primary.filename, version: version.version_number, projectId, dependencies: installedDeps, depProblems };
+  return { file: safeName, version: version.version_number, projectId, dependencies: installedDeps, depProblems };
 }
 
 function sha512File(file) {
@@ -234,11 +255,24 @@ async function installRequiredDeps(version, loaders, mc, dir, onStep) {
         depProblems.push(`${dep.project_id}: no downloadable file`);
         continue;
       }
-      const depDest = path.join(dir, depFile.filename);
+      let depSafe;
+      try {
+        depSafe = sanitizeContentFilename(depFile.filename, CATEGORIES.mod.exts);
+      } catch (err) {
+        depProblems.push(`${dep.project_id}: ${err.message}`);
+        continue;
+      }
+      const depDest = path.join(dir, depSafe);
       if (!fs.existsSync(depDest)) {
-        onStep && onStep({ phase: 'dependency', label: `Installing dependency ${depFile.filename}` });
+        onStep && onStep({ phase: 'dependency', label: `Installing dependency ${depSafe}` });
         await downloadToFile(depFile.url, depDest);
-        installedDeps.push(depFile.filename);
+        try {
+          await verifySha512(depDest, depFile.hashes?.sha512);
+        } catch (err) {
+          depProblems.push(`${dep.project_id}: ${err.message}`);
+          continue;
+        }
+        installedDeps.push(depSafe);
       }
     } catch (err) {
       depProblems.push(`${dep.project_id}: ${err.message}`);
@@ -431,14 +465,19 @@ function listDir(dir, exts) {
   } catch {
     return [];
   }
-  return entries
-    .filter((f) => f !== META_FILE && matchesExt(f, exts))
-    .map((f) => {
-      const full = path.join(dir, f);
+  const out = [];
+  for (const f of entries) {
+    if (f === META_FILE || !matchesExt(f, exts)) continue;
+    const full = path.join(dir, f);
+    try {
       const stat = fs.statSync(full);
-      return { file: f, size: stat.size, mtime: stat.mtimeMs };
-    })
-    .sort((a, b) => a.file.localeCompare(b.file));
+      if (!stat.isFile()) continue;
+      out.push({ file: f, size: stat.size, mtime: stat.mtimeMs });
+    } catch {
+      continue;
+    }
+  }
+  return out.sort((a, b) => a.file.localeCompare(b.file));
 }
 
 function listInstalled(instanceId, category) {

@@ -5,6 +5,7 @@ const { autoUpdater } = require('electron-updater');
 
 let send = () => {};
 let started = false;
+let downloaded = false;
 
 function emit(state, data) {
   try {
@@ -56,6 +57,7 @@ function initUpdater(broadcast) {
     emit('downloading', { percent: pct, transferred: p?.transferred || 0, total: p?.total || 0 });
   });
   autoUpdater.on('update-downloaded', (info) => {
+    downloaded = true;
     emit('ready', { version: info?.version || '' });
   });
   autoUpdater.on('error', (err) => {
@@ -82,11 +84,20 @@ function repeat(fn, ms) {
 
 async function downloadUpdate() {
   if (!isSupported()) throw new Error('No update source configured.');
+  if (downloaded) return { ok: true, already: true };
   await autoUpdater.downloadUpdate();
   return { ok: true };
 }
 
 function installUpdate() {
+  if (!isSupported()) throw new Error('No update source configured.');
+  if (!downloaded) throw new Error('No update downloaded yet. Download the update first.');
+  try {
+    const minecraft = require('./minecraft');
+    if (minecraft.isRunning()) throw new Error('Stop the game before installing the update.');
+  } catch (err) {
+    if (/Stop the game/.test(err.message)) throw err;
+  }
   try {
     autoUpdater.quitAndInstall(true, true);
   } catch {

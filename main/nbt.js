@@ -20,11 +20,13 @@ function i32be(n) {
 
 function nbtName(name) {
   const bytes = Buffer.from(String(name ?? ''), 'utf8');
+  if (bytes.length > 65535) throw new Error('NBT name too long.');
   return Buffer.concat([u16be(bytes.length), bytes]);
 }
 
 function stringPayload(value) {
   const bytes = Buffer.from(String(value ?? ''), 'utf8');
+  if (bytes.length > 65535) throw new Error('NBT string too long (max 65535 bytes).');
   return Buffer.concat([u16be(bytes.length), bytes]);
 }
 

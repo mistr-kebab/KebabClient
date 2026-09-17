@@ -34,37 +34,46 @@
     if (node) node.textContent = value;
   }
 
+  async function fetchJsonTimeout(url, timeoutMs = 8000) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+    try {
+      const res = await fetch(url, {
+        headers: { Accept: 'application/json' },
+        signal: ctrl.signal
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
   async function load() {
     try {
       const v = await bridge().appVersion();
       if (v && v.version) set('aboutVersion', 'v' + String(v.version).replace(/^v/, ''));
     } catch {}
-    try {
-      const res = await fetch('https://kebabdev.de/api/latest.json', {
-        headers: { Accept: 'application/json' },
-      });
-      if (res.ok) {
-        const d = await res.json();
-        if (d && d.version) set('aboutLatest', 'v' + String(d.version).replace(/^v/, ''));
-        const notes = d && d.changelog && (d.changelog[uiLang()] || d.changelog.de);
-        const box = document.getElementById('aboutChangelog');
-        if (box && notes) {
-          box.textContent = String(notes);
-          box.hidden = false;
-        }
+    const latest = await fetchJsonTimeout('https://kebabdev.de/api/latest.json');
+    if (latest && latest.version) {
+      set('aboutLatest', 'v' + String(latest.version).replace(/^v/, ''));
+      const notes = latest.changelog && (latest.changelog[uiLang()] || latest.changelog.de);
+      const box = document.getElementById('aboutChangelog');
+      if (box && notes) {
+        box.textContent = String(notes);
+        box.hidden = false;
       }
-    } catch {}
-    try {
-      const res = await fetch('https://kebabdev.de/api/stats.json', {
-        headers: { Accept: 'application/json' },
-      });
-      if (res.ok) {
-        const d = await res.json();
-        if (d && d.activeUsers !== null && d.activeUsers !== undefined) {
-          set('aboutUsers', fmt(d.activeUsers));
-        }
-      }
-    } catch {}
+    } else {
+      set('aboutLatest', t('about.failed', 'Versionsabfrage fehlgeschlagen'));
+    }
+    const stats = await fetchJsonTimeout('https://kebabdev.de/api/stats.json');
+    if (stats && stats.activeUsers !== null && stats.activeUsers !== undefined) {
+      set('aboutUsers', fmt(stats.activeUsers));
+    } else {
+      set('aboutUsers', '–');
+    }
   }
 
   document.addEventListener('DOMContentLoaded', () => {

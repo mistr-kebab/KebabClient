@@ -82,7 +82,6 @@
       btn.dataset.accent = key;
       btn.title = p.label;
       btn.setAttribute('aria-label', `${p.label} accent`);
-      btn.style.background = p.accent;
       btn.addEventListener('click', async () => {
         try {
           await bridge().updateSettings({ theme: { accent: key, mode: currentMode } });
@@ -104,26 +103,33 @@
       toast(`Could not load settings: ${err.message}`, 'error');
       return;
     }
-    const s = data.settings;
-    currentLanguage = s.language === 'en' ? 'en' : 'de';
-    if (window.i18n) window.i18n.initLanguage(currentLanguage);
-    applyTheme(s.theme.accent, s.theme.mode);
-    renderSwatches(s.theme.accent);
-    fillSelect('javaRamSelect', data.ramOptions || [2, 4, 6, 8, 12, 16], s.java.xmx, ' GB');
-    fillSelect('threadSelect', data.threadOptions || [2, 4, 8, 16], s.downloads.threads, '');
-    const javaPath = document.getElementById('javaPathInput');
-    const javaArgs = document.getElementById('javaArgsInput');
-    if (javaPath) javaPath.value = s.java.path || '';
-    if (javaArgs) javaArgs.value = s.java.extraArgs || '';
-    const dirLabel = document.getElementById('dataDirLabel');
-    if (dirLabel) {
-      const suffix = data.dataDir.source === 'env'
-        ? ' (from environment)'
-        : data.dataDir.custom ? ' (custom)' : ' (default)';
-      dirLabel.textContent = data.dataDir.current + suffix;
+    try {
+      const s = (data && data.settings) || {};
+      currentLanguage = s.language === 'en' ? 'en' : 'de';
+      if (window.i18n) window.i18n.initLanguage(currentLanguage);
+      applyTheme(s.theme && s.theme.accent, s.theme && s.theme.mode);
+      renderSwatches(s.theme && s.theme.accent);
+      fillSelect('javaRamSelect', data.ramOptions || [2, 4, 6, 8, 12, 16], s.java && s.java.xmx, ' GB');
+      fillSelect('threadSelect', data.threadOptions || [2, 4, 8, 16], s.downloads && s.downloads.threads, '');
+      const javaPath = document.getElementById('javaPathInput');
+      const javaArgs = document.getElementById('javaArgsInput');
+      if (javaPath) javaPath.value = (s.java && s.java.path) || '';
+      if (javaArgs) javaArgs.value = (s.java && s.java.extraArgs) || '';
+      const dirLabel = document.getElementById('dataDirLabel');
+      if (dirLabel) {
+        const current = (data.dataDir && data.dataDir.current) || '';
+        const source = data.dataDir && data.dataDir.source;
+        const custom = data.dataDir && data.dataDir.custom;
+        const suffix = source === 'env'
+          ? ' (from environment)'
+          : custom ? ' (custom)' : ' (default)';
+        dirLabel.textContent = current + suffix;
+      }
+      const dirInput = document.getElementById('dataDirInput');
+      if (dirInput && data.dataDir && data.dataDir.custom) dirInput.value = data.dataDir.custom;
+    } catch (err) {
+      toast(`Could not apply settings: ${err.message}`, 'error');
     }
-    const dirInput = document.getElementById('dataDirInput');
-    if (dirInput && data.dataDir.custom) dirInput.value = data.dataDir.custom;
   }
 
   function setStatus(id, text) {
@@ -254,7 +260,7 @@
           const mb = Math.round((res.movedBytes || 0) / 1048576);
           setStatus('dataDirStatus', `Moved ${res.movedFiles} files (${mb} MB) to ${res.dir}. Restart the app to use it.`);
           toast(`Moved ${res.movedFiles} files. Restart to apply.`, 'ok');
-          load();
+          load().catch(() => {});
         } catch (err) {
           setStatus('dataDirStatus', err.message);
           toast(`Move failed: ${err.message}`, 'error');
@@ -263,6 +269,6 @@
         }
       });
     }
-    load();
+    load().catch(() => {});
   });
 })();

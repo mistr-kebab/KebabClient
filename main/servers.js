@@ -53,11 +53,22 @@ function syncToAllInstances(servers) {
   return servers || listServers();
 }
 
+const MAX_NAME_LEN = 128;
+const MAX_IP_LEN = 256;
+
+function assertServerFields(name, ip) {
+  if (!name) throw new Error('Server name is required.');
+  if (!ip) throw new Error('Server IP is required.');
+  if (name.length > MAX_NAME_LEN) throw new Error(`Server name is too long (max ${MAX_NAME_LEN}).`);
+  if (ip.length > MAX_IP_LEN) throw new Error(`Server IP is too long (max ${MAX_IP_LEN}).`);
+  if (Buffer.byteLength(name, 'utf8') > 2000) throw new Error('Server name is too long (UTF-8).');
+  if (Buffer.byteLength(ip, 'utf8') > 2000) throw new Error('Server IP is too long (UTF-8).');
+}
+
 function addServer(name, ip) {
   const cleanName = String(name || '').trim();
   const cleanIp = String(ip || '').trim();
-  if (!cleanName) throw new Error('Server name is required.');
-  if (!cleanIp) throw new Error('Server IP is required.');
+  assertServerFields(cleanName, cleanIp);
   const servers = listServers();
   servers.push({ id: crypto.randomUUID(), name: cleanName, ip: cleanIp });
   return saveServers(servers);
@@ -70,11 +81,13 @@ function updateServer(id, name, ip) {
   if (name !== undefined) {
     const cleanName = String(name).trim();
     if (!cleanName) throw new Error('Server name is required.');
+    if (cleanName.length > MAX_NAME_LEN) throw new Error(`Server name is too long (max ${MAX_NAME_LEN}).`);
     entry.name = cleanName;
   }
   if (ip !== undefined) {
     const cleanIp = String(ip).trim();
     if (!cleanIp) throw new Error('Server IP is required.');
+    if (cleanIp.length > MAX_IP_LEN) throw new Error(`Server IP is too long (max ${MAX_IP_LEN}).`);
     entry.ip = cleanIp;
   }
   return saveServers(servers);

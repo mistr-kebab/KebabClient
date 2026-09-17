@@ -1,6 +1,6 @@
 {
   "name": "kebabclient",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "Minimal Electron Minecraft launcher (MVP): Microsoft auth, 26.1.2 instance, Modrinth mods, skins/capes.",
   "license": "MIT",
   "main": "main/index.js",
@@ -18,8 +18,7 @@
       "main/**/*",
       "preload/**/*",
       "renderer/**/*",
-      "package.json",
-      ".env"
+      "package.json"
     ],
     "win": {
       "icon": "renderer/assets/icon.ico",

@@ -1345,3 +1345,14 @@ button.skin-card {
   height: 36px;
   color: var(--text-faint);
 }
+
+:root[data-theme="light"] .mini-log,
+:root[data-theme="light"] .log-view {
+  background: #17171a;
+  color: #e8e4d8;
+}
+
+:root[data-theme="light"] .skin-stage,
+:root[data-theme="light"] .skin-card-preview {
+  background: radial-gradient(80% 80% at 50% 30%, #2a2a30 0%, #141416 70%);
+}

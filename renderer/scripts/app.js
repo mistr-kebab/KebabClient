@@ -86,10 +86,14 @@
     document.addEventListener('i18n:applied', () => {
       const crumb = document.getElementById('crumbView');
       if (crumb) crumb.textContent = crumbName(currentView);
+      const running = document.getElementById('runPill')?.classList.contains('is-running');
       const pill = document.getElementById('runPillText');
       if (pill) {
-        const running = document.getElementById('runPill')?.classList.contains('is-running');
         pill.textContent = running ? tr('topbar.running', 'Instance running') : tr('topbar.idle', 'No instances running');
+      }
+      for (const id of ['sideStatus', 'heroStatusText', 'homeActiveState']) {
+        const node = document.getElementById(id);
+        if (node) node.textContent = running ? tr('status.running', 'Running') : tr('status.idle', 'Idle');
       }
     });
   }

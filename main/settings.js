@@ -39,7 +39,15 @@ function sanitizeJava(j) {
   }
   const xmx = Number(j?.xmx);
   out.xmx = RAM_OPTIONS.includes(xmx) ? xmx : 4;
-  out.extraArgs = String(j?.extraArgs || '').trim().slice(0, 500);
+  const rawArgs = String(j?.extraArgs || '').trim().slice(0, 500);
+  const kept = [];
+  for (const token of rawArgs.split(/\s+/).filter(Boolean)) {
+    if (token.includes('\0')) continue;
+    if (/javaagent/i.test(token)) continue;
+    if (/^(-agentlib|-agentpath|-Xbootclasspath|-Xrunjdwp)/i.test(token)) continue;
+    kept.push(token);
+  }
+  out.extraArgs = kept.join(' ');
   return out;
 }
 
@@ -51,9 +59,15 @@ function sanitizeDownloads(d) {
 function getSettings() {
   const state = loadState();
   const s = state.settings || {};
+  let java;
+  try {
+    java = sanitizeJava(s.java || {});
+  } catch {
+    java = { ...DEFAULTS.java };
+  }
   return {
     theme: sanitizeTheme(s.theme),
-    java: { ...DEFAULTS.java, ...(s.java || {}) },
+    java,
     downloads: sanitizeDownloads(s.downloads),
     language: sanitizeLanguage(s.language)
   };
@@ -136,10 +150,23 @@ function writeBootstrap(dir) {
   return file;
 }
 
+function assertUsableDataDir(clean) {
+  const resolved = path.resolve(clean);
+  const root = path.parse(resolved).root;
+  if (resolved === root) throw new Error('Directory must not be a drive root.');
+  const lower = resolved.toLowerCase();
+  const winDir = (process.env.SystemRoot || 'C:\\Windows').toLowerCase();
+  if (lower === winDir || lower.startsWith(winDir + path.sep)) {
+    throw new Error('System directory cannot be used as data directory.');
+  }
+  return resolved;
+}
+
 function setDataDir(dir) {
   const clean = String(dir || '').trim();
   if (!clean) throw new Error('Directory is required.');
   if (!path.isAbsolute(clean)) throw new Error('Directory must be an absolute path.');
+  assertUsableDataDir(clean);
   try {
     fs.mkdirSync(clean, { recursive: true });
   } catch (err) {
@@ -176,13 +203,22 @@ function moveDataDir(dir, onStep) {
   const clean = String(dir || '').trim();
   if (!clean) throw new Error('Directory is required.');
   if (!path.isAbsolute(clean)) throw new Error('Directory must be an absolute path.');
+  assertUsableDataDir(clean);
   if (require('./minecraft').isRunning()) {
     throw new Error('Stop the game before moving data.');
   }
   const { dataDir } = require('./config');
   const src = dataDir();
-  if (path.resolve(src) === path.resolve(clean)) {
+  const resolvedSrc = path.resolve(src);
+  const resolvedDst = path.resolve(clean);
+  if (resolvedSrc === resolvedDst) {
     throw new Error('Source and destination are the same directory.');
+  }
+  const relSrcToDst = path.relative(resolvedSrc, resolvedDst);
+  const relDstToSrc = path.relative(resolvedDst, resolvedSrc);
+  if ((relSrcToDst && !relSrcToDst.startsWith('..') && !path.isAbsolute(relSrcToDst)) ||
+      (relDstToSrc && !relDstToSrc.startsWith('..') && !path.isAbsolute(relDstToSrc))) {
+    throw new Error('Destination must not be inside the source directory (or vice versa).');
   }
   if (!fs.existsSync(src)) {
     fs.mkdirSync(clean, { recursive: true });

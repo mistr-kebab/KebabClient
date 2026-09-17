@@ -65,6 +65,13 @@ function makeTally() {
   return tally;
 }
 
+function writeJsonAtomic(file, obj) {
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  const tmp = `${file}.tmp-${process.pid}-${Date.now().toString(36)}-${(tmpCounter = (tmpCounter + 1) % 100000)}`;
+  fs.writeFileSync(tmp, JSON.stringify(obj), 'utf8');
+  fs.renameSync(tmp, file);
+}
+
 async function fetchJson(url) {
   return retryAsync(async () => {
     const res = await fetch(url, { headers: { Accept: 'application/json' } });
@@ -260,7 +267,7 @@ async function ensureVanilla(mc, layout, manifest, progress, tally) {
   const versionDir = path.join(layout.versionsBase, mc);
   fs.mkdirSync(versionDir, { recursive: true });
   const versionFile = path.join(versionDir, `${mc}.json`);
-  fs.writeFileSync(versionFile, JSON.stringify(versionJson), 'utf8');
+  writeJsonAtomic(versionFile, versionJson);
   progress('version-json', 1, 'Version details saved');
 
   const client = versionJson.downloads?.client;
@@ -356,7 +363,7 @@ async function ensureLoaderFiles(instance, layout, vanillaJson, progress, tally)
   const variantDir = path.join(layout.versionsBase, variantId);
   fs.mkdirSync(variantDir, { recursive: true });
   const versionFile = path.join(variantDir, `${variantId}.json`);
-  fs.writeFileSync(versionFile, JSON.stringify(merged), 'utf8');
+  writeJsonAtomic(versionFile, merged);
 
   progress('loader', 0.5, `Downloading ${label} libraries`);
   for (const lib of normalizedProfileLibs) {
@@ -430,7 +437,7 @@ async function ensureClientInner(instance, onProgress) {
 
   emit('game:log', { stream: 'system', line: `Verify complete: ${tally.cached} file(s) cached, ${tally.downloaded} downloaded.` });
   progress('done', 1, `Verified (${tally.cached} cached, ${tally.downloaded} downloaded)`);
-  fs.writeFileSync(markerFile(layout.root, variant), JSON.stringify({
+  writeJsonAtomic(markerFile(layout.root, variant), {
     variant,
     mc: instance.mc,
     loader: instance.loader,
@@ -438,7 +445,7 @@ async function ensureClientInner(instance, onProgress) {
     cached: tally.cached,
     downloaded: tally.downloaded,
     verifiedAt: Date.now()
-  }));
+  });
 
   return { instanceDir: layout.root, versionFile, cached: tally.cached, downloaded: tally.downloaded, instance, variant };
 }
@@ -447,10 +454,22 @@ function javaSettings() {
   try {
     const { loadState } = require('./store');
     const s = loadState().settings?.java || {};
+    let customPath = String(s.path || '').trim();
+    if (customPath && (!path.isAbsolute(customPath) || !fs.existsSync(customPath))) {
+      customPath = '';
+    }
+    const rawArgs = String(s.extraArgs || '').trim().slice(0, 500);
+    const kept = [];
+    for (const token of rawArgs.split(/\s+/).filter(Boolean)) {
+      if (token.includes('\0')) continue;
+      if (/javaagent/i.test(token)) continue;
+      if (/^(-agentlib|-agentpath|-Xbootclasspath|-Xrunjdwp)/i.test(token)) continue;
+      kept.push(token);
+    }
     return {
-      path: String(s.path || '').trim(),
-      xmx: Number(s.xmx) || 4,
-      extraArgs: String(s.extraArgs || '').trim()
+      path: customPath,
+      xmx: [2, 4, 6, 8, 12, 16].includes(Number(s.xmx)) ? Number(s.xmx) : 4,
+      extraArgs: kept.join(' ')
     };
   } catch {
     return { path: '', xmx: 4, extraArgs: '' };
@@ -516,6 +535,9 @@ async function launchGame(instanceId) {
   if (child) throw new Error('Game is already running.');
   const instance = instanceId ? getInstance(instanceId) : getActiveInstance();
   if (!instance) throw new Error('No instance selected. Create one first.');
+  if (ensuring.has(instance.id)) {
+    throw new Error(`Verify is still running for "${instance.name}". Wait until it finishes, then press Play.`);
+  }
   const layout = dirsFor(instance);
   const inst = layout.root;
   const { versionsBase, libraries, assets } = layout;
@@ -531,7 +553,12 @@ async function launchGame(instanceId) {
   if (!marker || marker.variant !== variant) {
     throw new Error(`Instance "${instance.name}" is not fully verified yet. Press Download / verify, wait until it finishes, then press Play.`);
   }
-  const versionJson = JSON.parse(fs.readFileSync(versionFile, 'utf8'));
+  let versionJson;
+  try {
+    versionJson = JSON.parse(fs.readFileSync(versionFile, 'utf8'));
+  } catch {
+    throw new Error(`Instance "${instance.name}" has a corrupt or incomplete version file. Press Download / verify again.`);
+  }
   const profile = getStoredProfile();
   if (!profile) throw new Error('Not signed in. Sign in with Microsoft first.');
   const accessToken = await getValidMcAccessToken();

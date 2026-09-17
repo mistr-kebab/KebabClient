@@ -30,6 +30,7 @@ async function getSkinState() {
 
 function validateSkinPng(buffer) {
   if (!buffer || buffer.length < 8) throw new Error('Empty file.');
+  if (buffer.length > 5 * 1024 * 1024) throw new Error('Skin file is too large (max 5 MB).');
   const pngSig = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
   if (!buffer.subarray(0, 8).equals(pngSig)) throw new Error('Skin must be a PNG file.');
   let offset = 8;

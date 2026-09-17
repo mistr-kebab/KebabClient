@@ -56,11 +56,11 @@
     const heroText = document.getElementById('heroStatusText');
     if (pill) pill.classList.toggle('is-running', !!running);
     if (pillText) pillText.textContent = running ? tr('topbar.running', 'Instance running') : tr('topbar.idle', 'No instances running');
-    if (sideStatus) sideStatus.textContent = running ? 'Running' : 'Idle';
+    if (sideStatus) sideStatus.textContent = running ? tr('status.running', 'Running') : tr('status.idle', 'Idle');
     if (heroPill) heroPill.classList.toggle('is-running', !!running);
-    if (heroText) heroText.textContent = running ? 'Running' : 'Idle';
+    if (heroText) heroText.textContent = running ? tr('status.running', 'Running') : tr('status.idle', 'Idle');
     const homeState = document.getElementById('homeActiveState');
-    if (homeState) homeState.textContent = running ? 'Running' : 'Idle';
+    if (homeState) homeState.textContent = running ? tr('status.running', 'Running') : tr('status.idle', 'Idle');
     if (running && !wasRunning) toast(`Game running${pid ? ` (pid ${pid})` : ''}.`, 'ok');
     wasRunning = !!running;
   }
@@ -124,7 +124,8 @@
       let pool = banners.filter((b) => b.name !== last);
       if (!pool.length) pool = banners;
       const pick = pool[Math.floor(Math.random() * pool.length)];
-      document.documentElement.style.setProperty('--hero-image', `url("${pick.dataUrl}")`);
+      const safeUrl = String(pick.dataUrl || '').replace(/"/g, '%22');
+      document.documentElement.style.setProperty('--hero-image', `url("${safeUrl}")`);
       try { window.localStorage.setItem('kebabLastBanner', pick.name); } catch {}
     } catch {}
   }

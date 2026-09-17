@@ -33,9 +33,22 @@ function newState() {
   return base64url(crypto.randomBytes(16));
 }
 
+async function fetchWithTimeout(url, options, timeoutMs = 20000) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: ctrl.signal });
+  } catch (err) {
+    if (err?.name === 'AbortError') throw new Error(`Request timed out after ${timeoutMs}ms: ${url}`);
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function postForm(url, params) {
   const body = new URLSearchParams(params);
-  const res = await fetch(url, {
+  const res = await fetchWithTimeout(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json' },
     body
@@ -53,7 +66,7 @@ async function postForm(url, params) {
 async function postJson(url, payload, token) {
   const headers = { 'Content-Type': 'application/json', Accept: 'application/json' };
   if (token) headers.Authorization = `Bearer ${token}`;
-  const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(payload) });
+  const res = await fetchWithTimeout(url, { method: 'POST', headers, body: JSON.stringify(payload) });
   const text = await res.text();
   let json = null;
   try { json = JSON.parse(text); } catch {}
@@ -85,9 +98,14 @@ function listenForAuthCode(parent, cfg) {
       webPreferences: { contextIsolation: true, nodeIntegration: false }
     });
     let settled = false;
+    const cleanup = () => {
+      try { win.webContents.session.webRequest.onBeforeRequest(null); } catch {}
+      try { win.webContents.removeAllListeners('will-redirect'); } catch {}
+    };
     const done = (err, code) => {
       if (settled) return;
       settled = true;
+      cleanup();
       try { win.close(); } catch {}
       if (err) reject(err);
       else resolve({ code, verifier });
@@ -97,6 +115,12 @@ function listenForAuthCode(parent, cfg) {
     win.webContents.session.webRequest.onBeforeRequest(filter, (details, callback) => {
       try {
         const u = new URL(details.url);
+        const gotState = u.searchParams.get('state');
+        if (gotState && gotState !== state) {
+          callback({ cancel: true });
+          done(new Error('Microsoft sign-in failed: state mismatch (possible CSRF).'));
+          return;
+        }
         const code = u.searchParams.get('code');
         const err = u.searchParams.get('error');
         const errDesc = u.searchParams.get('error_description');
@@ -106,6 +130,11 @@ function listenForAuthCode(parent, cfg) {
           return;
         }
         if (code) {
+          if (!gotState || gotState !== state) {
+            callback({ cancel: true });
+            done(new Error('Microsoft sign-in failed: state mismatch (possible CSRF).'));
+            return;
+          }
           callback({ cancel: true });
           done(null, code);
           return;
@@ -117,11 +146,13 @@ function listenForAuthCode(parent, cfg) {
       try {
         const u = new URL(url);
         if (url.startsWith(redirect)) {
+          const gotState = u.searchParams.get('state');
           const code = u.searchParams.get('code');
           const err = u.searchParams.get('error');
           if (code || err) {
             event.preventDefault();
             if (err) done(new Error(`Microsoft sign-in failed: ${err}`));
+            else if (!gotState || gotState !== state) done(new Error('Microsoft sign-in failed: state mismatch (possible CSRF).'));
             else done(null, code);
           }
         }
@@ -181,10 +212,19 @@ async function mcLoginWithXbox(uhs, xstsToken) {
 }
 
 async function fetchMcProfile(mcAccessToken) {
-  const res = await fetch(URLS.mcProfile, { headers: { Authorization: `Bearer ${mcAccessToken}` } });
-  if (res.status === 404) throw new Error('No Minecraft profile found for this Microsoft account (game not owned?).');
-  if (!res.ok) throw new Error(`Failed to fetch Minecraft profile (${res.status}).`);
-  return res.json();
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 20000);
+  try {
+    const res = await fetch(URLS.mcProfile, { headers: { Authorization: `Bearer ${mcAccessToken}` }, signal: ctrl.signal });
+    if (res.status === 404) throw new Error('No Minecraft profile found for this Microsoft account (game not owned?).');
+    if (!res.ok) throw new Error(`Failed to fetch Minecraft profile (${res.status}).`);
+    return res.json();
+  } catch (err) {
+    if (err?.name === 'AbortError') throw new Error('Minecraft profile request timed out.');
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 async function fullLoginFlow(parentWindow) {
@@ -218,7 +258,7 @@ async function finishLoginWithMsTokens(msTokens) {
   return { profile, mcAccessToken: mc.access_token };
 }
 
-async function refreshSession() {
+async function refreshSessionInner() {
   const secrets = loadSecrets();
   if (!secrets || !secrets.msRefreshToken) {
     throw new Error('No stored session. Please sign in with Microsoft first.');
@@ -238,6 +278,14 @@ async function refreshSession() {
     access_token: msTokens.access_token,
     refresh_token: msTokens.refresh_token || secrets.msRefreshToken
   });
+}
+
+let refreshInflight = null;
+
+async function refreshSession() {
+  if (refreshInflight) return refreshInflight;
+  refreshInflight = refreshSessionInner().finally(() => { refreshInflight = null; });
+  return refreshInflight;
 }
 
 function getStoredProfile() {

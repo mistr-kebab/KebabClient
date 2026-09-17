@@ -56,6 +56,11 @@ input {
   border: 2px solid var(--bg);
 }
 
+:root[data-theme="light"] ::-webkit-scrollbar-thumb {
+  background: #c9c4b4;
+  border-color: var(--bg);
+}
+
 ::-webkit-scrollbar-track {
   background: transparent;
 }

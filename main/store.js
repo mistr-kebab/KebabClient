@@ -29,9 +29,18 @@ function readJson(file, fallback) {
   }
 }
 
-function writeJson(file, obj) {
+function writeAtomic(file, data) {
   ensureDir(path.dirname(file));
-  fs.writeFileSync(file, JSON.stringify(obj, null, 2), 'utf8');
+  const tmp = `${file}.tmp-${process.pid}-${Date.now().toString(36)}`;
+  fs.writeFileSync(tmp, data);
+  try {
+    fs.chmodSync(tmp, 0o600);
+  } catch {}
+  fs.renameSync(tmp, file);
+}
+
+function writeJson(file, obj) {
+  writeAtomic(file, JSON.stringify(obj, null, 2));
 }
 
 function loadState() {
@@ -46,12 +55,12 @@ function saveState(patch) {
 }
 
 function saveSecrets(obj) {
+  if (!safeStorage.isEncryptionAvailable()) {
+    throw new Error('Secure storage is unavailable on this system. Sign-in is disabled to protect your refresh token.');
+  }
   const raw = Buffer.from(JSON.stringify(obj), 'utf8');
-  const payload = safeStorage.isEncryptionAvailable()
-    ? safeStorage.encryptString(raw.toString('utf8'))
-    : raw;
-  ensureDir(path.dirname(secretsFile()));
-  fs.writeFileSync(secretsFile(), payload);
+  const payload = safeStorage.encryptString(raw.toString('utf8'));
+  writeAtomic(secretsFile(), payload);
 }
 
 function loadSecrets() {
@@ -61,10 +70,17 @@ function loadSecrets() {
       try {
         return JSON.parse(safeStorage.decryptString(buf));
       } catch {
+        try {
+          const legacy = JSON.parse(buf.toString('utf8'));
+          if (legacy && typeof legacy === 'object') {
+            console.warn('[store] Found legacy plaintext secrets, removing.');
+            try { fs.unlinkSync(secretsFile()); } catch {}
+          }
+        } catch {}
         return null;
       }
     }
-    return JSON.parse(buf.toString('utf8'));
+    return null;
   } catch {
     return null;
   }
