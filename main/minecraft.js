@@ -554,29 +554,95 @@ function bundledJavaDir() {
   return path.join(dataDir(), 'java');
 }
 
-function findBundledJava() {
+function normalizeJavaMajor(v, fallback) {
+  const n = Number(v);
+  return Number.isInteger(n) && n >= 8 && n <= 99 ? n : fallback;
+}
+
+function requiredJavaMajor(versionJson) {
+  return normalizeJavaMajor(versionJson?.javaVersion?.majorVersion, 21);
+}
+
+function getJavaMajor(java) {
+  return new Promise((resolve) => {
+    try {
+      require('node:child_process').execFile(java, ['-version'], (err, stdout, stderr) => {
+        const text = `${stdout || ''}\n${stderr || ''}`;
+        const m = text.match(/version "(\d+)(?:\.(\d+))?/);
+        if (!m) return resolve(null);
+        if (m[1] === '1' && m[2] !== undefined) return resolve(Number(m[2]));
+        resolve(Number(m[1]));
+      }).on('error', () => resolve(null));
+    } catch {
+      resolve(null);
+    }
+  });
+}
+
+async function checkJavaForMajor(java, minMajor) {
+  await assertJavaAvailable(java);
+  if (!minMajor) return null;
+  const major = await getJavaMajor(java);
+  if (major !== null && major < minMajor) {
+    const e = new Error(`Java ${major} is too old ("${java}"). This version needs Java ${minMajor}+.`);
+    e.code = 'JAVA_TOO_OLD';
+    e.javaMajor = major;
+    throw e;
+  }
+  return major;
+}
+
+function listBundledJavas() {
   const exe = process.platform === 'win32' ? 'java.exe' : 'java';
   let entries = [];
   try {
     entries = fs.readdirSync(bundledJavaDir(), { withFileTypes: true });
   } catch {
-    return null;
+    return [];
   }
+  const out = [];
   for (const e of entries) {
     if (!e.isDirectory() || e.name.startsWith('.')) continue;
     const cand = path.join(bundledJavaDir(), e.name, 'bin', exe);
-    if (fs.existsSync(cand)) return cand;
+    if (!fs.existsSync(cand)) continue;
+    const fm = e.name.match(/jdk-(\d+)/i);
+    out.push({ dir: e.name, path: cand, folderMajor: fm ? Number(fm[1]) : null });
+  }
+  out.sort((a, b) => (b.folderMajor || 0) - (a.folderMajor || 0));
+  return out;
+}
+
+async function findBundledJava(requiredMajor) {
+  for (const c of listBundledJavas()) {
+    if (c.folderMajor !== null && c.folderMajor < requiredMajor) continue;
+    try {
+      await assertJavaAvailable(c.path);
+    } catch {
+      continue;
+    }
+    if (c.folderMajor !== null) return c.path;
+    const major = await getJavaMajor(c.path);
+    if (major === null || major >= requiredMajor) return c.path;
   }
   return null;
 }
 
-function temurinDownloadUrl() {
-  const os = process.platform === 'win32' ? 'windows' : process.platform === 'darwin' ? 'mac' : 'linux';
-  const arch = process.arch === 'arm64' ? 'aarch64' : 'x64';
-  return `https://api.adoptium.net/v3/binary/latest/21/ga/${os}/${arch}/jre/hotspot/normal/eclipse`;
+function isBundledJavaPath(p) {
+  try {
+    const rel = path.relative(bundledJavaDir(), path.resolve(p));
+    return !!rel && !rel.startsWith('..') && !path.isAbsolute(rel);
+  } catch {
+    return false;
+  }
 }
 
-async function downloadBundledJava(onProgress) {
+function temurinDownloadUrl(major) {
+  const os = process.platform === 'win32' ? 'windows' : process.platform === 'darwin' ? 'mac' : 'linux';
+  const arch = process.arch === 'arm64' ? 'aarch64' : 'x64';
+  return `https://api.adoptium.net/v3/binary/latest/${major}/ga/${os}/${arch}/jre/hotspot/normal/eclipse`;
+}
+
+async function downloadBundledJava(major, onProgress) {
   if (process.platform !== 'win32') {
     throw new Error('Automatic Java install is only supported on Windows. Install Eclipse Temurin manually (https://adoptium.net) or pick java.exe in Settings → Java.');
   }
@@ -588,14 +654,14 @@ async function downloadBundledJava(onProgress) {
   }
   const target = bundledJavaDir();
   fs.mkdirSync(target, { recursive: true });
-  const tmpZip = path.join(target, '.temurin-21-jre.zip');
-  await downloadFileResilient(temurinDownloadUrl(), tmpZip, null, 0, onProgress);
+  const tmpZip = path.join(target, `.temurin-${major}-jre.zip`);
+  await downloadFileResilient(temurinDownloadUrl(major), tmpZip, null, 0, onProgress);
   try {
     new AdmZip(tmpZip).extractAllTo(target, true);
   } finally {
     try { fs.unlinkSync(tmpZip); } catch {}
   }
-  const found = findBundledJava();
+  const found = await findBundledJava(major);
   if (!found) throw new Error('Java download finished but no runtime was found inside.');
   await assertJavaAvailable(found);
   return found;
@@ -607,15 +673,40 @@ function persistJavaPath(javaPath) {
   } catch {}
 }
 
-let javaSetupInflight = null;
+let javaSetupInflight = {};
 
-async function ensureJavaRuntime(onProgress) {
+async function ensureJavaRuntime(requiredMajorOrOnProgress, maybeOnProgress) {
+  let requiredMajor = 21;
+  let onProgress;
+  if (typeof requiredMajorOrOnProgress === 'function') {
+    onProgress = requiredMajorOrOnProgress;
+  } else {
+    requiredMajor = normalizeJavaMajor(requiredMajorOrOnProgress, 21);
+    onProgress = maybeOnProgress;
+  }
   const opts = javaSettings();
   if (opts.path) {
-    if (!fs.existsSync(opts.path)) {
-      throw new Error(`Configured Java not found: ${opts.path}. Pick a valid executable in Settings → Java or clear the field for auto-detect.`);
+    if (!isBundledJavaPath(opts.path)) {
+      try {
+        await checkJavaForMajor(opts.path, requiredMajor);
+      } catch (err) {
+        if (err && err.code === 'JAVA_TOO_OLD') {
+          throw new Error(
+            `Configured Java is version ${err.javaMajor}, but this Minecraft version needs Java ${requiredMajor}+. ` +
+            'Pick a newer executable in Settings → Java or clear the field for automatic setup.'
+          );
+        }
+        throw err;
+      }
+      return opts.path;
     }
-    return opts.path;
+    try {
+      await checkJavaForMajor(opts.path, requiredMajor);
+      return opts.path;
+    } catch (err) {
+      if (!err || (err.code !== 'JAVA_TOO_OLD' && err.code !== 'JAVA_NOT_FOUND')) throw err;
+      emit('game:log', { stream: 'system', line: `Stored Java is outdated (${err.code === 'JAVA_TOO_OLD' ? `Java ${err.javaMajor}` : 'missing'}). Setting up Java ${requiredMajor}…` });
+    }
   }
   const exeName = process.platform === 'win32' ? 'java.exe' : 'java';
   const candidates = [];
@@ -625,29 +716,26 @@ async function ensureJavaRuntime(onProgress) {
   candidates.push(exeName);
   for (const cand of candidates) {
     try {
-      await assertJavaAvailable(cand);
+      await checkJavaForMajor(cand, requiredMajor);
       return cand;
     } catch (err) {
-      if (!err || err.code !== 'JAVA_NOT_FOUND') throw err;
+      if (!err || (err.code !== 'JAVA_NOT_FOUND' && err.code !== 'JAVA_TOO_OLD')) throw err;
     }
   }
-  const bundled = findBundledJava();
+  const bundled = await findBundledJava(requiredMajor);
   if (bundled) {
-    try {
-      await assertJavaAvailable(bundled);
-      persistJavaPath(bundled);
-      return bundled;
-    } catch {}
+    persistJavaPath(bundled);
+    return bundled;
   }
-  emit('game:log', { stream: 'system', line: 'Java not found. Downloading Eclipse Temurin 21 JRE…' });
-  if (!javaSetupInflight) {
-    javaSetupInflight = downloadBundledJava((r) => {
-      try { onProgress && onProgress(r, `Downloading Java runtime ${Math.round((r || 0) * 100)}%`); } catch {}
-    }).finally(() => { javaSetupInflight = null; });
+  emit('game:log', { stream: 'system', line: `Java ${requiredMajor} not found. Downloading Eclipse Temurin ${requiredMajor} JRE…` });
+  if (!javaSetupInflight[requiredMajor]) {
+    javaSetupInflight[requiredMajor] = downloadBundledJava(requiredMajor, (r) => {
+      try { onProgress && onProgress(r, `Downloading Java ${requiredMajor} runtime ${Math.round((r || 0) * 100)}%`); } catch {}
+    }).finally(() => { javaSetupInflight[requiredMajor] = null; });
   }
   let fresh;
   try {
-    fresh = await javaSetupInflight;
+    fresh = await javaSetupInflight[requiredMajor];
   } catch (err) {
     throw new Error(`Java download failed (${err?.message || err}). Install Eclipse Temurin manually (https://adoptium.net) or pick java.exe in Settings → Java.`);
   }
@@ -769,13 +857,20 @@ async function launchGame(instanceId, serverAddr) {
   if (extra.length) jvmArgs.push(...extra);
 
   const mainClass = versionJson.mainClass;
-  const java = await ensureJavaRuntime((ratio, label) => {
+  const requiredMajor = requiredJavaMajor(versionJson);
+  const java = await ensureJavaRuntime(requiredMajor, (ratio, label) => {
     emit('game:progress', { phase: 'java', ratio, label, instanceId: instance.id, instanceName: instance.name });
   });
-  const args = [...jvmArgs, mainClass, ...gameArgs];
+  let launchJvmArgs = jvmArgs;
+  const javaMajor = await getJavaMajor(java).catch(() => null);
+  if (javaMajor !== null && javaMajor < 23 && jvmArgs.some((a) => String(a).startsWith('--sun-misc-unsafe-memory-access'))) {
+    launchJvmArgs = jvmArgs.filter((a) => !String(a).startsWith('--sun-misc-unsafe-memory-access'));
+    emit('game:log', { stream: 'system', line: `Ignoring --sun-misc-unsafe-memory-access (needs Java 23+, running Java ${javaMajor}).` });
+  }
+  const args = [...launchJvmArgs, mainClass, ...gameArgs];
 
   emit('game:status', { running: true, pid: null, instanceId: instance.id });
-  emit('game:log', { stream: 'system', line: `Launching ${instance.name} (${variant}) as ${profile.name} [java: ${java}, Xmx: ${javaOpts.xmx}G]` });
+  emit('game:log', { stream: 'system', line: `Launching ${instance.name} (${variant}) as ${profile.name} [java: ${java}, needs Java ${requiredMajor}+, Xmx: ${javaOpts.xmx}G]` });
 
   child = spawn(java, args, { cwd: inst, env: { ...process.env } });
   touchLastPlayed(instance.id);
@@ -843,6 +938,8 @@ module.exports = {
   supportsQuickPlay,
   assertJavaAvailable,
   ensureJavaRuntime,
+  requiredJavaMajor,
+  getJavaMajor,
   MC_VERSION: MC_VERSION,
   platformInfo: () => ({ platform: process.platform, arch: os.arch() })
 };
