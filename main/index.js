@@ -115,7 +115,7 @@ function registerIpc() {
   });
   ipcMain.handle('game:launch', async (_e, args) => {
     servers.syncToAllInstances();
-    return minecraft.launchGame(args?.instanceId);
+    return minecraft.launchGame(args?.instanceId, args?.server);
   });
   ipcMain.handle('game:stop', async () => minecraft.stopGame());
   ipcMain.handle('game:status', async () => {
@@ -123,7 +123,7 @@ function registerIpc() {
     return {
       running: minecraft.isRunning(),
       runningInstanceId: minecraft.runningInstanceId(),
-      instance: active || null,
+      instance: active ? instances.describeInstance(active) : null,
       instanceDir: active ? minecraft.dirsFor(active).root : null,
       profile: auth.getStoredProfile()
     };
@@ -171,6 +171,7 @@ function registerIpc() {
     broadcast('instances:changed', { instances: rest, activeId: instances.getActiveInstance()?.id || null });
     return rest;
   });
+  ipcMain.handle('instances:backup', async (_e, args) => instances.backupInstanceSaves(args?.id));
   ipcMain.handle('instances:setActive', async (_e, args) => {
     const active = instances.setActiveInstance(args?.id);
     broadcast('instances:changed', { instances: instances.listInstances(), activeId: active.id });
@@ -229,6 +230,11 @@ function registerIpc() {
   ipcMain.handle('mods:list', async (_e, args) => content.listInstalled(args?.instanceId, args?.category));
   ipcMain.handle('mods:uninstall', async (_e, args) => content.uninstallMod(args?.file, args?.instanceId, args?.category));
   ipcMain.handle('mods:toggle', async (_e, args) => content.toggleContent(args?.file, args?.instanceId, args?.category));
+  ipcMain.handle('mods:checkUpdates', async (_e, args) => content.checkContentUpdates(args?.instanceId, args?.category));
+  ipcMain.handle('mods:versions', async (_e, args) => content.listContentVersions(args?.projectId, args?.instanceId, args?.category));
+  ipcMain.handle('mods:switch', async (_e, args) => content.switchContentVersion(args?.file, args?.projectId, args?.versionId, args?.instanceId, args?.category, (s) =>
+    broadcast('game:progress', { phase: 'mods', ...s })
+  ));
 
   ipcMain.handle('content:drop', async (_e, args) =>
     content.importContent(args?.category, args?.paths, args?.instanceId)
@@ -306,8 +312,25 @@ function registerIpc() {
   });
 
   ipcMain.handle('servers:list', async () => servers.listServers());
-  ipcMain.handle('servers:add', async (_e, args) => servers.addServer(args?.name, args?.ip));
-  ipcMain.handle('servers:update', async (_e, args) => servers.updateServer(args?.id, args?.name, args?.ip));
+  ipcMain.handle('servers:add', async (_e, args) => servers.addServer(args?.name, args?.ip, args?.categoryId, args?.invite));
+  ipcMain.handle('servers:update', async (_e, args) => {
+    const extra = {};
+    if (args && args.categoryId !== undefined) extra.categoryId = args.categoryId;
+    if (args && args.invite !== undefined) extra.invite = args.invite;
+    return servers.updateServer(args?.id, args?.name, args?.ip, extra);
+  });
+  ipcMain.handle('servers:toggle', async (_e, args) => servers.setServerDisabled(args?.id, args?.disabled));
+  ipcMain.handle('servers:categories', async () => servers.listCategories());
+  ipcMain.handle('servers:addCategory', async (_e, args) => servers.addCategory(args?.name));
+  ipcMain.handle('servers:renameCategory', async (_e, args) => servers.renameCategory(args?.id, args?.name));
+  ipcMain.handle('servers:openInvite', async (_e, args) => {
+    let url = String(args?.url || '').trim();
+    if (!url) throw new Error('No invite link.');
+    if (/^discord\.gg\//i.test(url)) url = `https://${url}`;
+    if (!/^https?:\/\//i.test(url)) throw new Error('Invite must be an http(s) link.');
+    await shell.openExternal(url);
+    return { ok: true };
+  });
   ipcMain.handle('servers:remove', async (_e, args) => servers.removeServer(args?.id));
   ipcMain.handle('servers:move', async (_e, args) => servers.moveServer(args?.id, args?.direction));
   ipcMain.handle('servers:ping', async (_e, args) => require('./ping').pingServer(args?.ip));

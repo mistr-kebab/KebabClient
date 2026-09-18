@@ -135,6 +135,137 @@ function sanitizeContentFilename(filename, exts) {
   return base;
 }
 
+async function mapPool(items, concurrency, fn) {
+  let i = 0;
+  const workers = Array.from({ length: Math.max(1, concurrency) }, async () => {
+    while (i < items.length) {
+      const idx = i;
+      i += 1;
+      await fn(items[idx], idx);
+    }
+  });
+  await Promise.all(workers);
+}
+
+async function checkContentUpdates(instanceId, category) {
+  const instance = resolveInstance(instanceId);
+  const catKeys = category ? [categoryOf(category).key] : ['mod', 'resourcepack', 'shader'];
+  const out = [];
+  for (const catKey of catKeys) {
+    const dir = contentDir(instance.id, catKey);
+    const loaders = catKey === 'mod' ? loaderFilter(instance) : null;
+    const items = listInstalled(instance.id, catKey);
+    await mapPool(items, 4, async (item) => {
+      const full = path.join(dir, path.basename(String(item.file)));
+      let installed = null;
+      try {
+        installed = await identifyVersionByHash(full);
+      } catch {}
+      const projectId = (installed && installed.project_id) || item.projectId || null;
+      const base = { file: item.file, category: catKey, projectId };
+      if (!projectId) {
+        out.push({ ...base, unknown: true });
+        return;
+      }
+      let versions = [];
+      try {
+        versions = await getProjectVersions(projectId, loaders, instance.mc);
+      } catch (err) {
+        out.push({ ...base, error: err.message });
+        return;
+      }
+      if (!versions.length) {
+        out.push({ ...base, unknown: true });
+        return;
+      }
+      const latest = pickVersion(versions, loaders);
+      const installedId = installed ? installed.id : null;
+      const installedVersion = installed ? installed.version_number : (item.version || null);
+      let updateAvailable = false;
+      if (latest) {
+        if (installedId) updateAvailable = latest.id !== installedId;
+        else if (installedVersion && latest.version_number) updateAvailable = latest.version_number !== installedVersion;
+        else updateAvailable = true;
+      }
+      out.push({
+        ...base,
+        installedVersion,
+        installedId,
+        latestVersion: latest ? latest.version_number : null,
+        latestId: latest ? latest.id : null,
+        updateAvailable
+      });
+    });
+  }
+  return out;
+}
+
+function versionMatchesInstance(v, loaders, mc) {
+  const games = v.game_versions || v.gameVersions || [];
+  if (mc && games.length && !games.includes(mc)) return false;
+  if (loaders && loaders.length) {
+    const ok = (v.files || []).some((f) => (f.loaders || []).some((l) => loaders.includes(l)));
+    if (!ok) return false;
+  }
+  return true;
+}
+
+async function listContentVersions(projectId, instanceId, category) {
+  const cat = categoryOf(category);
+  const instance = resolveInstance(instanceId);
+  const loaders = cat.key === 'mod' ? loaderFilter(instance) : null;
+  const pid = String(projectId);
+  const [all, compat] = await Promise.all([
+    apiGet(`/project/${encodeURIComponent(pid)}/version`),
+    getProjectVersions(pid, loaders, instance.mc).catch(() => null)
+  ]);
+  const compatIds = new Set((compat || []).map((v) => v.id));
+  const hadCompat = Array.isArray(compat);
+  return (all || [])
+    .map((v) => {
+      const fileLoaders = [];
+      for (const f of v.files || []) {
+        for (const l of f.loaders || []) {
+          if (!fileLoaders.includes(l)) fileLoaders.push(l);
+        }
+      }
+      return {
+        id: v.id,
+        version_number: v.version_number,
+        name: v.name || v.version_number,
+        date: v.date_published || null,
+        type: v.version_type || 'release',
+        changelog: v.changelog || '',
+        gameVersions: v.game_versions || [],
+        loaders: fileLoaders,
+        compatible: hadCompat ? compatIds.has(v.id) : versionMatchesInstance(v, loaders, instance.mc)
+      };
+    })
+    .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+}
+
+async function switchContentVersion(filename, projectId, versionId, instanceId, category, onStep) {
+  const cat = categoryOf(category);
+  const safe = path.basename(String(filename || ''));
+  if (!safe) throw new Error('Missing file name.');
+  if (!versionId) throw new Error('Missing version id.');
+  const instance = resolveInstance(instanceId);
+  const loaders = cat.key === 'mod' ? loaderFilter(instance) : null;
+  const available = await getProjectVersions(String(projectId), loaders, instance.mc);
+  if (!available.some((v) => v.id === versionId)) {
+    throw new Error('Selected version is not available for this instance.');
+  }
+  const installed = await installMod(projectId, versionId, instanceId, onStep, cat.key);
+  if (installed.file !== safe) {
+    try {
+      uninstallMod(safe, instanceId, cat.key);
+    } catch (err) {
+      installed.depProblems = [...(installed.depProblems || []), `old file not removed: ${err.message}`];
+    }
+  }
+  return installed;
+}
+
 async function downloadToFile(url, dest) {
   fs.mkdirSync(path.dirname(dest), { recursive: true });
   const res = await fetch(url, { headers: { 'User-Agent': clientUA() } });
@@ -444,7 +575,7 @@ function resolveFileMeta(dir, file, catKey, meta) {
   catch { return null; }
   const cached = meta && meta[safe];
   if (cached && cached.v === META_VERSION && cached.mtime === stat.mtimeMs && (cached.title || cached.icon)) {
-    return { file: safe, name: cached.title || prettifyFilename(safe), icon: cached.icon || null, disabled, projectId: cached.projectId || null, size: stat.size };
+    return { file: safe, name: cached.title || prettifyFilename(safe), icon: cached.icon || null, disabled, projectId: cached.projectId || null, version: cached.version || null, size: stat.size };
   }
   let found = null;
   if (catKey === 'mod') found = parseJarMeta(full);
@@ -452,10 +583,11 @@ function resolveFileMeta(dir, file, catKey, meta) {
   const name = (found && found.title) || (cached && cached.v === META_VERSION && cached.title) || prettifyFilename(safe);
   const icon = (found && found.icon) || (cached && cached.icon) || null;
   const projectId = (cached && cached.projectId) || null;
+  const version = (cached && cached.version) || null;
   if (meta && (name !== prettifyFilename(safe) || icon || projectId)) {
-    meta[safe] = { v: META_VERSION, title: name, icon, projectId, mtime: stat.mtimeMs };
+    meta[safe] = { v: META_VERSION, title: name, icon, projectId, version, mtime: stat.mtimeMs };
   }
-  return { file: safe, name, icon, disabled, projectId, size: stat.size };
+  return { file: safe, name, icon, disabled, projectId, version, size: stat.size };
 }
 
 function listDir(dir, exts) {
@@ -594,6 +726,9 @@ module.exports = {
   importContent,
   ensureDependenciesForFiles,
   installRequiredDeps,
+  checkContentUpdates,
+  listContentVersions,
+  switchContentVersion,
   modsDir,
   contentDir
 };

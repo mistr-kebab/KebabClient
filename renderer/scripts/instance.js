@@ -47,14 +47,11 @@
     if (launchBtn) launchBtn.disabled = !!running;
     if (stopBtn) stopBtn.disabled = !running;
     if (homePlay) homePlay.disabled = !!running;
-    const pill = document.getElementById('runPill');
-    const pillText = document.getElementById('runPillText');
-    const sideStatus = document.getElementById('sideStatus');
     const heroPill = document.getElementById('heroStatusPill');
     const heroText = document.getElementById('heroStatusText');
-    if (pill) pill.classList.toggle('is-running', !!running);
-    if (pillText) pillText.textContent = running ? tr('topbar.running', 'Instance running') : tr('topbar.idle', 'No instances running');
-    if (sideStatus) sideStatus.textContent = running ? tr('status.running', 'Running') : tr('status.idle', 'Idle');
+    try {
+      document.documentElement.dataset.gameRunning = running ? '1' : '';
+    } catch {}
     if (heroPill) heroPill.classList.toggle('is-running', !!running);
     if (heroText) heroText.textContent = running ? tr('status.running', 'Running') : tr('status.idle', 'Idle');
     const homeState = document.getElementById('homeActiveState');
@@ -80,12 +77,28 @@
     text.textContent = label ? `${pct}% — ${label}` : `${pct}%`;
   }
 
+  function paintHeroIcon(instance) {
+    const box = document.getElementById('heroIcon');
+    if (!box) return;
+    box.textContent = '';
+    if (instance && instance.iconDataUrl) {
+      const img = document.createElement('img');
+      img.alt = '';
+      img.src = instance.iconDataUrl;
+      box.appendChild(img);
+    } else {
+      const fb = document.createElement('i');
+      fb.setAttribute('data-lucide', 'boxes');
+      box.appendChild(fb);
+      if (window.refreshIcons) window.refreshIcons();
+    }
+  }
+
   function setNoActiveInstance() {
     activeInstance = null;
+    paintHeroIcon(null);
     const nameEl = document.getElementById('activeName');
     const verEl = document.getElementById('heroVer');
-    const sideEl = document.getElementById('sideInstance');
-    const railVer = document.getElementById('versionLabel');
     const homeName = document.getElementById('homeActiveName');
     const homeSub = document.getElementById('homeActiveSub');
     const pathLabel = document.getElementById('instancePathLabel');
@@ -93,8 +106,6 @@
     const homePlay = document.getElementById('homePlayButton');
     if (nameEl) nameEl.textContent = 'KebabClient';
     if (verEl) verEl.textContent = tr('play.noInstance', 'No instance yet');
-    if (sideEl) sideEl.textContent = '—';
-    if (railVer) railVer.textContent = '—';
     if (homeName) homeName.textContent = tr('home.noInstance', 'Noch keine Instanz');
     if (homeSub) homeSub.textContent = '—';
     if (pathLabel) pathLabel.textContent = tr('play.getStarted', 'Create an instance to get started.');
@@ -132,17 +143,14 @@
   function applyActiveInstance(instance) {
     activeInstance = instance;
     if (!instance) return;
+    paintHeroIcon(instance);
     const nameEl = document.getElementById('activeName');
     const verEl = document.getElementById('heroVer');
-    const sideEl = document.getElementById('sideInstance');
-    const railVer = document.getElementById('versionLabel');
     const homeName = document.getElementById('homeActiveName');
     const homeSub = document.getElementById('homeActiveSub');
     const label = `${instance.mc} · ${loaderLabel(instance.loader)}`;
     if (nameEl) nameEl.textContent = instance.name;
     if (verEl) verEl.textContent = `Minecraft ${label}`;
-    if (sideEl) sideEl.textContent = label;
-    if (railVer) railVer.textContent = instance.mc;
     if (homeName) homeName.textContent = instance.name;
     if (homeSub) homeSub.textContent = label;
   }

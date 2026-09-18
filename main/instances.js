@@ -255,6 +255,38 @@ function touchLastPlayed(id) {
   } catch {}
 }
 
+function backupInstanceSaves(id) {
+  const instances = listInstances();
+  const entry = instances.find((i) => i.id === id);
+  if (!entry) throw new Error('Instance not found.');
+  if (isGameRunning()) throw new Error('Stop the game before backing up.');
+  const saves = path.join(instanceDir(entry), 'saves');
+  let entries = [];
+  try {
+    entries = fs.readdirSync(saves);
+  } catch {
+    entries = [];
+  }
+  if (!entries.length) throw new Error('No worlds found for this instance.');
+  let AdmZip;
+  try {
+    AdmZip = require('adm-zip');
+  } catch {
+    throw new Error('Missing dependency adm-zip. Run npm install.');
+  }
+  const now = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+  const outDir = path.join(instanceDir(entry), 'backups');
+  fs.mkdirSync(outDir, { recursive: true });
+  const dest = path.join(outDir, `saves-${stamp}.zip`);
+  const zip = new AdmZip();
+  zip.addLocalFolder(saves, 'saves');
+  zip.writeZip(dest);
+  const stat = fs.statSync(dest);
+  return { file: dest, bytes: stat.size, worlds: entries.length };
+}
+
 const ICON_EXTS = ['.png', '.jpg', '.jpeg', '.webp'];
 const ICON_MAX_BYTES = 2 * 1024 * 1024;
 
@@ -350,6 +382,7 @@ module.exports = {
   renameInstance,
   deleteInstance,
   touchLastPlayed,
+  backupInstanceSaves,
   setInstanceIcon,
   clearInstanceIcon,
   addPlaytime,

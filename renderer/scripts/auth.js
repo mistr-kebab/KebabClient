@@ -47,12 +47,11 @@
   }
 
   function setAccount(profile) {
-    const nameEl = document.getElementById('accountName');
-    const stateEl = document.getElementById('accountState');
-    const chipNameEl = document.getElementById('accountChipName');
+    const nameEl = document.getElementById('profileName');
+    const stateEl = document.getElementById('profileState');
     const avatarEls = [
-      document.getElementById('accountAvatarLarge'),
-      document.getElementById('accountAvatar')
+      document.getElementById('profileAvatar'),
+      document.getElementById('accountAvatarLarge')
     ].filter(Boolean);
     const btn = document.getElementById('authButton');
     const btnLabel = btn ? btn.querySelector('span:last-child') : null;
@@ -64,7 +63,6 @@
       if (btn) btn.classList.add('is-danger');
       nameEl.textContent = profile.name;
       stateEl.textContent = t('account.connected', 'Microsoft connected');
-      if (chipNameEl) chipNameEl.textContent = profile.name;
       if (btnLabel) btnLabel.textContent = t('auth.signOut', 'Sign out');
       refreshHeadshot();
     } else {
@@ -72,7 +70,6 @@
       if (btn) btn.classList.remove('is-danger');
       nameEl.textContent = t('topbar.signin', 'Not signed in');
       stateEl.textContent = t('account.only', 'Microsoft only');
-      if (chipNameEl) chipNameEl.textContent = t('topbar.signin', 'Not signed in');
       if (btnLabel) btnLabel.textContent = t('auth.signIn', 'Sign in');
       headDataUrl = null;
       paintHeads();
@@ -115,6 +112,26 @@
     paintHeads();
     const btn = document.getElementById('authButton');
     if (btn) btn.addEventListener('click', onAuthButton);
+    const railBtn = document.getElementById('railProfileButton');
+    if (railBtn) railBtn.addEventListener('click', () => {
+      if (typeof window.showView === 'function') window.showView('profile');
+    });
+    const profileRefresh = document.getElementById('profileRefreshButton');
+    if (profileRefresh) {
+      profileRefresh.addEventListener('click', async () => {
+        try {
+          const res = await bridge().refresh();
+          setAccount(res && res.profile ? res.profile : null);
+          toast(t('auth.refreshed', 'Session refreshed.'), 'ok');
+        } catch (err) {
+          toast(fmt(t('auth.refreshFail', 'Refresh failed: {msg}'), { msg: err.message }), 'error');
+        }
+      });
+    }
+    const profileOutfit = document.getElementById('profileOutfitButton');
+    if (profileOutfit) profileOutfit.addEventListener('click', () => {
+      if (typeof window.showView === 'function') window.showView('skins');
+    });
     const refreshBtn = document.getElementById('refreshSessionButton');
     if (refreshBtn) {
       refreshBtn.addEventListener('click', async () => {
@@ -141,11 +158,7 @@
     }
     document.addEventListener('skin:reload', () => {
       headRequested = false;
-      const chip = document.getElementById('accountChipName');
-      const name = chip && chip.textContent && chip.textContent !== t('topbar.signin', 'Not signed in')
-        ? { name: chip.textContent }
-        : null;
-      if (name) refreshHeadshot();
+      if (signedIn) refreshHeadshot();
     });
     try {
       bridge().onAuthChanged((payload) => {

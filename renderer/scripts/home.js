@@ -13,12 +13,27 @@
     return fallback || key;
   }
 
+  function fmtDur(ms) {
+    const totalMin = Math.floor((Number(ms) || 0) / 60000);
+    if (totalMin <= 0) return '';
+    const h = Math.floor(totalMin / 60);
+    const m = totalMin % 60;
+    if (h <= 0) return `${m} min`;
+    return `${h}h ${m}m`;
+  }
+
   async function refreshStats() {
     try {
       const res = await bridge().listInstances();
       const instances = (res && res.instances) || [];
       const n = document.getElementById('homeStatsInstances');
       if (n) n.textContent = String(instances.length);
+      const play = document.getElementById('homeStatsPlaytime');
+      if (play) {
+        let total = 0;
+        for (const i of instances) total += Number(i.totalPlayMs) || 0;
+        play.textContent = fmtDur(total) || '–';
+      }
       renderRecent(instances);
     } catch {}
     try {

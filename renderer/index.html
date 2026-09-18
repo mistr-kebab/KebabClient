@@ -54,7 +54,12 @@
             <span class="rail-label" data-i18n="nav.settings">Settings</span>
           </button>
         </nav>
-        <span class="ver-pill" id="versionLabel">26.1.2</span>
+        <button type="button" class="rail-profile" id="railProfileButton" title="Profile" data-i18n-title="nav.profile" aria-label="Profile" data-i18n-aria="nav.profile">
+          <span class="headshot headshot-md">
+            <canvas data-headshot="72" width="72" height="72" aria-hidden="true"></canvas>
+            <span class="headshot-fallback" data-head-fallback="1"><i data-lucide="log-in"></i></span>
+          </span>
+        </button>
       </div>
     </aside>
 
@@ -66,18 +71,6 @@
           <span id="crumbView">Home</span>
         </div>
         <div class="topbar-right">
-          <span class="status-pill" id="runPill">
-            <span class="pill-dot"></span>
-            <span id="runPillText" data-i18n="topbar.idle">Keine Instanz aktiv</span>
-          </span>
-          <button type="button" class="account-chip" id="accountChipButton">
-            <span class="headshot headshot-sm">
-              <canvas data-headshot="72" width="72" height="72" aria-hidden="true"></canvas>
-              <span class="headshot-fallback" data-head-fallback="1"><span id="accountAvatar">?</span></span>
-            </span>
-            <span id="accountChipName">Nicht angemeldet</span>
-            <i data-lucide="chevron-down" class="btn-icon"></i>
-          </button>
           <button type="button" class="btn btn-primary btn-sm update-btn" id="updateButton" hidden>
             <i data-lucide="arrow-down-to-line" class="btn-icon"></i>
             <span id="updateButtonLabel">Update</span>
@@ -167,6 +160,10 @@
                   <span class="mini-key" data-i18n="home.statServers">Servers</span>
                   <span class="mini-val" id="homeStatsServers">–</span>
                 </div>
+                <div class="mini-row">
+                  <span class="mini-key" data-i18n="home.totalPlay">Total playtime</span>
+                  <span class="mini-val" id="homeStatsPlaytime">–</span>
+                </div>
                 <p class="muted small" data-i18n="home.tip">Tipp: Fabric / Quilt gibt es pro Instanz über die Detailansicht, inkl. Modrinth-Suche.</p>
               </div>
               <div class="panel home-card">
@@ -190,7 +187,7 @@
                 </span>
               </div>
               <div class="hero-mid">
-                <span class="instance-icon hero-icon" aria-hidden="true">
+                <span class="instance-icon hero-icon" id="heroIcon" aria-hidden="true">
                   <i data-lucide="boxes"></i>
                 </span>
                 <h1 class="hero-title" id="activeName">KebabClient</h1>
@@ -327,6 +324,13 @@
                 <button type="button" class="segment-btn" data-content-tab="logs" data-i18n="nav.logs">Logs</button>
               </div>
               <span class="detail-toolbar-actions">
+                <button type="button" class="icon-btn" id="detailBackupButton" title="Backup worlds" data-i18n-title="inst.backup" aria-label="Backup worlds" data-i18n-aria="inst.backup">
+                  <i data-lucide="archive" class="btn-icon"></i>
+                </button>
+                <button type="button" class="btn btn-primary btn-sm" id="detailUpdateAllButton" hidden>
+                  <i data-lucide="arrow-up-to-line" class="btn-icon"></i>
+                  <span>Update all</span>
+                </button>
                 <button type="button" class="icon-btn" id="detailReloadButton" title="Reload" data-i18n-title="detail.reload" aria-label="Reload" data-i18n-aria="detail.reload">
                   <i data-lucide="rotate-ccw" class="btn-icon"></i>
                 </button>
@@ -472,20 +476,38 @@
           <section class="view" id="view-servers" aria-label="Servers">
             <h1 class="section-title" data-i18n="servers.title">Server</h1>
             <p class="page-sub" data-i18n="servers.sub">Added servers are written into every instance's server list automatically, before every launch.</p>
-            <div class="panel server-form-panel">
-              <h3 class="panel-title">
+            <div class="panel server-form-panel collapsible is-collapsed">
+              <h3 class="panel-title collapsible-head" tabindex="0" role="button" aria-expanded="false">
                 <i data-lucide="plus-circle" class="panel-icon"></i>
                 <span data-i18n="servers.addTitle">Add server</span>
+                <i data-lucide="chevron-down" class="collapse-icon"></i>
               </h3>
               <div class="server-form">
                 <input type="text" id="serverNameInput" class="input input-plain" placeholder="Server name" data-i18n-ph="servers.namePh" autocomplete="off" spellcheck="false">
                 <input type="text" id="serverIpInput" class="input input-plain" placeholder="IP or address:port" data-i18n-ph="servers.ipPh" autocomplete="off" spellcheck="false">
+                <input type="text" id="serverInviteInput" class="input input-plain" placeholder="Discord link (optional)" data-i18n-ph="servers.invitePh" autocomplete="off" spellcheck="false">
+                <select id="serverCategoryInput" class="input input-plain server-cat-select" aria-label="Category"></select>
                 <button type="button" class="btn btn-play btn-sm" id="serverAddButton">
                   <i data-lucide="plus" class="btn-icon"></i>
                   <span data-i18n="servers.add">Add</span>
                 </button>
               </div>
               <p class="status-line" id="serverFormStatus"></p>
+            </div>
+            <div class="panel server-form-panel collapsible is-collapsed">
+              <h3 class="panel-title collapsible-head" tabindex="0" role="button" aria-expanded="false">
+                <i data-lucide="tags" class="panel-icon"></i>
+                <span data-i18n="servers.categories">Categories</span>
+                <i data-lucide="chevron-down" class="collapse-icon"></i>
+              </h3>
+              <div class="row">
+                <input type="text" id="serverCategoryNameInput" class="input input-plain" placeholder="Category name" data-i18n-ph="servers.categoryNamePh" autocomplete="off" spellcheck="false" maxlength="48">
+                <button type="button" class="btn btn-primary btn-sm" id="serverCategoryAddButton">
+                  <i data-lucide="plus" class="btn-icon"></i>
+                  <span data-i18n="servers.add">Add</span>
+                </button>
+              </div>
+              <div class="cat-bar" id="serverCategoryBar"></div>
             </div>
             <ul class="server-list" id="serverList"></ul>
           </section>
@@ -496,6 +518,36 @@
               <i data-lucide="users"></i>
               <h3 class="empty-title" data-i18n="nav.friends">Friends</h3>
               <p class="muted" data-i18n="friends.soon">Coming Soon</p>
+            </div>
+          </section>
+
+          <section class="view" id="view-profile" aria-label="Profile">
+            <h1 class="section-title" data-i18n="profile.title">Profil</h1>
+            <div class="panel profile-panel">
+              <div class="profile-hero">
+                <span class="headshot headshot-lg">
+                  <canvas data-headshot="96" width="96" height="96" aria-hidden="true"></canvas>
+                  <span class="headshot-fallback" data-head-fallback="1"><span id="profileAvatar">?</span></span>
+                </span>
+                <span class="account-meta">
+                  <span class="account-name" id="profileName">Not signed in</span>
+                  <span class="account-state" id="profileState">Microsoft only</span>
+                </span>
+              </div>
+              <div class="row profile-actions">
+                <button type="button" class="btn btn-ghost btn-sm" id="profileRefreshButton">
+                  <i data-lucide="refresh-cw" class="btn-icon"></i>
+                  <span data-i18n="play.refresh">Session aktualisieren</span>
+                </button>
+                <button type="button" class="btn btn-ghost btn-sm" id="profileOutfitButton">
+                  <i data-lucide="shirt" class="btn-icon"></i>
+                  <span data-i18n="profile.outfit">Outfit öffnen</span>
+                </button>
+              </div>
+              <button type="button" class="btn btn-ghost btn-block" id="authButton">
+                <i data-lucide="log-in" class="btn-icon"></i>
+                <span>Sign in</span>
+              </button>
             </div>
           </section>
 
@@ -633,50 +685,8 @@
               <p class="status-line" id="aboutStatus"></p>
             </div>
           </section>
-
-          </section>
         </main>
       </div>
-    </div>
-
-    <div class="drawer-backdrop" id="drawerBackdrop" hidden></div>
-    <aside class="drawer" id="accountDrawer" role="dialog" aria-modal="true" data-i18n-aria="drawer.title" aria-label="Account and instance" hidden>
-      <div class="drawer-head">
-        <h3 class="panel-title">
-          <i data-lucide="user" class="panel-icon"></i>
-          <span data-i18n="drawer.title">Account</span>
-        </h3>
-        <button type="button" class="icon-btn" id="drawerCloseButton" title="Close" data-i18n-title="actions.close" data-i18n-aria="actions.close" aria-label="Close">
-          <i data-lucide="x"></i>
-        </button>
-      </div>
-      <p class="side-label" data-i18n="drawer.playingAs">Playing as</p>
-      <div class="account-card" id="accountCard">
-        <span class="headshot">
-          <canvas data-headshot="72" width="72" height="72" aria-hidden="true"></canvas>
-          <span class="headshot-fallback" data-head-fallback="1">?</span>
-        </span>
-        <span class="account-meta">
-          <span class="account-name" id="accountName">Not signed in</span>
-          <span class="account-state" id="accountState">Microsoft only</span>
-        </span>
-      </div>
-      <p class="side-label" data-i18n="drawer.instance">Instance</p>
-          <div class="panel instance-mini">
-            <div class="mini-row">
-              <span class="mini-key" data-i18n="drawer.instance">Instance</span>
-              <span class="mini-val" id="sideInstance">26.1.2 vanilla</span>
-            </div>
-        <div class="mini-row">
-          <span class="mini-key" data-i18n="drawer.status">Status</span>
-          <span class="mini-val" id="sideStatus" data-i18n="status.idle">Idle</span>
-        </div>
-      </div>
-      <button type="button" class="btn btn-ghost btn-block" id="authButton">
-        <i data-lucide="log-in" class="btn-icon"></i>
-        <span>Sign in</span>
-      </button>
-    </aside>
   </div>
 
   <div class="toast-stack" id="toastStack" aria-live="polite"></div>
@@ -688,7 +698,6 @@
   <script src="./scripts/avatar.js"></script>
   <script src="./scripts/icons.js"></script>
   <script src="./scripts/app.js"></script>
-  <script src="./scripts/drawer.js"></script>
   <script src="./scripts/auth.js"></script>
   <script src="./scripts/instance.js"></script>
   <script src="./scripts/skins.js"></script>

@@ -7,7 +7,7 @@ const os = require('node:os');
 const { spawn } = require('node:child_process');
 const { MC_VERSION, URLS, instanceDir, dataDir, instancesRoot, sharedLibrariesDir, sharedAssetsDir } = require('./config');
 const { getStoredProfile, getValidMcAccessToken } = require('./auth');
-const { getInstance, getActiveInstance, setLoaderVersion, touchLastPlayed } = require('./instances');
+const { getInstance, getActiveInstance, setLoaderVersion, touchLastPlayed, describeInstance } = require('./instances');
 const loaders = require('./loaders');
 
 let child = null;
@@ -203,6 +203,34 @@ function rulesAllow(rules, features) {
     else if (r.action === 'disallow') allowed = false;
   }
   return allowed;
+}
+
+function parseServerAddress(addr) {
+  const s = String(addr || '').trim();
+  if (!s) return null;
+  const idx = s.lastIndexOf(':');
+  if (idx > 0 && /^[0-9]+$/.test(s.slice(idx + 1))) {
+    return { host: s.slice(0, idx), port: Number(s.slice(idx + 1)) };
+  }
+  return { host: s, port: 25565 };
+}
+
+function supportsQuickPlay(mc) {
+  const s = String(mc || '').trim();
+  let m = s.match(/^(\d+)\.(\d+)(?:\.(\d+))?/);
+  if (m) {
+    if (Number(m[1]) !== 1) return true;
+    const minor = Number(m[2]);
+    const patch = m[3] === undefined ? 0 : Number(m[3]);
+    return minor > 20 || (minor === 20 && patch >= 2);
+  }
+  m = s.match(/^(\d+)w(\d+)[a-z]$/i);
+  if (m) {
+    const yy = Number(m[1]);
+    const ww = Number(m[2]);
+    return yy > 23 || (yy === 23 && ww >= 31);
+  }
+  return false;
 }
 
 function launchFeatures() {
@@ -448,7 +476,7 @@ async function ensureClientInner(instance, onProgress) {
     verifiedAt: Date.now()
   });
 
-  return { instanceDir: layout.root, versionFile, cached: tally.cached, downloaded: tally.downloaded, instance, variant };
+  return { instanceDir: layout.root, versionFile, cached: tally.cached, downloaded: tally.downloaded, instance: describeInstance(instance), variant };
 }
 
 function javaSettings() {
@@ -532,7 +560,7 @@ function buildLaunchArgs(versionJson, vars) {
   return { jvmArgs, gameArgs };
 }
 
-async function launchGame(instanceId) {
+async function launchGame(instanceId, serverAddr) {
   if (child) throw new Error('Game is already running.');
   const instance = instanceId ? getInstance(instanceId) : getActiveInstance();
   if (!instance) throw new Error('No instance selected. Create one first.');
@@ -589,6 +617,14 @@ async function launchGame(instanceId) {
   };
 
   const { jvmArgs, gameArgs } = buildLaunchArgs(versionJson, vars);
+  const joinTarget = parseServerAddress(serverAddr);
+  if (joinTarget) {
+    if (supportsQuickPlay(instance.mc)) {
+      gameArgs.push('--quickPlayMultiplayer', `${joinTarget.host}:${joinTarget.port}`);
+    } else {
+      gameArgs.push('--server', joinTarget.host, '--port', String(joinTarget.port));
+    }
+  }
   if (!jvmArgs.some((a) => a.startsWith('-Djava.library.path='))) {
     jvmArgs.push('-Djava.library.path=' + natives);
   }
@@ -671,6 +707,8 @@ module.exports = {
   gameDataDir,
   buildLaunchArgs,
   rulesAllow,
+  parseServerAddress,
+  supportsQuickPlay,
   MC_VERSION: MC_VERSION,
   platformInfo: () => ({ platform: process.platform, arch: os.arch() })
 };

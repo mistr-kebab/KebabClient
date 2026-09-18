@@ -27,16 +27,30 @@
       skins: tr('crumb.skins', 'Skins'),
       servers: tr('crumb.servers', 'Servers'),
       friends: tr('crumb.friends', 'Friends'),
+      profile: tr('crumb.profile', 'Profile'),
       settings: tr('crumb.settings', 'Settings')
     };
     return map[view] || view;
   }
 
   let currentView = 'home';
+  const viewHistory = ['home'];
+  let historyIndex = 0;
 
-  function setView(name) {
-    const known = ['home', 'play', 'instances', 'instance-detail', 'add-content', 'skins', 'servers', 'friends', 'settings'];
+  function setView(name, opts) {
+    const known = ['home', 'play', 'instances', 'instance-detail', 'add-content', 'skins', 'servers', 'friends', 'profile', 'settings'];
     const view = known.includes(name) ? name : 'home';
+    if (!opts || !opts.fromHistory) {
+      viewHistory.length = historyIndex + 1;
+      if (viewHistory[historyIndex] !== view) {
+        viewHistory.push(view);
+        historyIndex += 1;
+        if (viewHistory.length > 50) {
+          viewHistory.shift();
+          historyIndex -= 1;
+        }
+      }
+    }
     currentView = view;
     const navKey = view === 'instance-detail' || view === 'add-content' ? 'instances' : view;
     document.querySelectorAll('#mainNav .nav-item, #settingsNav .nav-item').forEach((btn) => {
@@ -50,6 +64,20 @@
     try {
       document.dispatchEvent(new CustomEvent('view:shown', { detail: { view } }));
     } catch {}
+  }
+
+  function goViewBack() {
+    if (historyIndex > 0) {
+      historyIndex -= 1;
+      setView(viewHistory[historyIndex], { fromHistory: true });
+    }
+  }
+
+  function goViewForward() {
+    if (historyIndex < viewHistory.length - 1) {
+      historyIndex += 1;
+      setView(viewHistory[historyIndex], { fromHistory: true });
+    }
   }
 
   function bindNav() {
@@ -93,12 +121,14 @@
     document.addEventListener('i18n:applied', () => {
       const crumb = document.getElementById('crumbView');
       if (crumb) crumb.textContent = crumbName(currentView);
-      const running = document.getElementById('runPill')?.classList.contains('is-running');
-      const pill = document.getElementById('runPillText');
-      if (pill) {
-        pill.textContent = running ? tr('topbar.running', 'Instance running') : tr('topbar.idle', 'No instances running');
-      }
-      for (const id of ['sideStatus', 'heroStatusText', 'homeActiveState']) {
+      const running = (() => {
+        try {
+          return document.documentElement.dataset.gameRunning === '1';
+        } catch {
+          return false;
+        }
+      })();
+      for (const id of ['heroStatusText', 'homeActiveState']) {
         const node = document.getElementById(id);
         if (node) node.textContent = running ? tr('status.running', 'Running') : tr('status.idle', 'Idle');
       }
@@ -143,6 +173,15 @@
   document.addEventListener('DOMContentLoaded', () => {
     bindNav();
     bindWindowControls();
+    document.addEventListener('mouseup', (e) => {
+      if (e.button === 3) {
+        e.preventDefault();
+        goViewBack();
+      } else if (e.button === 4) {
+        e.preventDefault();
+        goViewForward();
+      }
+    });
     setView('home');
     const status = document.getElementById('splashStatus');
     const steps = [tr('app.load1', 'Loading settings…'), tr('app.load2', 'Checking account…'), tr('app.load3', 'Loading instances…'), tr('app.load4', 'Almost there…')];
