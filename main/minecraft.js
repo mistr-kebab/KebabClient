@@ -515,14 +515,144 @@ function downloadThreads() {
   }
 }
 
-function findJava() {
-  const custom = javaSettings().path;
-  if (custom && fs.existsSync(custom)) return custom;
-  if (process.env.JAVA_HOME) {
-    const cand = path.join(process.env.JAVA_HOME, 'bin', process.platform === 'win32' ? 'java.exe' : 'java');
+function checkJavaRunnable(java) {
+  return new Promise((resolve, reject) => {
+    let proc = null;
+    try {
+      proc = require('node:child_process').execFile(java, ['-version'], (err) => {
+        if (err) reject(err);
+        else resolve(true);
+      });
+    } catch (err) {
+      reject(err);
+      return;
+    }
+    if (proc && typeof proc.on === 'function') {
+      proc.on('error', (err) => reject(err));
+    }
+  });
+}
+
+async function assertJavaAvailable(java) {
+  try {
+    await checkJavaRunnable(java);
+    return;
+  } catch (err) {
+    if (err && (err.code === 'ENOENT' || /ENOENT/i.test(String(err.message || '')))) {
+      const e = new Error(
+        `Java was not found ("${java}"). Install Java (e.g. Eclipse Temurin from https://adoptium.net) ` +
+        'or pick your Java executable in Settings → Java.'
+      );
+      e.code = 'JAVA_NOT_FOUND';
+      throw e;
+    }
+    throw err;
+  }
+}
+
+function bundledJavaDir() {
+  return path.join(dataDir(), 'java');
+}
+
+function findBundledJava() {
+  const exe = process.platform === 'win32' ? 'java.exe' : 'java';
+  let entries = [];
+  try {
+    entries = fs.readdirSync(bundledJavaDir(), { withFileTypes: true });
+  } catch {
+    return null;
+  }
+  for (const e of entries) {
+    if (!e.isDirectory() || e.name.startsWith('.')) continue;
+    const cand = path.join(bundledJavaDir(), e.name, 'bin', exe);
     if (fs.existsSync(cand)) return cand;
   }
-  return process.platform === 'win32' ? 'java.exe' : 'java';
+  return null;
+}
+
+function temurinDownloadUrl() {
+  const os = process.platform === 'win32' ? 'windows' : process.platform === 'darwin' ? 'mac' : 'linux';
+  const arch = process.arch === 'arm64' ? 'aarch64' : 'x64';
+  return `https://api.adoptium.net/v3/binary/latest/21/ga/${os}/${arch}/jre/hotspot/normal/eclipse`;
+}
+
+async function downloadBundledJava(onProgress) {
+  if (process.platform !== 'win32') {
+    throw new Error('Automatic Java install is only supported on Windows. Install Eclipse Temurin manually (https://adoptium.net) or pick java.exe in Settings → Java.');
+  }
+  let AdmZip;
+  try {
+    AdmZip = require('adm-zip');
+  } catch {
+    throw new Error('Missing dependency adm-zip. Run npm install.');
+  }
+  const target = bundledJavaDir();
+  fs.mkdirSync(target, { recursive: true });
+  const tmpZip = path.join(target, '.temurin-21-jre.zip');
+  await downloadFileResilient(temurinDownloadUrl(), tmpZip, null, 0, onProgress);
+  try {
+    new AdmZip(tmpZip).extractAllTo(target, true);
+  } finally {
+    try { fs.unlinkSync(tmpZip); } catch {}
+  }
+  const found = findBundledJava();
+  if (!found) throw new Error('Java download finished but no runtime was found inside.');
+  await assertJavaAvailable(found);
+  return found;
+}
+
+function persistJavaPath(javaPath) {
+  try {
+    require('./settings').updateSettings({ java: { path: javaPath } });
+  } catch {}
+}
+
+let javaSetupInflight = null;
+
+async function ensureJavaRuntime(onProgress) {
+  const opts = javaSettings();
+  if (opts.path) {
+    if (!fs.existsSync(opts.path)) {
+      throw new Error(`Configured Java not found: ${opts.path}. Pick a valid executable in Settings → Java or clear the field for auto-detect.`);
+    }
+    return opts.path;
+  }
+  const exeName = process.platform === 'win32' ? 'java.exe' : 'java';
+  const candidates = [];
+  if (process.env.JAVA_HOME) {
+    candidates.push(path.join(process.env.JAVA_HOME, 'bin', exeName));
+  }
+  candidates.push(exeName);
+  for (const cand of candidates) {
+    try {
+      await assertJavaAvailable(cand);
+      return cand;
+    } catch (err) {
+      if (!err || err.code !== 'JAVA_NOT_FOUND') throw err;
+    }
+  }
+  const bundled = findBundledJava();
+  if (bundled) {
+    try {
+      await assertJavaAvailable(bundled);
+      persistJavaPath(bundled);
+      return bundled;
+    } catch {}
+  }
+  emit('game:log', { stream: 'system', line: 'Java not found. Downloading Eclipse Temurin 21 JRE…' });
+  if (!javaSetupInflight) {
+    javaSetupInflight = downloadBundledJava((r) => {
+      try { onProgress && onProgress(r, `Downloading Java runtime ${Math.round((r || 0) * 100)}%`); } catch {}
+    }).finally(() => { javaSetupInflight = null; });
+  }
+  let fresh;
+  try {
+    fresh = await javaSetupInflight;
+  } catch (err) {
+    throw new Error(`Java download failed (${err?.message || err}). Install Eclipse Temurin manually (https://adoptium.net) or pick java.exe in Settings → Java.`);
+  }
+  persistJavaPath(fresh);
+  return fresh;
 }
 
 function buildClasspath(versionJson, librariesDir, clientJarPath) {
@@ -639,7 +769,9 @@ async function launchGame(instanceId, serverAddr) {
   if (extra.length) jvmArgs.push(...extra);
 
   const mainClass = versionJson.mainClass;
-  const java = findJava();
+  const java = await ensureJavaRuntime((ratio, label) => {
+    emit('game:progress', { phase: 'java', ratio, label, instanceId: instance.id, instanceName: instance.name });
+  });
   const args = [...jvmArgs, mainClass, ...gameArgs];
 
   emit('game:status', { running: true, pid: null, instanceId: instance.id });
@@ -709,6 +841,8 @@ module.exports = {
   rulesAllow,
   parseServerAddress,
   supportsQuickPlay,
+  assertJavaAvailable,
+  ensureJavaRuntime,
   MC_VERSION: MC_VERSION,
   platformInfo: () => ({ platform: process.platform, arch: os.arch() })
 };
