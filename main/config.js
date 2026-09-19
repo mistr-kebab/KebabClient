@@ -40,9 +40,6 @@ const MC_VERSION = '26.1.2';
 
 const APP_NAME = 'KebabClient';
 
-const BUILTIN_CLIENT_ID = '00000000402B5328';
-const BUILTIN_REDIRECT_URI = 'https://login.live.com/oauth20_desktop.srf';
-
 const OWN_CLIENT_ID = 'b0be2e82-378f-4156-a4f5-c43506935142';
 
 function appDataRoot() {
@@ -107,10 +104,6 @@ const URLS = {
   sessionServerJoin: 'https://sessionserver.mojang.com/session/minecraft/join'
 };
 
-function microsoftClientId() {
-  return process.env.MC_LAUNCHER_CLIENT_ID || process.env.AZURE_CLIENT_ID || '';
-}
-
 const BUILTIN_DISCORD_CLIENT_ID = '1549540973653004320';
 
 function discordClientId() {
@@ -124,8 +117,6 @@ function msRedirectUri() {
 module.exports = {
   MC_VERSION,
   APP_NAME,
-  BUILTIN_CLIENT_ID,
-  BUILTIN_REDIRECT_URI,
   OWN_CLIENT_ID,
   BUILTIN_DISCORD_CLIENT_ID,
   discordClientId,
@@ -137,6 +128,5 @@ module.exports = {
   instancesRoot,
   sharedLibrariesDir,
   sharedAssetsDir,
-  microsoftClientId,
   msRedirectUri
 };

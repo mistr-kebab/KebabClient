@@ -57,8 +57,6 @@ dev.
 
 | Variable                | Purpose                                              |
 | ----------------------- | ---------------------------------------------------- |
-| `MC_LAUNCHER_CLIENT_ID` | Entra application (client) ID for sign-in (public ID, empty = built-in default) |
-| `AZURE_CLIENT_ID`       | Legacy alias for `MC_LAUNCHER_CLIENT_ID`             |
 | `DISCORD_CLIENT_ID`     | Own Discord application ID for Rich Presence (public ID, empty = built-in default) |
 | `KEBAB_DATA_DIR`        | Custom data directory (absolute path)                |
 | `KEBAB_LANG`            | Force Discord Rich Presence language (`de`, `en`, empty = follow app settings) |
