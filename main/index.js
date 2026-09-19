@@ -323,6 +323,7 @@ function registerIpc() {
   ipcMain.handle('servers:categories', async () => servers.listCategories());
   ipcMain.handle('servers:addCategory', async (_e, args) => servers.addCategory(args?.name));
   ipcMain.handle('servers:renameCategory', async (_e, args) => servers.renameCategory(args?.id, args?.name));
+  ipcMain.handle('servers:deleteCategory', async (_e, args) => servers.deleteCategory(args?.id));
   ipcMain.handle('servers:openInvite', async (_e, args) => {
     let url = String(args?.url || '').trim();
     if (!url) throw new Error('No invite link.');
