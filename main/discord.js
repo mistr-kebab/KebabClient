@@ -2,6 +2,7 @@
 
 
 const { loadState } = require('./store');
+const { URLS } = require('./config');
 
 const RECONNECT_MS = 30000;
 
@@ -93,7 +94,7 @@ function buildActivity() {
     activity.state = t.menu;
   }
   if (current.startedAt) activity.startTimestamp = current.startedAt;
-  activity.buttons = [{ label: t.download, url: 'https://kebabdev.de/download/' }];
+  activity.buttons = [{ label: t.download, url: URLS.downloadPage }];
   return activity;
 }
 

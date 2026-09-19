@@ -16,29 +16,15 @@
     if (node) node.textContent = value;
   }
 
-  async function fetchJsonTimeout(url, timeoutMs = 8000) {
-    const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), timeoutMs);
-    try {
-      const res = await fetch(url, {
-        headers: { Accept: 'application/json' },
-        signal: ctrl.signal
-      });
-      if (!res.ok) return null;
-      return await res.json();
-    } catch {
-      return null;
-    } finally {
-      clearTimeout(timer);
-    }
-  }
-
   async function load() {
     try {
       const v = await bridge().appVersion();
       if (v && v.version) set('aboutVersion', 'v' + String(v.version).replace(/^v/, ''));
     } catch {}
-    const latest = await fetchJsonTimeout('https://kebabdev.de/api/latest.json');
+    let latest = null;
+    try {
+      latest = await bridge().getLatestRelease();
+    } catch {}
     if (latest && latest.version) {
       set('aboutLatest', 'v' + String(latest.version).replace(/^v/, ''));
       const notes = latest.changelog && (latest.changelog[uiLang()] || latest.changelog.de);

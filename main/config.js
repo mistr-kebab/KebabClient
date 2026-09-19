@@ -92,17 +92,35 @@ function sharedAssetsDir() {
 
 const URLS = {
   pistonMetaManifest: 'https://piston-meta.mojang.com/mc/game/version_manifest_v2.json',
+  minecraftResources: 'https://resources.download.minecraft.net',
   modrinthApi: 'https://api.modrinth.com/v2',
+  fabricMeta: 'https://meta.fabricmc.net/v2',
+  fabricMaven: 'https://maven.fabricmc.net/',
+  quiltMeta: 'https://meta.quiltmc.org/v3',
+  quiltMaven: 'https://maven.quiltmc.org/repository/release/',
+  adoptiumApi: 'https://api.adoptium.net',
+  mcServicesBase: 'https://api.minecraftservices.com',
   msAuthorize: 'https://login.microsoftonline.com/consumers/oauth2/v2.0/authorize',
   msToken: 'https://login.microsoftonline.com/consumers/oauth2/v2.0/token',
+  liveLegacyRedirect: 'https://login.live.com/oauth20_desktop.srf',
   xboxUserAuth: 'https://user.auth.xboxlive.com/user/authenticate',
+  xboxRelyingParty: 'http://auth.xboxlive.com',
   xstsAuthorize: 'https://xsts.auth.xboxlive.com/xsts/authorize',
   mcLoginXbox: 'https://api.minecraftservices.com/authentication/login_with_xbox',
   mcProfile: 'https://api.minecraftservices.com/minecraft/profile',
   mcProfileSkins: 'https://api.minecraftservices.com/minecraft/profile/skins',
   mcProfileCapes: 'https://api.minecraftservices.com/minecraft/profile/capes',
-  sessionServerJoin: 'https://sessionserver.mojang.com/session/minecraft/join'
+  sessionServerJoin: 'https://sessionserver.mojang.com/session/minecraft/join',
+  downloadPage: 'https://kebabdev.de/download/',
+  telemetryPing: 'https://kebabdev.de/api/ping',
+  latestRelease: 'https://kebabdev.de/api/latest.json'
 };
+
+function temurinDownloadUrl(major) {
+  const os = process.platform === 'win32' ? 'windows' : process.platform === 'darwin' ? 'mac' : 'linux';
+  const arch = process.arch === 'arm64' ? 'aarch64' : 'x64';
+  return `${URLS.adoptiumApi}/v3/binary/latest/${major}/ga/${os}/${arch}/jre/hotspot/normal/eclipse`;
+}
 
 const BUILTIN_DISCORD_CLIENT_ID = '1549540973653004320';
 
@@ -120,6 +138,7 @@ module.exports = {
   OWN_CLIENT_ID,
   BUILTIN_DISCORD_CLIENT_ID,
   discordClientId,
+  temurinDownloadUrl,
   URLS,
   dataDir,
   defaultDataDir,

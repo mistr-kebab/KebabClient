@@ -11,7 +11,7 @@ const HISTORY_LIMIT = 12;
 
 async function mcGet(p) {
   const token = await getValidMcAccessToken();
-  const res = await fetch(`https://api.minecraftservices.com${p}`, {
+  const res = await fetch(`${URLS.mcServicesBase}${p}`, {
     headers: { Authorization: `Bearer ${token}` }
   });
   if (!res.ok) throw new Error(`Mojang API request failed (${res.status}): ${p}`);

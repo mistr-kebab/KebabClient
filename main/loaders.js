@@ -1,19 +1,21 @@
 'use strict';
 
+const { URLS } = require('./config');
+
 const LOADERS = {
   fabric: {
     label: 'Fabric',
-    meta: (mc) => `https://meta.fabricmc.net/v2/versions/loader/${encodeURIComponent(mc)}`,
+    meta: (mc) => `${URLS.fabricMeta}/versions/loader/${encodeURIComponent(mc)}`,
     profile: (mc, loaderVersion) =>
-      `https://meta.fabricmc.net/v2/versions/loader/${encodeURIComponent(mc)}/${encodeURIComponent(loaderVersion)}/profile/json`,
-    maven: 'https://maven.fabricmc.net/'
+      `${URLS.fabricMeta}/versions/loader/${encodeURIComponent(mc)}/${encodeURIComponent(loaderVersion)}/profile/json`,
+    maven: URLS.fabricMaven
   },
   quilt: {
     label: 'Quilt',
-    meta: (mc) => `https://meta.quiltmc.org/v3/versions/loader/${encodeURIComponent(mc)}`,
+    meta: (mc) => `${URLS.quiltMeta}/versions/loader/${encodeURIComponent(mc)}`,
     profile: (mc, loaderVersion) =>
-      `https://meta.quiltmc.org/v3/versions/loader/${encodeURIComponent(mc)}/${encodeURIComponent(loaderVersion)}/profile/json`,
-    maven: 'https://maven.quiltmc.org/repository/release/'
+      `${URLS.quiltMeta}/versions/loader/${encodeURIComponent(mc)}/${encodeURIComponent(loaderVersion)}/profile/json`,
+    maven: URLS.quiltMaven
   }
 };
 

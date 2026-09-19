@@ -4,6 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { app } = require('electron');
 const updater = require('../updater');
+const { URLS } = require('../config');
 
 function register(ipcMain) {
   ipcMain.on('views:load', (event) => {
@@ -58,6 +59,20 @@ function register(ipcMain) {
   });
 
   ipcMain.handle('discord:refresh', async () => require('../discord').refresh());
+
+  ipcMain.handle('about:latest', async () => {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 8000);
+    try {
+      const res = await fetch(URLS.latestRelease, { headers: { Accept: 'application/json' }, signal: ctrl.signal });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
+    } finally {
+      clearTimeout(timer);
+    }
+  });
 
   ipcMain.handle('update:version', async () => ({ version: updater.currentVersion() }));
   ipcMain.handle('update:check', async () => updater.checkNow(true));

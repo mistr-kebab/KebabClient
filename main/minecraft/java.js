@@ -2,7 +2,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
-const { dataDir } = require('../config');
+const { dataDir, temurinDownloadUrl } = require('../config');
 const { emit } = require('./events');
 const { downloadFileResilient } = require('./download');
 
@@ -151,12 +151,6 @@ function isBundledJavaPath(p) {
   } catch {
     return false;
   }
-}
-
-function temurinDownloadUrl(major) {
-  const os = process.platform === 'win32' ? 'windows' : process.platform === 'darwin' ? 'mac' : 'linux';
-  const arch = process.arch === 'arm64' ? 'aarch64' : 'x64';
-  return `https://api.adoptium.net/v3/binary/latest/${major}/ga/${os}/${arch}/jre/hotspot/normal/eclipse`;
 }
 
 async function downloadBundledJava(major, onProgress) {

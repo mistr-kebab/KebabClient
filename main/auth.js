@@ -111,7 +111,7 @@ function listenForAuthCode(parent, cfg) {
       else resolve({ code, verifier });
     };
     win.on('closed', () => done(new Error('Sign-in window was closed before completing authentication.')));
-    const filter = { urls: [`${redirect}*`, 'https://login.live.com/oauth20_desktop.srf*'] };
+    const filter = { urls: [`${redirect}*`, `${URLS.liveLegacyRedirect}*`] };
     win.webContents.session.webRequest.onBeforeRequest(filter, (details, callback) => {
       try {
         const u = new URL(details.url);
@@ -185,7 +185,7 @@ async function refreshMsTokens(refreshToken, clientId) {
 async function xboxAuthenticate(msAccessToken) {
   const body = await postJson(URLS.xboxUserAuth, {
     Properties: { AuthMethod: 'RPS', SiteName: 'user.auth.xboxlive.com', RpsTicket: `d=${msAccessToken}` },
-    RelyingParty: 'http://auth.xboxlive.com',
+    RelyingParty: URLS.xboxRelyingParty,
     TokenType: 'JWT'
   });
   if (!body || !body.Token) throw new Error('Xbox Live authentication returned no token.');

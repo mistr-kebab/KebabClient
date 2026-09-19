@@ -4,8 +4,9 @@
 const { app } = require('electron');
 const { randomUUID } = require('node:crypto');
 const { loadState, saveState } = require('./store');
+const { URLS } = require('./config');
 
-const PING_URL = 'https://kebabdev.de/api/ping';
+const PING_URL = URLS.telemetryPing;
 const DAY = 24 * 60 * 60 * 1000;
 
 function userAgent() {

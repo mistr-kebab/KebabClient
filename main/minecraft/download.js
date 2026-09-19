@@ -270,7 +270,7 @@ async function ensureAssets(versionJson, assets, progress, tally) {
     const hash = obj.hash;
     const sub = path.join('objects', hash.slice(0, 2), hash);
     tally(await downloadFileResilient(
-      `https://resources.download.minecraft.net/${hash.slice(0, 2)}/${hash}`,
+      `${URLS.minecraftResources}/${hash.slice(0, 2)}/${hash}`,
       path.join(assets, sub),
       hash,
       obj.size

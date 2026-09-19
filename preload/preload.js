@@ -88,6 +88,7 @@ contextBridge.exposeInMainWorld('mc', {
   refreshDiscord: () => ipcRenderer.invoke('discord:refresh'),
 
   appVersion: () => ipcRenderer.invoke('update:version'),
+  getLatestRelease: () => ipcRenderer.invoke('about:latest'),
   checkForUpdates: () => ipcRenderer.invoke('update:check'),
   downloadUpdate: () => ipcRenderer.invoke('update:download'),
   installUpdate: () => ipcRenderer.invoke('update:install'),
