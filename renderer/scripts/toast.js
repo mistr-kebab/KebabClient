@@ -1,11 +1,6 @@
 'use strict';
 
 (function () {
-  function bridge() {
-    if (!window.mc) throw new Error('Preload bridge (window.mc) is unavailable.');
-    return window.mc;
-  }
-
   const DURATION = 5200;
   const MAX_VISIBLE = 5;
 
@@ -115,19 +110,6 @@
     stack.classList.toggle('has-many', kids.length > 3);
   }
 
-  function formatDownloads(n) {
-    const v = Number(n || 0);
-    if (v >= 1000000) return `${(v / 1000000).toFixed(1)}M`;
-    if (v >= 1000) return `${(v / 1000).toFixed(1)}k`;
-    return String(v);
-  }
-
-  function el(tag, className, text) {
-    const node = document.createElement(tag);
-    if (className) node.className = className;
-    if (text !== undefined) node.textContent = text;
-    return node;
-  }
-
-  window.launcherUtil = { bridge, toast, formatDownloads, el };
+  window.launcherUtil = window.launcherUtil || {};
+  window.launcherUtil.toast = toast;
 })();
