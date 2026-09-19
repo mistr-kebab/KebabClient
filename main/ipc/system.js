@@ -18,6 +18,21 @@ function register(ipcMain) {
     event.returnValue = out;
   });
 
+  ipcMain.on('locales:load', (event) => {
+    const dir = path.join(app.getAppPath(), 'renderer', 'locales');
+    const out = {};
+    try {
+      for (const file of fs.readdirSync(dir).sort()) {
+        const m = file.match(/^([a-z]{2}(?:-[A-Za-z]{2})?)\.json$/);
+        if (!m) continue;
+        try {
+          out[m[1].toLowerCase()] = JSON.parse(fs.readFileSync(path.join(dir, file), 'utf8'));
+        } catch {}
+      }
+    } catch {}
+    event.returnValue = out;
+  });
+
   ipcMain.handle('assets:banners', async () => {
     const dir = path.join(app.getAppPath(), 'renderer', 'assets');
     const MIME = { '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp', '.avif': 'image/avif' };
