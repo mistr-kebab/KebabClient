@@ -3,9 +3,9 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
-const { URLS, dataDir } = require('./config');
+const { URLS, dataDir } = require('../config');
 const { getValidMcAccessToken, getStoredProfile } = require('./auth');
-const { loadState, saveState } = require('./store');
+const { loadState, saveState } = require('../store');
 
 const HISTORY_LIMIT = 12;
 

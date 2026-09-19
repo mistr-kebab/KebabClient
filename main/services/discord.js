@@ -1,8 +1,8 @@
 'use strict';
 
 
-const { loadState } = require('./store');
-const { URLS } = require('./config');
+const { loadState } = require('../store');
+const { URLS } = require('../config');
 
 const RECONNECT_MS = 30000;
 
@@ -26,7 +26,7 @@ function note(text) {
 
 function discordClientId() {
   try {
-    const cfg = require('./config');
+    const cfg = require('../config');
     const v = typeof cfg.discordClientId === 'function' ? cfg.discordClientId() : '';
     const s = String(v || '').trim();
     if (!s || /DEIN-|HIER-|XXXX|0000/.test(s)) return '';

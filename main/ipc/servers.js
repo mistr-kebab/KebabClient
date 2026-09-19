@@ -1,7 +1,7 @@
 'use strict';
 
 const { shell } = require('electron');
-const servers = require('../servers');
+const servers = require('../services/servers');
 
 function register(ipcMain) {
   ipcMain.handle('servers:list', async () => servers.listServers());

@@ -3,7 +3,7 @@
 const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
-const { URLS } = require('./config');
+const { URLS } = require('../config');
 const { dirsFor } = require('./minecraft');
 const { getInstance, getActiveInstance } = require('./instances');
 

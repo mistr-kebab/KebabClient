@@ -3,8 +3,8 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
-const { MC_VERSION, dataDir, instancesRoot } = require('./config');
-const { loadState, saveState } = require('./store');
+const { MC_VERSION, dataDir, instancesRoot } = require('../config');
+const { loadState, saveState } = require('../store');
 
 const LOADERS = ['vanilla', 'fabric', 'quilt'];
 const LOADER_NAMES = { vanilla: 'Vanilla', fabric: 'Fabric', quilt: 'Quilt' };

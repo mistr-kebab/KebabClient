@@ -93,7 +93,7 @@ function installUpdate() {
   if (!isSupported()) throw new Error('No update source configured.');
   if (!downloaded) throw new Error('No update downloaded yet. Download the update first.');
   try {
-    const minecraft = require('./minecraft');
+    const minecraft = require('./services/minecraft');
     if (minecraft.isRunning()) throw new Error('Stop the game before installing the update.');
   } catch (err) {
     if (/Stop the game/.test(err.message)) throw err;

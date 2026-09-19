@@ -1,6 +1,6 @@
 'use strict';
 
-const { URLS } = require('./config');
+const { URLS } = require('../config');
 
 const LOADERS = {
   fabric: {

@@ -1,7 +1,7 @@
 'use strict';
 
 const { dialog } = require('electron');
-const content = require('../content');
+const content = require('../services/content');
 
 function register(ipcMain, ctx) {
   const { broadcast, getWindow } = ctx;

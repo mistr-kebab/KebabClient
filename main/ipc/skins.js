@@ -3,7 +3,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { dialog } = require('electron');
-const skins = require('../skins');
+const skins = require('../services/skins');
 
 function register(ipcMain, ctx) {
   const getWindow = ctx.getWindow;

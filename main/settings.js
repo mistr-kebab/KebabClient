@@ -203,7 +203,7 @@ function moveDataDir(dir, onStep) {
   if (!clean) throw new Error('Directory is required.');
   if (!path.isAbsolute(clean)) throw new Error('Directory must be an absolute path.');
   assertUsableDataDir(clean);
-  if (require('./minecraft').isRunning()) {
+  if (require('./services/minecraft').isRunning()) {
     throw new Error('Stop the game before moving data.');
   }
   const { dataDir } = require('./config');

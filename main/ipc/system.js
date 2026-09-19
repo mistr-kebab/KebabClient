@@ -58,7 +58,7 @@ function register(ipcMain) {
     return out;
   });
 
-  ipcMain.handle('discord:refresh', async () => require('../discord').refresh());
+  ipcMain.handle('discord:refresh', async () => require('../services/discord').refresh());
 
   ipcMain.handle('about:latest', async () => {
     const ctrl = new AbortController();

@@ -1,7 +1,7 @@
 'use strict';
 
 const os = require('node:os');
-const { MC_VERSION, instanceDir } = require('./config');
+const { MC_VERSION, instanceDir } = require('../config');
 const { setEmitter } = require('./minecraft/events');
 const paths = require('./minecraft/paths');
 const download = require('./minecraft/download');

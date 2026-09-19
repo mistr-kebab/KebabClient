@@ -1,6 +1,6 @@
 'use strict';
 
-const auth = require('../auth');
+const auth = require('../services/auth');
 const store = require('../store');
 
 function register(ipcMain, ctx) {

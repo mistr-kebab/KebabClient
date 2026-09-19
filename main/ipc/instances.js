@@ -2,8 +2,8 @@
 
 const { dialog } = require('electron');
 const config = require('../config');
-const instances = require('../instances');
-const loaders = require('../loaders');
+const instances = require('../services/instances');
+const loaders = require('../services/loaders');
 
 function register(ipcMain, ctx) {
   const { broadcast, getWindow } = ctx;

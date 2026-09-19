@@ -2,13 +2,13 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
-const { dataDir, temurinDownloadUrl } = require('../config');
+const { dataDir, temurinDownloadUrl } = require('../../config');
 const { emit } = require('./events');
 const { downloadFileResilient } = require('./download');
 
 function javaSettings() {
   try {
-    const { loadState } = require('../store');
+    const { loadState } = require('../../store');
     const s = loadState().settings?.java || {};
     let customPath = String(s.path || '').trim();
     if (customPath && (!path.isAbsolute(customPath) || !fs.existsSync(customPath))) {
@@ -180,7 +180,7 @@ async function downloadBundledJava(major, onProgress) {
 
 function persistJavaPath(javaPath) {
   try {
-    require('../settings').updateSettings({ java: { path: javaPath } });
+    require('../../settings').updateSettings({ java: { path: javaPath } });
   } catch {}
 }
 

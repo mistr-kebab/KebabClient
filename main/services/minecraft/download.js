@@ -3,7 +3,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
-const { URLS } = require('../config');
+const { URLS } = require('../../config');
 const { getInstance, getActiveInstance, setLoaderVersion, describeInstance } = require('../instances');
 const loaders = require('../loaders');
 const { emit } = require('./events');
@@ -327,7 +327,7 @@ async function ensureLoaderFiles(instance, layout, vanillaJson, progress, tally)
 
 function downloadThreads() {
   try {
-    const { loadState } = require('../store');
+    const { loadState } = require('../../store');
     const t = Number(loadState().settings?.downloads?.threads);
     return [2, 4, 8, 16].includes(t) ? t : 8;
   } catch {

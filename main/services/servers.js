@@ -3,9 +3,9 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
-const { instanceDir } = require('./config');
-const { loadState, saveState } = require('./store');
-const { buildServersDat, parseServersDat } = require('./nbt');
+const { instanceDir } = require('../config');
+const { loadState, saveState } = require('../store');
+const { buildServersDat, parseServersDat } = require('../nbt');
 
 function listServers() {
   const state = loadState();

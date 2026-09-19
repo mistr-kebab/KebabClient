@@ -1,10 +1,10 @@
 'use strict';
 
 const { shell } = require('electron');
-const auth = require('../auth');
-const minecraft = require('../minecraft');
-const servers = require('../servers');
-const instances = require('../instances');
+const auth = require('../services/auth');
+const minecraft = require('../services/minecraft');
+const servers = require('../services/servers');
+const instances = require('../services/instances');
 
 function register(ipcMain, ctx) {
   const { broadcast } = ctx;

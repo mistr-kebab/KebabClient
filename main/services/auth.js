@@ -2,8 +2,8 @@
 
 const crypto = require('node:crypto');
 const { BrowserWindow } = require('electron');
-const { URLS, msRedirectUri, OWN_CLIENT_ID } = require('./config');
-const { loadSecrets, saveSecrets, clearSecrets, loadState, saveState } = require('./store');
+const { URLS, msRedirectUri, OWN_CLIENT_ID } = require('../config');
+const { loadSecrets, saveSecrets, clearSecrets, loadState, saveState } = require('../store');
 
 const SCOPES = ['XboxLive.signin', 'offline_access', 'openid', 'profile', 'email'];
 

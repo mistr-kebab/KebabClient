@@ -3,9 +3,9 @@
 const path = require('node:path');
 const { app, BrowserWindow, ipcMain } = require('electron');
 const store = require('./store');
-const auth = require('./auth');
-const minecraft = require('./minecraft');
-const servers = require('./servers');
+const auth = require('./services/auth');
+const minecraft = require('./services/minecraft');
+const servers = require('./services/servers');
 const updater = require('./updater');
 const telemetry = require('./telemetry');
 
@@ -52,7 +52,7 @@ function broadcast(channel, payload) {
 minecraft.setEmitter((channel, payload) => broadcast(channel, payload));
 
 try {
-  require('./discord').setLogger((text) => broadcast('game:log', { stream: 'system', line: text }));
+  require('./services/discord').setLogger((text) => broadcast('game:log', { stream: 'system', line: text }));
 } catch {}
 
 function registerIpc() {
@@ -96,7 +96,7 @@ if (!gotSingleInstanceLock) {
     createWindow();
     updater.initUpdater(broadcast);
     telemetry.startTelemetry();
-    try { require('./discord').showMenu(); } catch {}
+    try { require('./services/discord').showMenu(); } catch {}
     autoRefresh();
     try { servers.syncToAllInstances(); } catch (err) { console.error('Could not sync servers.dat:', err); }
     app.on('activate', () => {

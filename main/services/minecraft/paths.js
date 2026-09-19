@@ -2,7 +2,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
-const { instanceDir, dataDir, instancesRoot, sharedLibrariesDir, sharedAssetsDir } = require('../config');
+const { instanceDir, dataDir, instancesRoot, sharedLibrariesDir, sharedAssetsDir } = require('../../config');
 const { getActiveInstance } = require('../instances');
 
 function dirsFor(instance) {
