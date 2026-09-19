@@ -69,7 +69,7 @@ async function apiGet(p, params) {
   return res.json();
 }
 
-async function searchMods(query, options) {
+async function searchContent(query, options) {
   const opts = options && typeof options === 'object'
     ? options
     : { limit: options, offset: arguments[2], instanceId: arguments[3] };
@@ -255,10 +255,10 @@ async function switchContentVersion(filename, projectId, versionId, instanceId, 
   if (!available.some((v) => v.id === versionId)) {
     throw new Error('Selected version is not available for this instance.');
   }
-  const installed = await installMod(projectId, versionId, instanceId, onStep, cat.key);
+  const installed = await installContent(projectId, versionId, instanceId, onStep, cat.key);
   if (installed.file !== safe) {
     try {
-      uninstallMod(safe, instanceId, cat.key);
+      uninstallContent(safe, instanceId, cat.key);
     } catch (err) {
       installed.depProblems = [...(installed.depProblems || []), `old file not removed: ${err.message}`];
     }
@@ -292,7 +292,7 @@ async function verifySha512(file, expected) {
   }
 }
 
-async function installMod(projectId, versionId, instanceId, onStep, category, meta) {
+async function installContent(projectId, versionId, instanceId, onStep, category, meta) {
   const cat = categoryOf(category);
   const instance = resolveInstance(instanceId);
   const mc = instance.mc;
@@ -635,7 +635,7 @@ function listInstalled(instanceId, category) {
   };
 }
 
-function uninstallMod(filename, instanceId, category) {
+function uninstallContent(filename, instanceId, category) {
   const cat = categoryOf(category);
   const safe = path.basename(String(filename || ''));
   const { base } = stripDisabled(safe);
@@ -716,11 +716,11 @@ async function importContent(category, sourcePaths, instanceId) {
 
 module.exports = {
   CATEGORIES,
-  searchMods,
+  searchContent,
   getProjectVersions,
-  installMod,
+  installContent,
   listInstalled,
-  uninstallMod,
+  uninstallContent,
   toggleContent,
   prettifyFilename,
   importContent,

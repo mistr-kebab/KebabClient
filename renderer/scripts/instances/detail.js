@@ -401,7 +401,7 @@
     del.addEventListener('click', async () => {
       if (!window.confirm(fmt(tr('inst.delContentConfirm', 'Delete “{name}” from this instance?'), { name: m.name || m.file }))) return;
       try {
-        await bridge().uninstallMod(m.file, key, ctx.detailId);
+        await bridge().uninstallContent(m.file, key, ctx.detailId);
         toast(fmt(tr('inst.removedToast', 'Removed {name}.'), { name: m.name || m.file }), 'ok');
         await ctx.loadDetailInstalled();
         void ctx.checkForUpdates(true);

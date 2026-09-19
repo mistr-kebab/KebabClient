@@ -6,8 +6,8 @@ const content = require('../services/content');
 function register(ipcMain, ctx) {
   const { broadcast, getWindow } = ctx;
 
-  ipcMain.handle('mods:search', async (_e, args) =>
-    content.searchMods(args?.query || '', {
+  ipcMain.handle('content:search', async (_e, args) =>
+    content.searchContent(args?.query || '', {
       limit: args?.limit || 24,
       offset: args?.offset || 0,
       instanceId: args?.instanceId,
@@ -15,17 +15,17 @@ function register(ipcMain, ctx) {
       sort: args?.sort
     })
   );
-  ipcMain.handle('mods:install', async (_e, args) => {
-    const res = await content.installMod(args?.projectId, args?.versionId, args?.instanceId, (s) =>
+  ipcMain.handle('content:install', async (_e, args) => {
+    const res = await content.installContent(args?.projectId, args?.versionId, args?.instanceId, (s) =>
       broadcast('game:progress', { phase: 'mods', ...s }), args?.category, args?.meta);
     return res;
   });
-  ipcMain.handle('mods:list', async (_e, args) => content.listInstalled(args?.instanceId, args?.category));
-  ipcMain.handle('mods:uninstall', async (_e, args) => content.uninstallMod(args?.file, args?.instanceId, args?.category));
-  ipcMain.handle('mods:toggle', async (_e, args) => content.toggleContent(args?.file, args?.instanceId, args?.category));
-  ipcMain.handle('mods:checkUpdates', async (_e, args) => content.checkContentUpdates(args?.instanceId, args?.category));
-  ipcMain.handle('mods:versions', async (_e, args) => content.listContentVersions(args?.projectId, args?.instanceId, args?.category));
-  ipcMain.handle('mods:switch', async (_e, args) => content.switchContentVersion(args?.file, args?.projectId, args?.versionId, args?.instanceId, args?.category, (s) =>
+  ipcMain.handle('content:list', async (_e, args) => content.listInstalled(args?.instanceId, args?.category));
+  ipcMain.handle('content:uninstall', async (_e, args) => content.uninstallContent(args?.file, args?.instanceId, args?.category));
+  ipcMain.handle('content:toggle', async (_e, args) => content.toggleContent(args?.file, args?.instanceId, args?.category));
+  ipcMain.handle('content:checkUpdates', async (_e, args) => content.checkContentUpdates(args?.instanceId, args?.category));
+  ipcMain.handle('content:versions', async (_e, args) => content.listContentVersions(args?.projectId, args?.instanceId, args?.category));
+  ipcMain.handle('content:switch', async (_e, args) => content.switchContentVersion(args?.file, args?.projectId, args?.versionId, args?.instanceId, args?.category, (s) =>
     broadcast('game:progress', { phase: 'mods', ...s })
   ));
 

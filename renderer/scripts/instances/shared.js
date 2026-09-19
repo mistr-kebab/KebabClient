@@ -173,7 +173,7 @@
     if (!ctx.detailId) return;
     let data = null;
     try {
-      data = await bridge().listInstalledMods(ctx.detailId);
+      data = await bridge().listInstalledContent(ctx.detailId);
     } catch (err) {
       toast(fmt(tr('inst.listFail', 'Could not list content: {msg}'), { msg: err.message }), 'error');
       return;

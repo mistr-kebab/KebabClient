@@ -109,7 +109,7 @@
         btn.addEventListener('click', async () => {
           btn.disabled = true;
           try {
-            const res = await bridge().installMod(mod.id, undefined, ctx.detailId, mod.projectType, { title: mod.title, icon: mod.iconUrl });
+            const res = await bridge().installContent(mod.id, undefined, ctx.detailId, mod.projectType, { title: mod.title, icon: mod.iconUrl });
             const extra = res?.dependencies?.length ? fmt(tr('inst.extraDeps', ' (+{n} deps)'), { n: res.dependencies.length }) : '';
             const missing = res?.depProblems?.length ? fmt(tr('inst.missingDeps', ' Missing: {x}'), { x: res.depProblems.join('; ') }) : '';
             toast(fmt(tr('inst.installed', 'Installed {file}{extra}.{missing}'), { file: res?.file || mod.title, extra, missing }), res?.depProblems?.length ? 'error' : 'ok');
@@ -158,7 +158,7 @@
     try {
       const params = { limit: RESULT_LIMIT, offset: resultOffset, instanceId: ctx.detailId, category: ctx.searchFilter };
       if (!searching) params.sort = 'popular';
-      const res = await bridge().searchMods(resultQ, params);
+      const res = await bridge().searchContent(resultQ, params);
       if (!ctx.detailId) return;
       resultTotal = res.total || 0;
       renderDetailResults(res.results || [], !reset);
