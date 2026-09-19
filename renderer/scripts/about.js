@@ -1,17 +1,7 @@
 'use strict';
 
 (function () {
-  const { bridge } = window.launcherUtil;
-
-  function t(key, fallback) {
-    try {
-      if (window.i18n && typeof window.i18n.t === 'function') {
-        const v = window.i18n.t(key);
-        if (v && v !== key) return v;
-      }
-    } catch {}
-    return fallback;
-  }
+  const { bridge, tr: t } = window.launcherUtil;
 
   function uiLang() {
     try {

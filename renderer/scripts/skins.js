@@ -1,21 +1,7 @@
 'use strict';
 
 (function () {
-  const { bridge, toast, el } = window.launcherUtil;
-
-  function tr(key, fallback) {
-    try {
-      if (window.i18n) {
-        const v = window.i18n.t(key);
-        if (v && v !== key) return v;
-      }
-    } catch {}
-    return fallback;
-  }
-
-  function fmt(tpl, map) {
-    return String(tpl).replace(/\{(\w+)\}/g, (_, k) => (map && map[k] !== undefined ? map[k] : ''));
-  }
+  const { bridge, toast, el, tr, fmt } = window.launcherUtil;
 
   let viewer = null;
   let resizeObserver = null;

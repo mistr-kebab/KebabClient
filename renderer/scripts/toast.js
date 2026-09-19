@@ -3,16 +3,7 @@
 (function () {
   const DURATION = 5200;
   const MAX_VISIBLE = 5;
-
-  function t(key, fallback) {
-    try {
-      if (window.i18n && typeof window.i18n.t === 'function') {
-        const v = window.i18n.t(key);
-        if (v && v !== key) return v;
-      }
-    } catch {}
-    return fallback || key;
-  }
+  const { tr: t } = window.launcherUtil;
 
   function toast(message, kind) {
     const stack = document.getElementById('toastStack');

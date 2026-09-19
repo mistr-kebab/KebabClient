@@ -1,7 +1,7 @@
 'use strict';
 
 (function () {
-  const { bridge, toast, el } = window.launcherUtil;
+  const { bridge, toast, el, tr, fmt } = window.launcherUtil;
 
   const ctx = {};
 
@@ -25,20 +25,7 @@
   ctx.LOADER_LABELS = { vanilla: 'Vanilla', fabric: 'Fabric', quilt: 'Quilt', forge: 'Forge', neoforge: 'NeoForge' };
   ctx.EMPTY_BY_CAT = { mod: 'inst.emptyMods', resourcepack: 'inst.emptyRp', shader: 'inst.emptyShaders' };
 
-  function tr(key, fallback) {
-    try {
-      if (window.i18n) {
-        const v = window.i18n.t(key);
-        if (v && v !== key) return v;
-      }
-    } catch {}
-    return fallback;
-  }
   ctx.tr = tr;
-
-  function fmt(tpl, map) {
-    return String(tpl).replace(/\{(\w+)\}/g, (_, k) => (map && map[k] !== undefined ? map[k] : ''));
-  }
   ctx.fmt = fmt;
 
   function localeDate(iso) {

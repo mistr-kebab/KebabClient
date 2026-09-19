@@ -1,21 +1,11 @@
 'use strict';
 
 (function () {
-  const { bridge, toast } = window.launcherUtil;
+  const { bridge, toast, tr: t } = window.launcherUtil;
 
   let state = 'idle';
   let version = '';
   let percent = 0;
-
-  function t(key, fallback) {
-    try {
-      if (window.i18n) {
-        const v = window.i18n.t(key);
-        if (v && v !== key) return v;
-      }
-    } catch {}
-    return fallback;
-  }
 
   function paint() {
     const b = document.getElementById('updateButton');

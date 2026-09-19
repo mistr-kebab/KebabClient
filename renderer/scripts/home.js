@@ -1,17 +1,7 @@
 'use strict';
 
 (function () {
-  const { bridge, toast, el } = window.launcherUtil;
-
-  function t(key, fallback) {
-    try {
-      if (window.i18n) {
-        const v = window.i18n.t(key);
-        if (v && v !== key) return v;
-      }
-    } catch {}
-    return fallback || key;
-  }
+  const { bridge, toast, el, tr: t } = window.launcherUtil;
 
   function fmtDur(ms) {
     const totalMin = Math.floor((Number(ms) || 0) / 60000);

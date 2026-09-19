@@ -1,21 +1,7 @@
 'use strict';
 
 (function () {
-  const { bridge, toast } = window.launcherUtil;
-
-  function t(key, fallback) {
-    try {
-      if (window.i18n) {
-        const v = window.i18n.t(key);
-        if (v && v !== key) return v;
-      }
-    } catch {}
-    return fallback || key;
-  }
-
-  function fmt(tpl, map) {
-    return String(tpl).replace(/\{(\w+)\}/g, (_, k) => (map && map[k] !== undefined ? map[k] : ''));
-  }
+  const { bridge, toast, tr: t, fmt } = window.launcherUtil;
 
   let headDataUrl = null;
   let headRequested = false;
