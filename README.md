@@ -46,13 +46,22 @@ them — request approval at `https://aka.ms/mce-reviewappid`.
 
 ## Configuration
 
-Optional `.env` next to the source (dev) or next to the portable `.exe`.
-Real environment variables always win. `.env` is git-ignored — never commit it.
+Optional local overrides via `.env` next to the source (dev) or next to the
+portable `.exe` (runtime, external file). Real environment variables always
+win. `.env` is git-ignored — never commit it — and is NEVER bundled into the
+packaged app (see `package.json` → `build.files`).
+
+`.env` must NEVER contain secrets (no tokens, passwords, or client secrets).
+Only public, non-sensitive overrides. Copy `.env.example` to `.env` for local
+dev.
 
 | Variable                | Purpose                                              |
 | ----------------------- | ---------------------------------------------------- |
-| `DISCORD_CLIENT_ID`     | Own Discord application ID for Rich Presence         |
+| `MC_LAUNCHER_CLIENT_ID` | Entra application (client) ID for sign-in (public ID, empty = built-in default) |
+| `AZURE_CLIENT_ID`       | Legacy alias for `MC_LAUNCHER_CLIENT_ID`             |
+| `DISCORD_CLIENT_ID`     | Own Discord application ID for Rich Presence (public ID, empty = built-in default) |
 | `KEBAB_DATA_DIR`        | Custom data directory (absolute path)                |
+| `KEBAB_LANG`            | Force Discord Rich Presence language (`de`, `en`, empty = follow app settings) |
 
 ## Build (.exe)
 

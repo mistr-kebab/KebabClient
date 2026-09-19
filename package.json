@@ -18,7 +18,9 @@
       "main/**/*",
       "preload/**/*",
       "renderer/**/*",
-      "package.json"
+      "package.json",
+      "!**/.env",
+      "!**/.env.example"
     ],
     "win": {
       "icon": "renderer/assets/icon.ico",
