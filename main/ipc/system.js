@@ -6,6 +6,18 @@ const { app } = require('electron');
 const updater = require('../updater');
 
 function register(ipcMain) {
+  ipcMain.on('views:load', (event) => {
+    const dir = path.join(app.getAppPath(), 'renderer', 'views');
+    const out = {};
+    try {
+      for (const file of fs.readdirSync(dir).sort()) {
+        if (!file.toLowerCase().endsWith('.html')) continue;
+        out[path.basename(file, '.html')] = fs.readFileSync(path.join(dir, file), 'utf8');
+      }
+    } catch {}
+    event.returnValue = out;
+  });
+
   ipcMain.handle('assets:banners', async () => {
     const dir = path.join(app.getAppPath(), 'renderer', 'assets');
     const MIME = { '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp', '.avif': 'image/avif' };

@@ -1,0 +1,61 @@
+          <section class="view" id="view-play" aria-label="Play">
+            <div class="hero">
+              <div class="hero-glow" aria-hidden="true"></div>
+              <div class="hero-top">
+                <span class="ver-pill hero-ver" id="heroVer">Minecraft 26.1.2 &middot; Vanilla</span>
+                <span class="status-pill" id="heroStatusPill">
+                  <span class="pill-dot"></span>
+                  <span id="heroStatusText" data-i18n="status.idle">Idle</span>
+                </span>
+              </div>
+              <div class="hero-mid">
+                <span class="instance-icon hero-icon" id="heroIcon" aria-hidden="true">
+                  <i data-lucide="boxes"></i>
+                </span>
+                <h1 class="hero-title" id="activeName">KebabClient</h1>
+                <p class="hero-sub" id="instancePathLabel" data-i18n="play.resolves">Instance folder resolves on first download.</p>
+              </div>
+              <div class="hero-bottom">
+                <span class="progress hero-progress" id="dlProgressWrap" hidden>
+                  <span class="progress-bar" id="dlProgressBar"></span>
+                </span>
+                <span class="progress-label" id="dlProgressLabel"></span>
+                <div class="hero-actions">
+                  <button type="button" class="icon-btn" id="ensureButton" data-i18n-title="play.download" title="Client laden / prüfen" aria-label="Download or verify client" data-i18n-aria="play.download">
+                    <i data-lucide="download"></i>
+                  </button>
+                  <button type="button" class="btn btn-play btn-hero" id="launchButton">
+                    <i data-lucide="play" class="btn-icon"></i>
+                    <span data-i18n="home.play">Spielen</span>
+                  </button>
+                  <button type="button" class="icon-btn" id="stopButton" data-i18n-title="play.stop" title="Spiel stoppen" aria-label="Stop game" data-i18n-aria="play.stop" disabled>
+                    <i data-lucide="square"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <button type="button" class="btn btn-ghost btn-sm" id="openFolderButton">
+                <i data-lucide="folder-open" class="btn-icon"></i>
+                <span data-i18n="play.openFolder">Ordner öffnen</span>
+              </button>
+              <button type="button" class="btn btn-ghost btn-sm" id="refreshSessionButton">
+                <i data-lucide="refresh-cw" class="btn-icon"></i>
+                <span data-i18n="play.refresh">Session aktualisieren</span>
+              </button>
+            </div>
+
+            <div class="panel">
+              <div class="panel-head">
+                <h3 class="panel-title">
+                  <i data-lucide="activity" class="panel-icon"></i>
+                  <span data-i18n="play.latest">Letzte Ausgabe</span>
+                </h3>
+                <button type="button" class="btn btn-ghost btn-sm" id="gotoDetailLogButton">
+                  <span data-i18n="play.openLog">Vollständiges Log öffnen</span>
+                  <i data-lucide="arrow-right" class="btn-icon"></i>
+                </button>
+              </div>
+              <div class="mini-log" id="miniLog" aria-live="off"></div>
+            </div>
+          </section>

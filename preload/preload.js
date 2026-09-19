@@ -11,6 +11,7 @@ function on(channel, callback) {
 }
 
 contextBridge.exposeInMainWorld('mc', {
+  loadViews: () => ipcRenderer.sendSync('views:load'),
   minimizeWindow: () => ipcRenderer.invoke('window:minimize'),
   toggleMaximize: () => ipcRenderer.invoke('window:toggleMaximize'),
   closeWindow: () => ipcRenderer.invoke('window:close'),
