@@ -381,5 +381,9 @@
   "play.needInstance": "Create an instance first.",
   "play.noInstance": "No instance yet",
   "play.getStarted": "Create an instance to get started.",
-  "play.resolves": "Instance folder resolves on first download."
+  "play.resolves": "Instance folder resolves on first download.",
+  "settings.privacy": "Privacy",
+  "settings.telemetryHint": "Sends the app version and a random install ID to kebabdev.de once a day. No personal data.",
+  "settings.telemetry": "Send anonymous usage statistics",
+  "settings.telemetrySaved": "Privacy setting saved."
 }

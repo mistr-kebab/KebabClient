@@ -127,6 +127,8 @@
       }
       const dirInput = document.getElementById('dataDirInput');
       if (dirInput && data.dataDir && data.dataDir.custom) dirInput.value = data.dataDir.custom;
+      const telemetryCheck = document.getElementById('telemetryCheck');
+      if (telemetryCheck) telemetryCheck.checked = s.telemetry !== false;
     } catch (err) {
       toast(fmt(tr('settings.applyFail', 'Could not apply settings: {msg}'), { msg: err.message }), 'error');
     }
@@ -213,6 +215,19 @@
           toast(tr('settings.dlSaved', 'Download settings saved.'), 'ok');
         } catch (err) {
           setStatus('downloadsStatus', err.message);
+          toast(fmt(tr('settings.saveFail', 'Save failed: {msg}'), { msg: err.message }), 'error');
+        }
+      });
+    }
+    const telemetryCheck = document.getElementById('telemetryCheck');
+    if (telemetryCheck) {
+      telemetryCheck.addEventListener('change', async () => {
+        try {
+          await bridge().updateSettings({ telemetry: telemetryCheck.checked });
+          setStatus('telemetryStatus', tr('settings.telemetrySaved', 'Privacy setting saved.'));
+        } catch (err) {
+          telemetryCheck.checked = !telemetryCheck.checked;
+          setStatus('telemetryStatus', err.message);
           toast(fmt(tr('settings.saveFail', 'Save failed: {msg}'), { msg: err.message }), 'error');
         }
       });

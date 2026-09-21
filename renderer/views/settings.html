@@ -111,6 +111,19 @@
 
             <div class="panel settings-panel">
               <h3 class="panel-title">
+                <i data-lucide="shield-check" class="panel-icon"></i>
+                <span data-i18n="settings.privacy">Privacy</span>
+              </h3>
+              <p class="muted" data-i18n="settings.telemetryHint">Sends the app version and a random install ID to kebabdev.de once a day. No personal data.</p>
+              <label class="check-row" for="telemetryCheck">
+                <input type="checkbox" id="telemetryCheck" checked>
+                <span data-i18n="settings.telemetry">Send anonymous usage statistics</span>
+              </label>
+              <p class="status-line" id="telemetryStatus"></p>
+            </div>
+
+            <div class="panel settings-panel">
+              <h3 class="panel-title">
                 <i data-lucide="info" class="panel-icon"></i>
                 <span data-i18n="about.title">KebabClient</span>
               </h3>

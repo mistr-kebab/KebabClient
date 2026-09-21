@@ -15,12 +15,17 @@ const DEFAULTS = {
   theme: { accent: 'amber' },
   java: { path: '', xmx: 4, extraArgs: '' },
   downloads: { threads: 8 },
-  language: 'de'
+  language: 'de',
+  telemetry: true
 };
 
 function sanitizeLanguage(l) {
   const v = String(l || '').trim().toLowerCase();
   return LANGUAGES.includes(v) ? v : 'de';
+}
+
+function sanitizeTelemetry(v) {
+  return v !== false;
 }
 
 function sanitizeTheme(t) {
@@ -68,7 +73,8 @@ function getSettings() {
     theme: sanitizeTheme(s.theme),
     java,
     downloads: sanitizeDownloads(s.downloads),
-    language: sanitizeLanguage(s.language)
+    language: sanitizeLanguage(s.language),
+    telemetry: sanitizeTelemetry(s.telemetry)
   };
 }
 
@@ -79,6 +85,7 @@ function updateSettings(patch) {
   if (patch.java !== undefined) next.java = sanitizeJava({ ...current.java, ...patch.java });
   if (patch.downloads !== undefined) next.downloads = sanitizeDownloads(patch.downloads);
   if (patch.language !== undefined) next.language = sanitizeLanguage(patch.language);
+  if (patch.telemetry !== undefined) next.telemetry = sanitizeTelemetry(patch.telemetry);
   saveState({ settings: next });
   return next;
 }

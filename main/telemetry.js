@@ -53,6 +53,14 @@ async function pingOnce() {
   }
 }
 
+function telemetryEnabled() {
+  try {
+    return loadState().settings?.telemetry !== false;
+  } catch {
+    return true;
+  }
+}
+
 let started = false;
 
 function startTelemetry() {
@@ -60,6 +68,7 @@ function startTelemetry() {
   started = true;
   if (!app.isPackaged) return;
   setTimeout(async () => {
+    if (!telemetryEnabled()) return;
     if (await pingOnce()) {
       try {
         saveState({ lastPing: Date.now() });
@@ -67,6 +76,7 @@ function startTelemetry() {
     }
   }, 20000);
   setInterval(async () => {
+    if (!telemetryEnabled()) return;
     if (await pingOnce()) {
       try {
         saveState({ lastPing: Date.now() });

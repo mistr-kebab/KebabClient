@@ -381,5 +381,9 @@
   "play.needInstance": "Erstelle zuerst eine Instanz.",
   "play.noInstance": "Noch keine Instanz",
   "play.getStarted": "Erstelle eine Instanz, um zu starten.",
-  "play.resolves": "Instanzordner steht nach dem ersten Download fest."
+  "play.resolves": "Instanzordner steht nach dem ersten Download fest.",
+  "settings.privacy": "Datenschutz",
+  "settings.telemetryHint": "Sendet einmal täglich die App-Version und eine zufällige Installations-ID an kebabdev.de. Keine personenbezogenen Daten.",
+  "settings.telemetry": "Anonyme Nutzungsstatistik senden",
+  "settings.telemetrySaved": "Datenschutz-Einstellung gespeichert."
 }
