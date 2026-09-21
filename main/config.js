@@ -138,6 +138,10 @@ function msRedirectUri() {
   return 'https://login.microsoftonline.com/common/oauth2/nativeclient';
 }
 
+function microsoftClientId() {
+  return process.env.MC_LAUNCHER_CLIENT_ID || process.env.AZURE_CLIENT_ID || '';
+}
+
 module.exports = {
   MC_VERSION,
   APP_NAME,
@@ -145,6 +149,7 @@ module.exports = {
   BUILTIN_DISCORD_CLIENT_ID,
   discordClientId,
   temurinDownloadUrl,
+  microsoftClientId,
   URLS,
   dataDir,
   defaultDataDir,

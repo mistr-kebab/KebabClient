@@ -9,7 +9,10 @@
     "dev": "electron . --dev",
     "dist": "electron-builder --win portable",
     "dist:setup": "electron-builder --win nsis",
-    "dist:publish": "electron-builder --win nsis portable --publish never"
+    "dist:publish": "electron-builder --win nsis portable --publish never",
+    "test": "node --test test/**/*.test.js",
+    "lint": "eslint main preload renderer/scripts",
+    "format": "prettier --write \"main/**/*.js\" \"preload/**/*.js\" \"renderer/scripts/**/*.js\" \"renderer/scripts/*.js\" \"renderer/views/**/*.html\" \"renderer/**/*.css\""
   },
   "build": {
     "appId": "com.kebabclient.launcher",
