@@ -60,11 +60,11 @@ function appLanguage() {
     const s = loadState().settings || {};
     return String(s.language || '')
       .trim()
-      .toLowerCase() === 'en'
-      ? 'en'
-      : 'de';
+      .toLowerCase() === 'de'
+      ? 'de'
+      : 'en';
   } catch {
-    return 'de';
+    return 'en';
   }
 }
 

@@ -14,7 +14,7 @@
   const THEME_MODES = ['oled', 'dark', 'light', 'system'];
   let currentAccent = 'amber';
   let currentMode = 'oled';
-  let currentLanguage = 'de';
+  let currentLanguage = 'en';
   let systemQuery = null;
   const onSystemChange = () => applyTheme(currentAccent, 'system');
 
@@ -109,7 +109,7 @@
     }
     try {
       const s = (data && data.settings) || {};
-      currentLanguage = s.language === 'en' ? 'en' : 'de';
+      currentLanguage = s.language === 'de' ? 'de' : 'en';
       if (window.i18n) window.i18n.initLanguage(currentLanguage);
       applyTheme(s.theme && s.theme.accent, s.theme && s.theme.mode);
       renderSwatches(s.theme && s.theme.accent);

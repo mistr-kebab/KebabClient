@@ -10,18 +10,18 @@
     console.warn('Locales could not be loaded from renderer/locales.');
   }
 
-  let lang = 'de';
+  let lang = 'en';
 
   function detect() {
     try {
       const nav = String(navigator.language || '').toLowerCase();
       if (nav.startsWith('de')) return 'de';
     } catch {}
-    return 'de';
+    return 'en';
   }
 
   function t(key) {
-    const table = STRINGS[lang] || STRINGS.de;
+    const table = STRINGS[lang] || STRINGS.en;
     if (table[key] !== undefined) return table[key];
     if ((STRINGS.en || {})[key] !== undefined) return STRINGS.en[key];
     return key;

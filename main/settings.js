@@ -15,7 +15,7 @@ const DEFAULTS = {
   theme: { accent: 'amber' },
   java: { path: '', xmx: 4, extraArgs: '' },
   downloads: { threads: 8 },
-  language: 'de',
+  language: 'en',
   telemetry: true,
 };
 
@@ -23,7 +23,7 @@ function sanitizeLanguage(l) {
   const v = String(l || '')
     .trim()
     .toLowerCase();
-  return LANGUAGES.includes(v) ? v : 'de';
+  return LANGUAGES.includes(v) ? v : 'en';
 }
 
 function sanitizeTelemetry(v) {
@@ -236,7 +236,7 @@ function moveDataDir(dir, onStep) {
   }
   if (!fs.existsSync(src)) {
     fs.mkdirSync(clean, { recursive: true });
-const _file = writeBootstrap(clean);
+    const _file = writeBootstrap(clean);
     return { ok: true, movedFiles: 0, movedBytes: 0, dir: clean, bootstrapFile: file, restartRequired: true };
   }
   const before = dirSize(src);

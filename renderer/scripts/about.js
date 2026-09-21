@@ -8,7 +8,7 @@
       const l = document.documentElement.lang;
       if (l === 'de' || l === 'en') return l;
     } catch {}
-    return 'de';
+    return 'en';
   }
 
   function set(id, value) {
