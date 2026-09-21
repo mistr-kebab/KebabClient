@@ -2,6 +2,13 @@
 
 All notable changes to KebabClient are documented here.
 
+## [0.3.1] – 2026-09-21
+
+- **English by default**: fresh installs start in English (app, Discord
+  Rich Presence, installer default). German remains fully available via
+  Settings → Sprache. Note: an already-saved language preference always
+  wins over the default – switch it in Settings if needed.
+
 ## [0.3.0] – 2026-09-21
 
 Major internal restructuring release. No user-facing breaking changes; the
