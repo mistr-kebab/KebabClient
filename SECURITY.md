@@ -23,3 +23,22 @@ We will confirm receipt and keep you updated on the fix.
 - Optional local values (e.g. `DISCORD_CLIENT_ID`) stay in your untracked
   `.env` only.
 - OAuth refresh tokens are stored encrypted via Electron `safeStorage`.
+
+## Content Security Policy
+
+The renderer ships a strict CSP via `<meta>` in `renderer/index.html`:
+
+- `script-src 'self'` / `style-src 'self'` — only packaged files, no inline
+  code, no CDN at runtime.
+- `img-src 'self' data: https:` — external images are limited to what the
+  views genuinely display (Modrinth thumbnails, Minecraft skin/cape
+  textures, avatar services).
+- `connect-src 'none'` — the renderer performs **no** network requests at
+  all. Every network call (auth, Modrinth, downloads, telemetry, update
+  checks) runs in the main process and is reached via the preload bridge
+  (`window.mc`). If you add a `fetch()` to renderer code, it will fail by
+  design — move the call to `main/` and expose it via IPC instead.
+- `frame-ancestors` is deliberately not set: it is ignored when delivered
+  via `<meta>` and the app is not served over HTTP. Framing is instead
+  prevented by `setWindowOpenHandler` (deny) and the `will-navigate` guard
+  in `main/index.js`.
