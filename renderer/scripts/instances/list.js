@@ -8,7 +8,7 @@
   const progressById = new Map();
   const progressTimers = new Map();
 
-  const TILE_BANNERS = ['banner.webp', 'banner_2.webp', 'banner_3.webp', 'banner_4.webp', 'banner_5.webp', 'banner_7.webp', 'banner_8.webp', 'banner_9.webp', 'banner_10.webp', 'banner_11.webp'];
+  const TILE_BANNERS = ['banner-01.webp', 'banner-02.webp', 'banner-03.webp', 'banner-04.webp', 'banner-05.webp', 'banner-06.webp', 'banner-07.webp', 'banner-08.webp', 'banner-09.webp', 'banner-10.webp'];
 
   function paintTileProgress(tile, ratio, label) {
     const prog = tile.querySelector('.tile-progress');
