@@ -1,84 +1,88 @@
-          <section class="view is-active" id="view-home" aria-label="Home">
-            <div class="home-hero">
-              <div class="home-hero-text">
-                <span class="eyebrow" data-i18n="home.eyebrow">Übersicht</span>
-                <h1 class="home-title" data-i18n="home.title">Bereit zum Spielen?</h1>
-                <p class="muted" data-i18n="home.sub">Wähle eine Instanz und drück auf Spielen. Mods verwaltest du direkt in der Instanz.</p>
-                <div class="row home-actions">
-                  <button type="button" class="btn btn-play" id="homePlayButton">
-                    <i data-lucide="play" class="btn-icon"></i>
-                    <span data-i18n="home.play">Spielen</span>
-                  </button>
-                  <button type="button" class="btn btn-ghost" id="homeFolderButton">
-                    <i data-lucide="folder-open" class="btn-icon"></i>
-                    <span data-i18n="home.openFolder">Ordner öffnen</span>
-                  </button>
-                  <button type="button" class="btn btn-ghost" id="homeNewInstanceButton">
-                    <i data-lucide="plus" class="btn-icon"></i>
-                    <span data-i18n="home.newInstance">Neue Instanz</span>
-                  </button>
-                </div>
-              </div>
-              <div class="home-hero-card">
-                <span class="side-label" data-i18n="home.cardInstance">Aktive Instanz</span>
-                <span class="home-active-name" id="homeActiveName">–</span>
-                <span class="home-active-sub" id="homeActiveSub">–</span>
-                <span class="status-pill" id="homeActivePill">
-                  <span class="pill-dot"></span>
-                  <span id="homeActiveState" data-i18n="status.idle">Idle</span>
-                </span>
-                <button type="button" class="btn btn-ghost btn-sm" id="homeGotoInstances">
-                  <span data-i18n="home.gotoInstances">Zu den Instanzen</span>
-                  <i data-lucide="arrow-right" class="btn-icon"></i>
-                </button>
-              </div>
-            </div>
-            <div class="home-grid">
-              <div class="panel home-card">
-                <h3 class="panel-title">
-                  <i data-lucide="user" class="panel-icon"></i>
-                  <span data-i18n="home.cardAccount">Account</span>
-                </h3>
-                <div class="account-card home-account">
-                  <span class="headshot">
-                    <canvas data-headshot="72" width="72" height="72" aria-hidden="true"></canvas>
-                    <span class="headshot-fallback" data-head-fallback="1"><span id="accountAvatarLarge">?</span></span>
-                  </span>
-                  <span class="account-meta">
-                    <span class="account-name" id="homeAccountName">–</span>
-                    <span class="account-state" id="homeAccountState">–</span>
-                  </span>
-                </div>
-                <button type="button" class="btn btn-ghost btn-sm" id="homeRefreshButton">
-                  <i data-lucide="refresh-cw" class="btn-icon"></i>
-                  <span data-i18n="play.refresh">Session aktualisieren</span>
-                </button>
-              </div>
-              <div class="panel home-card">
-                <h3 class="panel-title">
-                  <i data-lucide="boxes" class="panel-icon"></i>
-                  <span data-i18n="home.cardSetup">Setup</span>
-                </h3>
-                <div class="mini-row">
-                  <span class="mini-key" data-i18n="home.statInstances">Instances</span>
-                  <span class="mini-val" id="homeStatsInstances">–</span>
-                </div>
-                <div class="mini-row">
-                  <span class="mini-key" data-i18n="home.statServers">Servers</span>
-                  <span class="mini-val" id="homeStatsServers">–</span>
-                </div>
-                <div class="mini-row">
-                  <span class="mini-key" data-i18n="home.totalPlay">Total playtime</span>
-                  <span class="mini-val" id="homeStatsPlaytime">–</span>
-                </div>
-                <p class="muted small" data-i18n="home.tip">Tipp: Fabric / Quilt gibt es pro Instanz über die Detailansicht, inkl. Modrinth-Suche.</p>
-              </div>
-              <div class="panel home-card">
-                <h3 class="panel-title">
-                  <i data-lucide="history" class="panel-icon"></i>
-                  <span data-i18n="home.recent">Zuletzt gespielt</span>
-                </h3>
-                <div class="recent-list" id="homeRecentList"></div>
-              </div>
-            </div>
-          </section>
+<section class="view is-active" id="view-home" aria-label="Home">
+  <div class="home-hero">
+    <div class="home-hero-text">
+      <span class="eyebrow" data-i18n="home.eyebrow">Übersicht</span>
+      <h1 class="home-title" data-i18n="home.title">Bereit zum Spielen?</h1>
+      <p class="muted" data-i18n="home.sub">
+        Wähle eine Instanz und drück auf Spielen. Mods verwaltest du direkt in der Instanz.
+      </p>
+      <div class="row home-actions">
+        <button type="button" class="btn btn-play" id="homePlayButton">
+          <i data-lucide="play" class="btn-icon"></i>
+          <span data-i18n="home.play">Spielen</span>
+        </button>
+        <button type="button" class="btn btn-ghost" id="homeFolderButton">
+          <i data-lucide="folder-open" class="btn-icon"></i>
+          <span data-i18n="home.openFolder">Ordner öffnen</span>
+        </button>
+        <button type="button" class="btn btn-ghost" id="homeNewInstanceButton">
+          <i data-lucide="plus" class="btn-icon"></i>
+          <span data-i18n="home.newInstance">Neue Instanz</span>
+        </button>
+      </div>
+    </div>
+    <div class="home-hero-card">
+      <span class="side-label" data-i18n="home.cardInstance">Aktive Instanz</span>
+      <span class="home-active-name" id="homeActiveName">–</span>
+      <span class="home-active-sub" id="homeActiveSub">–</span>
+      <span class="status-pill" id="homeActivePill">
+        <span class="pill-dot"></span>
+        <span id="homeActiveState" data-i18n="status.idle">Idle</span>
+      </span>
+      <button type="button" class="btn btn-ghost btn-sm" id="homeGotoInstances">
+        <span data-i18n="home.gotoInstances">Zu den Instanzen</span>
+        <i data-lucide="arrow-right" class="btn-icon"></i>
+      </button>
+    </div>
+  </div>
+  <div class="home-grid">
+    <div class="panel home-card">
+      <h3 class="panel-title">
+        <i data-lucide="user" class="panel-icon"></i>
+        <span data-i18n="home.cardAccount">Account</span>
+      </h3>
+      <div class="account-card home-account">
+        <span class="headshot">
+          <canvas data-headshot="72" width="72" height="72" aria-hidden="true"></canvas>
+          <span class="headshot-fallback" data-head-fallback="1"><span id="accountAvatarLarge">?</span></span>
+        </span>
+        <span class="account-meta">
+          <span class="account-name" id="homeAccountName">–</span>
+          <span class="account-state" id="homeAccountState">–</span>
+        </span>
+      </div>
+      <button type="button" class="btn btn-ghost btn-sm" id="homeRefreshButton">
+        <i data-lucide="refresh-cw" class="btn-icon"></i>
+        <span data-i18n="play.refresh">Session aktualisieren</span>
+      </button>
+    </div>
+    <div class="panel home-card">
+      <h3 class="panel-title">
+        <i data-lucide="boxes" class="panel-icon"></i>
+        <span data-i18n="home.cardSetup">Setup</span>
+      </h3>
+      <div class="mini-row">
+        <span class="mini-key" data-i18n="home.statInstances">Instances</span>
+        <span class="mini-val" id="homeStatsInstances">–</span>
+      </div>
+      <div class="mini-row">
+        <span class="mini-key" data-i18n="home.statServers">Servers</span>
+        <span class="mini-val" id="homeStatsServers">–</span>
+      </div>
+      <div class="mini-row">
+        <span class="mini-key" data-i18n="home.totalPlay">Total playtime</span>
+        <span class="mini-val" id="homeStatsPlaytime">–</span>
+      </div>
+      <p class="muted small" data-i18n="home.tip">
+        Tipp: Fabric / Quilt gibt es pro Instanz über die Detailansicht, inkl. Modrinth-Suche.
+      </p>
+    </div>
+    <div class="panel home-card">
+      <h3 class="panel-title">
+        <i data-lucide="history" class="panel-icon"></i>
+        <span data-i18n="home.recent">Zuletzt gespielt</span>
+      </h3>
+      <div class="recent-list" id="homeRecentList"></div>
+    </div>
+  </div>
+</section>

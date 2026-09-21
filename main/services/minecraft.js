@@ -27,5 +27,5 @@ module.exports = {
   requiredJavaMajor: java.requiredJavaMajor,
   getJavaMajor: java.getJavaMajor,
   MC_VERSION,
-  platformInfo: () => ({ platform: process.platform, arch: os.arch() })
+  platformInfo: () => ({ platform: process.platform, arch: os.arch() }),
 };

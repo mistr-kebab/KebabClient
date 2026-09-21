@@ -20,7 +20,7 @@
   }
 
   function bindCollapsible() {
-    document.querySelectorAll('#view-servers .collapsible > .panel-title').forEach((head) => {
+    document.querySelectorAll('#view-servers .collapsible > .panel-title').forEach(head => {
       const toggle = () => {
         const panel = head.closest('.collapsible');
         if (!panel) return;
@@ -28,7 +28,7 @@
         head.setAttribute('aria-expanded', String(!collapsed));
       };
       head.addEventListener('click', toggle);
-      head.addEventListener('keydown', (e) => {
+      head.addEventListener('keydown', e => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           toggle();
@@ -44,13 +44,13 @@
 
   function catName(id) {
     if (!id) return '';
-    const found = lastCategories.find((c) => c.id === id);
+    const found = lastCategories.find(c => c.id === id);
     return found ? found.name : '';
   }
 
   function visibleServers() {
     if (activeCatFilter === 'all') return lastServers;
-    return lastServers.filter((s) => (s.categoryId || null) === activeCatFilter);
+    return lastServers.filter(s => (s.categoryId || null) === activeCatFilter);
   }
 
   function paintRowStatus(server) {
@@ -124,13 +124,19 @@
     const shown = visibleServers();
     const filtered = activeCatFilter !== 'all';
     if (!shown.length) {
-      list.appendChild(el('li', 'installed-empty', lastServers.length
-        ? tr('servers.emptyFilter', 'No servers in this category.')
-        : tr('servers.empty', 'No servers added yet.')));
+      list.appendChild(
+        el(
+          'li',
+          'installed-empty',
+          lastServers.length
+            ? tr('servers.emptyFilter', 'No servers in this category.')
+            : tr('servers.empty', 'No servers added yet.')
+        )
+      );
       return;
     }
-    shown.forEach((server) => {
-      const index = lastServers.findIndex((s) => s.id === server.id);
+    shown.forEach(server => {
+      const index = lastServers.findIndex(s => s.id === server.id);
       const li = el('li', 'server-item' + (server.disabled ? ' is-disabled' : ''));
       li.dataset.serverId = server.id;
       li.appendChild(el('span', 'server-icon-slot'));
@@ -167,7 +173,16 @@
         box.disabled = true;
         try {
           await bridge().toggleServer(server.id, !box.checked);
-          toast(fmt(tr(box.checked ? 'servers.enabledToast' : 'servers.disabledToast', box.checked ? 'Enabled {name}.' : 'Disabled {name}.'), { name: server.name }), 'ok');
+          toast(
+            fmt(
+              tr(
+                box.checked ? 'servers.enabledToast' : 'servers.disabledToast',
+                box.checked ? 'Enabled {name}.' : 'Disabled {name}.'
+              ),
+              { name: server.name }
+            ),
+            'ok'
+          );
           await reload();
         } catch (err) {
           box.checked = !server.disabled;
@@ -254,7 +269,7 @@
 
   function countInCategory(id) {
     if (id === 'all') return lastServers.length;
-    return lastServers.filter((s) => (s.categoryId || null) === id).length;
+    return lastServers.filter(s => (s.categoryId || null) === id).length;
   }
 
   function renderBar() {
@@ -313,7 +328,7 @@
       opt.textContent = cat.name;
       select.appendChild(opt);
     }
-    if (prev && [...select.options].some((o) => o.value === prev)) select.value = prev;
+    if (prev && [...select.options].some(o => o.value === prev)) select.value = prev;
   }
 
   function paintAddButton() {
@@ -340,7 +355,10 @@
       formStatus(fmt(tr('servers.editing', 'Editing “{name}”.'), { name: server.name }));
     } catch (err) {
       editingId = null;
-      toast(fmt(tr('servers.editFail', 'Edit failed: {msg}'), { msg: err && err.message ? err.message : err }), 'error');
+      toast(
+        fmt(tr('servers.editFail', 'Edit failed: {msg}'), { msg: err && err.message ? err.message : err }),
+        'error'
+      );
     }
   }
 
@@ -361,7 +379,7 @@
     try {
       const [servers, categories] = await Promise.all([bridge().listServers(), bridge().listCategories()]);
       lastCategories = categories || [];
-      if (activeCatFilter !== 'all' && !lastCategories.some((c) => c.id === activeCatFilter)) {
+      if (activeCatFilter !== 'all' && !lastCategories.some(c => c.id === activeCatFilter)) {
         activeCatFilter = 'all';
       }
       fillCategorySelect();
@@ -465,7 +483,10 @@
   }
 
   async function removeCategory(cat) {
-    if (!window.confirm(fmt(tr('servers.catConfirm', 'Delete category “{name}”? Servers are kept.'), { name: cat.name }))) return;
+    if (
+      !window.confirm(fmt(tr('servers.catConfirm', 'Delete category “{name}”? Servers are kept.'), { name: cat.name }))
+    )
+      return;
     try {
       await bridge().deleteCategory(cat.id);
       if (activeCatFilter === cat.id) activeCatFilter = 'all';
@@ -499,7 +520,7 @@
     if (addBtn) addBtn.addEventListener('click', submit);
     const ipInput = document.getElementById('serverIpInput');
     if (ipInput) {
-      ipInput.addEventListener('keydown', (e) => {
+      ipInput.addEventListener('keydown', e => {
         if (e.key === 'Enter') submit();
       });
     }
@@ -507,14 +528,18 @@
     if (catAddBtn) catAddBtn.addEventListener('click', submitCategory);
     const catNameInput = document.getElementById('serverCategoryNameInput');
     if (catNameInput) {
-      catNameInput.addEventListener('keydown', (e) => {
+      catNameInput.addEventListener('keydown', e => {
         if (e.key === 'Enter') submitCategory();
       });
     }
-    document.addEventListener('view:shown', (e) => {
+    document.addEventListener('view:shown', e => {
       if (e && e.detail && e.detail.view === 'servers') pingAll();
     });
-    document.addEventListener('i18n:applied', () => { renderBar(); renderList(lastServers); paintAddButton(); });
+    document.addEventListener('i18n:applied', () => {
+      renderBar();
+      renderList(lastServers);
+      paintAddButton();
+    });
     reload();
   });
 })();

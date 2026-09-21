@@ -66,7 +66,10 @@
 
     function resume() {
       if (state.done) return;
-      if (state.remaining <= 0) { dismiss(); return; }
+      if (state.remaining <= 0) {
+        dismiss();
+        return;
+      }
       runTimer();
     }
 

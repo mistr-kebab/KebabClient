@@ -1,75 +1,87 @@
-          <section class="view" id="view-skins" aria-label="Skins">
-            <h1 class="section-title" data-i18n="skins.title">Skin &amp; Cape</h1>
-            <p class="page-sub" data-i18n="skins.sub">Live preview of the signed-in profile. Uploads go through Mojang's API.</p>
-            <div class="skin-layout">
-              <div class="skin-leftcol">
-                <div class="panel skin-preview-panel">
-                  <div class="panel-head">
-                    <h3 class="panel-title">
-                      <i data-lucide="person-standing" class="panel-icon"></i>
-                      <span id="skinPlayerLabel" data-i18n="skins.preview">Preview</span>
-                    </h3>
-                  </div>
-                  <div class="skin-stage" id="skinStage">
-                    <canvas id="skinCanvas" class="skin-canvas" width="320" height="320"></canvas>
-                  </div>
-                  <label class="check-row" for="capeVisibleCheck">
-                    <input type="checkbox" id="capeVisibleCheck" checked>
-                    <span data-i18n="skins.showCape">Show cape in preview</span>
-                  </label>
-                </div>
-                <div class="panel skin-controls-panel">
-                  <div class="row viewer-controls" role="group" aria-label="Preview controls">
-                    <select id="skinAnimSelect" class="input input-plain input-sm" aria-label="Preview animation">
-                      <option value="idle" data-i18n="skins.animIdle" selected>Idle</option>
-                      <option value="walk" data-i18n="skins.animWalk">Walk</option>
-                      <option value="run" data-i18n="skins.animRun">Run</option>
-                      <option value="none" data-i18n="skins.animStatic">Static</option>
-                    </select>
-                    <label class="check-row" for="spinCheck">
-                      <input type="checkbox" id="spinCheck">
-                      <span data-i18n="skins.spin">Spin</span>
-                    </label>
-                    <div class="segment" role="group" aria-label="Skin model">
-                      <button type="button" class="segment-btn is-active" data-variant="classic" data-i18n="skins.classic">Classic</button>
-                      <button type="button" class="segment-btn" data-variant="slim" data-i18n="skins.slim">Slim</button>
-                    </div>
-                  </div>
-                  <div class="row">
-                    <button type="button" class="btn btn-ghost btn-sm" id="reloadSkinButton">
-                      <i data-lucide="rotate-ccw" class="btn-icon"></i>
-                      <span data-i18n="skins.reload">Reload preview</span>
-                    </button>
-                  </div>
-                </div>
-                <button type="button" class="btn btn-play btn-block" id="saveOutfitButton" disabled>
-                  <i data-lucide="check" class="btn-icon"></i>
-                  <span data-i18n="skins.save">Save</span>
-                </button>
-                <p class="status-line" id="skinStatus"></p>
-              </div>
-              <div class="skin-gallerycol">
-                <div class="skin-toolbar">
-                  <div class="search-box">
-                    <i data-lucide="search" class="search-icon"></i>
-                    <input type="search" id="outfitSearchInput" class="input" placeholder="Search skin/cape names" data-i18n-ph="skins.searchPh" autocomplete="off" spellcheck="false">
-                  </div>
-                  <div class="segment" role="group" aria-label="Outfit category" id="outfitTabs">
-                    <button type="button" class="segment-btn is-active" data-outfit="skins" data-i18n="skins.tabSkins">Skins</button>
-                    <button type="button" class="segment-btn" data-outfit="capes" data-i18n="skins.tabCapes">Capes</button>
-                  </div>
-                  <button type="button" class="btn btn-primary" id="outfitUploadButton">
-                    <i data-lucide="upload" class="btn-icon"></i>
-                    <span data-i18n="skins.toolbarUpload">Upload</span>
-                  </button>
-                </div>
-                <div id="outfitSkins">
-                  <div class="skin-grid" id="skinHistory"></div>
-                </div>
-                <div id="outfitCapes" hidden>
-                  <div class="skin-grid" id="capeList"></div>
-                </div>
-                <p class="muted" id="galleryEmptyNote" data-i18n="skins.noMatch" hidden>No matches for this search.</p>
-              </div>
-            </div>
-          </section>
+<section class="view" id="view-skins" aria-label="Skins">
+  <h1 class="section-title" data-i18n="skins.title">Skin &amp; Cape</h1>
+  <p class="page-sub" data-i18n="skins.sub">Live preview of the signed-in profile. Uploads go through Mojang's API.</p>
+  <div class="skin-layout">
+    <div class="skin-leftcol">
+      <div class="panel skin-preview-panel">
+        <div class="panel-head">
+          <h3 class="panel-title">
+            <i data-lucide="person-standing" class="panel-icon"></i>
+            <span id="skinPlayerLabel" data-i18n="skins.preview">Preview</span>
+          </h3>
+        </div>
+        <div class="skin-stage" id="skinStage">
+          <canvas id="skinCanvas" class="skin-canvas" width="320" height="320"></canvas>
+        </div>
+        <label class="check-row" for="capeVisibleCheck">
+          <input type="checkbox" id="capeVisibleCheck" checked />
+          <span data-i18n="skins.showCape">Show cape in preview</span>
+        </label>
+      </div>
+      <div class="panel skin-controls-panel">
+        <div class="row viewer-controls" role="group" aria-label="Preview controls">
+          <select id="skinAnimSelect" class="input input-plain input-sm" aria-label="Preview animation">
+            <option value="idle" data-i18n="skins.animIdle" selected>Idle</option>
+            <option value="walk" data-i18n="skins.animWalk">Walk</option>
+            <option value="run" data-i18n="skins.animRun">Run</option>
+            <option value="none" data-i18n="skins.animStatic">Static</option>
+          </select>
+          <label class="check-row" for="spinCheck">
+            <input type="checkbox" id="spinCheck" />
+            <span data-i18n="skins.spin">Spin</span>
+          </label>
+          <div class="segment" role="group" aria-label="Skin model">
+            <button type="button" class="segment-btn is-active" data-variant="classic" data-i18n="skins.classic">
+              Classic
+            </button>
+            <button type="button" class="segment-btn" data-variant="slim" data-i18n="skins.slim">Slim</button>
+          </div>
+        </div>
+        <div class="row">
+          <button type="button" class="btn btn-ghost btn-sm" id="reloadSkinButton">
+            <i data-lucide="rotate-ccw" class="btn-icon"></i>
+            <span data-i18n="skins.reload">Reload preview</span>
+          </button>
+        </div>
+      </div>
+      <button type="button" class="btn btn-play btn-block" id="saveOutfitButton" disabled>
+        <i data-lucide="check" class="btn-icon"></i>
+        <span data-i18n="skins.save">Save</span>
+      </button>
+      <p class="status-line" id="skinStatus"></p>
+    </div>
+    <div class="skin-gallerycol">
+      <div class="skin-toolbar">
+        <div class="search-box">
+          <i data-lucide="search" class="search-icon"></i>
+          <input
+            type="search"
+            id="outfitSearchInput"
+            class="input"
+            placeholder="Search skin/cape names"
+            data-i18n-ph="skins.searchPh"
+            autocomplete="off"
+            spellcheck="false"
+          />
+        </div>
+        <div class="segment" role="group" aria-label="Outfit category" id="outfitTabs">
+          <button type="button" class="segment-btn is-active" data-outfit="skins" data-i18n="skins.tabSkins">
+            Skins
+          </button>
+          <button type="button" class="segment-btn" data-outfit="capes" data-i18n="skins.tabCapes">Capes</button>
+        </div>
+        <button type="button" class="btn btn-primary" id="outfitUploadButton">
+          <i data-lucide="upload" class="btn-icon"></i>
+          <span data-i18n="skins.toolbarUpload">Upload</span>
+        </button>
+      </div>
+      <div id="outfitSkins">
+        <div class="skin-grid" id="skinHistory"></div>
+      </div>
+      <div id="outfitCapes" hidden>
+        <div class="skin-grid" id="capeList"></div>
+      </div>
+      <p class="muted" id="galleryEmptyNote" data-i18n="skins.noMatch" hidden>No matches for this search.</p>
+    </div>
+  </div>
+</section>

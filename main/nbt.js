@@ -44,23 +44,14 @@ function serverCompound(server) {
     taggedString('ip', server.ip),
     taggedByte('acceptTextures', true),
     taggedByte('hidden', false),
-    Buffer.from([TAG_END])
+    Buffer.from([TAG_END]),
   ]);
 }
 
 function buildServersDat(servers) {
   const list = Array.isArray(servers) ? servers : [];
-  const listPayload = Buffer.concat([
-    Buffer.from([TAG_COMPOUND]),
-    i32be(list.length),
-    ...list.map(serverCompound)
-  ]);
-  const rootPayload = Buffer.concat([
-    Buffer.from([TAG_LIST]),
-    nbtName('servers'),
-    listPayload,
-    Buffer.from([TAG_END])
-  ]);
+  const listPayload = Buffer.concat([Buffer.from([TAG_COMPOUND]), i32be(list.length), ...list.map(serverCompound)]);
+  const rootPayload = Buffer.concat([Buffer.from([TAG_LIST]), nbtName('servers'), listPayload, Buffer.from([TAG_END])]);
   return Buffer.concat([Buffer.from([TAG_COMPOUND]), nbtName(''), rootPayload]);
 }
 
@@ -69,11 +60,31 @@ function createReader(buf) {
   function need(n) {
     if (off + n > buf.length) throw new Error('Truncated NBT data.');
   }
-  function u8() { need(1); return buf[off++]; }
-  function u16() { need(2); const v = buf.readUInt16BE(off); off += 2; return v; }
-  function i32() { need(4); const v = buf.readInt32BE(off); off += 4; return v; }
-  function bytes(n) { need(n); const v = buf.subarray(off, off + n); off += n; return v; }
-  function readString() { return bytes(u16()).toString('utf8'); }
+  function u8() {
+    need(1);
+    return buf[off++];
+  }
+  function u16() {
+    need(2);
+    const v = buf.readUInt16BE(off);
+    off += 2;
+    return v;
+  }
+  function i32() {
+    need(4);
+    const v = buf.readInt32BE(off);
+    off += 4;
+    return v;
+  }
+  function bytes(n) {
+    need(n);
+    const v = buf.subarray(off, off + n);
+    off += n;
+    return v;
+  }
+  function readString() {
+    return bytes(u16()).toString('utf8');
+  }
   function skipPayload(type) {
     if (type === 1) off += 1;
     else if (type === 2) off += 2;
@@ -136,8 +147,8 @@ function parseServersDat(buf) {
     const list = root && root.servers;
     if (!Array.isArray(list)) return [];
     return list
-      .filter((e) => e && typeof e.name === 'string' && typeof e.ip === 'string')
-      .map((e) => ({ name: e.name, ip: e.ip }));
+      .filter(e => e && typeof e.name === 'string' && typeof e.ip === 'string')
+      .map(e => ({ name: e.name, ip: e.ip }));
   } catch {
     return [];
   }

@@ -49,22 +49,23 @@
         } catch (err) {
           set(
             'aboutStatus',
-            `${t('about.failed', 'Versionsabfrage fehlgeschlagen')}: ${
-              err && err.message ? err.message : ''
-            }`
+            `${t('about.failed', 'Versionsabfrage fehlgeschlagen')}: ${err && err.message ? err.message : ''}`
           );
         }
       });
     }
     try {
-      bridge().onUpdateState((msg) => {
+      bridge().onUpdateState(msg => {
         if (!msg) return;
         if (msg.state === 'none') set('aboutStatus', t('about.uptodate', 'Du bist aktuell.'));
         else if (msg.state === 'error') {
           if (msg.code === 'not-configured') {
             set('aboutStatus', t('update.errNotConfigured', 'No update source configured.'));
           } else {
-            set('aboutStatus', `${t('about.failed', 'Versionsabfrage fehlgeschlagen')}${msg.message ? `: ${msg.message}` : ''}`);
+            set(
+              'aboutStatus',
+              `${t('about.failed', 'Versionsabfrage fehlgeschlagen')}${msg.message ? `: ${msg.message}` : ''}`
+            );
           }
         } else if (msg.state === 'available' || msg.state === 'ready') {
           set('aboutStatus', '');

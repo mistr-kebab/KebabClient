@@ -30,15 +30,17 @@ function createWindow() {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
-      preload: path.join(__dirname, '..', 'preload', 'preload.js')
-    }
+      preload: path.join(__dirname, '..', 'preload', 'preload.js'),
+    },
   });
   mainWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   mainWindow.webContents.on('will-navigate', (event, url) => {
     if (!url.startsWith('file://')) event.preventDefault();
   });
   mainWindow.loadFile(path.join(__dirname, '..', 'renderer', 'index.html'));
-  mainWindow.on('closed', () => { mainWindow = null; });
+  mainWindow.on('closed', () => {
+    mainWindow = null;
+  });
   mainWindow.on('maximize', () => broadcast('window:maxState', { maximized: true }));
   mainWindow.on('unmaximize', () => broadcast('window:maxState', { maximized: false }));
 }
@@ -52,7 +54,7 @@ function broadcast(channel, payload) {
 minecraft.setEmitter((channel, payload) => broadcast(channel, payload));
 
 try {
-  require('./services/discord').setLogger((text) => broadcast('game:log', { stream: 'system', line: text }));
+  require('./services/discord').setLogger(text => broadcast('game:log', { stream: 'system', line: text }));
 } catch {}
 
 function registerIpc() {
@@ -96,9 +98,15 @@ if (!gotSingleInstanceLock) {
     createWindow();
     updater.initUpdater(broadcast);
     telemetry.startTelemetry();
-    try { require('./services/discord').showMenu(); } catch {}
+    try {
+      require('./services/discord').showMenu();
+    } catch {}
     autoRefresh();
-    try { servers.syncToAllInstances(); } catch (err) { console.error('Could not sync servers.dat:', err); }
+    try {
+      servers.syncToAllInstances();
+    } catch (err) {
+      console.error('Could not sync servers.dat:', err);
+    }
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow();
     });

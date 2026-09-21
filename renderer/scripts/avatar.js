@@ -88,7 +88,7 @@
       preserveDrawingBuffer: true,
       renderPaused: true,
       enableControls: false,
-      pixelRatio: 1
+      pixelRatio: 1,
     });
     viewer3d.autoRotate = false;
     return viewer3d;
@@ -115,7 +115,7 @@
     let found = null;
     try {
       if (root && root.traverse) {
-        root.traverse((o) => {
+        root.traverse(o => {
           if (!found && o && o.head && o.body) found = o;
         });
       }
@@ -134,7 +134,7 @@
     const cy = p[1] * vx + p[5] * vy + p[9] * vz + p[13] * vw;
     const cw = p[2] * vx + p[6] * vy + p[10] * vz + p[14] * vw;
     if (!cw) throw new Error('projection failed');
-    return { x: (cx / cw * 0.5 + 0.5) * w, y: (1 - (cy / cw * 0.5 + 0.5)) * w };
+    return { x: ((cx / cw) * 0.5 + 0.5) * w, y: (1 - ((cy / cw) * 0.5 + 0.5)) * w };
   }
 
   function bustRect(v) {
@@ -189,8 +189,12 @@
       const key = `${model === 'slim' ? 'slim' : 'default'}|${dataUrl.length}:${dataUrl.slice(0, 32)}:${dataUrl.slice(-32)}`;
       if (lastCrop && key === lastKey) return lastCrop;
       const v = ensureViewer3D();
-      try { v.animation = null; } catch {}
-      try { v.resetCape(); } catch {}
+      try {
+        v.animation = null;
+      } catch {}
+      try {
+        v.resetCape();
+      } catch {}
       try {
         if (v.playerWrapper && v.playerWrapper.rotation) v.playerWrapper.rotation.set(0, ROT_Y, 0);
       } catch {}
@@ -199,7 +203,9 @@
         if (po && po.resetJoints) po.resetJoints();
       } catch {}
       await v.loadSkin(dataUrl, { model: model === 'slim' ? 'slim' : 'default' });
-      try { v.resetCape(); } catch {}
+      try {
+        v.resetCape();
+      } catch {}
       v.render();
       const shot = snapCanvas.toDataURL();
       if (!shot || shot.length < 1000) throw new Error('empty snapshot');
@@ -247,14 +253,16 @@
       if (hasContent(ctx, S)) return true;
       throw new Error('blank bust');
     } catch (err) {
-      try { console.error(`[avatar] 3D bust failed, using 2D fallback: ${err?.message || err}`); } catch {}
+      try {
+        console.error(`[avatar] 3D bust failed, using 2D fallback: ${err?.message || err}`);
+      } catch {}
       return render2D(canvas, dataUrl, S);
     }
   }
 
   function renderAll(dataUrl, model) {
     const jobs = [];
-    document.querySelectorAll('canvas[data-headshot]').forEach((canvas) => {
+    document.querySelectorAll('canvas[data-headshot]').forEach(canvas => {
       const size = Number(canvas.getAttribute('data-headshot') || 72) || 72;
       jobs.push(render(canvas, dataUrl, size, model).catch(() => {}));
     });

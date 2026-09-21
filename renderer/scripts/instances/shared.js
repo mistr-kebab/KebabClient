@@ -98,13 +98,13 @@
   }
   ctx.pushInstanceLog = pushInstanceLog;
 
-  document.addEventListener('game:log-line', (e) => {
+  document.addEventListener('game:log-line', e => {
     const d = e && e.detail;
     if (d) pushInstanceLog(d.instanceId, d.stream, d.line);
   });
 
   function syncContentTabs() {
-    document.querySelectorAll('#detailContentTabs .segment-btn').forEach((x) => {
+    document.querySelectorAll('#detailContentTabs .segment-btn').forEach(x => {
       x.classList.toggle('is-active', x.dataset.contentTab === ctx.installedTab);
     });
   }
@@ -134,7 +134,7 @@
     try {
       const list = await bridge().checkContentUpdates(ctx.detailId);
       if (run !== ctx.updateCheckRun || !ctx.detailId) return;
-      ctx.updateMap = new Map((list || []).map((u) => [updateKey(u.category, u.file), u]));
+      ctx.updateMap = new Map((list || []).map(u => [updateKey(u.category, u.file), u]));
       ctx.lastCheckAt = Date.now();
       ctx.lastCheckId = ctx.detailId;
     } catch {
@@ -161,7 +161,9 @@
     grid.textContent = '';
     const items = (ctx.detailContentData && ctx.detailContentData[ctx.installedTab]) || [];
     if (!items.length) {
-      grid.appendChild(el('p', 'content-empty', tr(ctx.EMPTY_BY_CAT[ctx.installedTab] || 'inst.emptyMods', 'No content installed.')));
+      grid.appendChild(
+        el('p', 'content-empty', tr(ctx.EMPTY_BY_CAT[ctx.installedTab] || 'inst.emptyMods', 'No content installed.'))
+      );
     } else {
       for (const m of items) grid.appendChild(ctx.contentCard(m, ctx.installedTab));
     }
@@ -179,7 +181,7 @@
       return;
     }
     ctx.installedProjectIds.clear();
-    const grouped = Array.isArray(data) ? { mod: data } : (data || {});
+    const grouped = Array.isArray(data) ? { mod: data } : data || {};
     ctx.detailContentData = grouped;
     for (const key of ['mod', 'resourcepack', 'shader']) {
       for (const m of grouped[key] || []) {

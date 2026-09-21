@@ -12,7 +12,8 @@
       ctx.loadInstances().catch(() => {});
       if (ctx.detailId) {
         const title = document.getElementById('detailSearchTitle');
-        if (title && ctx.detailName) title.textContent = ctx.fmt(ctx.tr('detail.addTo', 'Add content to {name}'), { name: ctx.detailName });
+        if (title && ctx.detailName)
+          title.textContent = ctx.fmt(ctx.tr('detail.addTo', 'Add content to {name}'), { name: ctx.detailName });
         ctx.refreshDetailDropText();
         ctx.loadDetailInstalled().catch(() => {});
         ctx.renderDetailLog();
@@ -28,7 +29,7 @@
     ctx.loadInstances();
   });
 
-  window.showInstanceDetail = async (tab) => {
+  window.showInstanceDetail = async tab => {
     try {
       if (!ctx.detailId) {
         const res = await bridge().listInstances();

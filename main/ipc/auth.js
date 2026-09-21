@@ -8,7 +8,10 @@ function register(ipcMain, ctx) {
 
   ipcMain.handle('auth:login', async () => auth.fullLoginFlow(getWindow()));
   ipcMain.handle('auth:refresh', async () => auth.refreshSession());
-  ipcMain.handle('auth:logout', async () => { auth.logout(); return { ok: true }; });
+  ipcMain.handle('auth:logout', async () => {
+    auth.logout();
+    return { ok: true };
+  });
   ipcMain.handle('auth:profile', async () => ({ profile: auth.getStoredProfile() }));
   ipcMain.handle('settings:getClientId', async () => auth.getClientIdInfo());
   ipcMain.handle('settings:setClientId', async (_e, args) => {
@@ -16,7 +19,9 @@ function register(ipcMain, ctx) {
     if (mode === 'custom') {
       const value = String(args?.clientId || '').trim();
       if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)) {
-        throw new Error('Invalid client ID format. Expected the Application (client) ID GUID from Entra, e.g. b0be2e82-…-953142.');
+        throw new Error(
+          'Invalid client ID format. Expected the Application (client) ID GUID from Entra, e.g. b0be2e82-…-953142.'
+        );
       }
       store.saveState({ clientId: value, authMode: 'custom' });
     } else {

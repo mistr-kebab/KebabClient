@@ -1,6 +1,5 @@
 'use strict';
 
-
 const { app } = require('electron');
 const { randomUUID } = require('node:crypto');
 const { loadState, saveState } = require('./store');

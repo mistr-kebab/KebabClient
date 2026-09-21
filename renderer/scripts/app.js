@@ -14,7 +14,7 @@
       servers: tr('crumb.servers', 'Servers'),
       friends: tr('crumb.friends', 'Friends'),
       profile: tr('crumb.profile', 'Profile'),
-      settings: tr('crumb.settings', 'Settings')
+      settings: tr('crumb.settings', 'Settings'),
     };
     return map[view] || view;
   }
@@ -24,7 +24,18 @@
   let historyIndex = 0;
 
   function setView(name, opts) {
-    const known = ['home', 'play', 'instances', 'instance-detail', 'add-content', 'skins', 'servers', 'friends', 'profile', 'settings'];
+    const known = [
+      'home',
+      'play',
+      'instances',
+      'instance-detail',
+      'add-content',
+      'skins',
+      'servers',
+      'friends',
+      'profile',
+      'settings',
+    ];
     const view = known.includes(name) ? name : 'home';
     if (!opts || !opts.fromHistory) {
       viewHistory.length = historyIndex + 1;
@@ -39,10 +50,10 @@
     }
     currentView = view;
     const navKey = view === 'instance-detail' || view === 'add-content' ? 'instances' : view;
-    document.querySelectorAll('#mainNav .nav-item, #settingsNav .nav-item').forEach((btn) => {
+    document.querySelectorAll('#mainNav .nav-item, #settingsNav .nav-item').forEach(btn => {
       btn.classList.toggle('is-active', btn.dataset.view === navKey);
     });
-    document.querySelectorAll('.view').forEach((section) => {
+    document.querySelectorAll('.view').forEach(section => {
       section.classList.toggle('is-active', section.id === `view-${view}`);
     });
     const crumb = document.getElementById('crumbView');
@@ -67,14 +78,15 @@
   }
 
   function bindNav() {
-    document.querySelectorAll('#mainNav .nav-item, #settingsNav .nav-item').forEach((btn) => {
+    document.querySelectorAll('#mainNav .nav-item, #settingsNav .nav-item').forEach(btn => {
       btn.addEventListener('click', () => setView(btn.dataset.view));
     });
     const gotoDetailLog = document.getElementById('gotoDetailLogButton');
-    if (gotoDetailLog) gotoDetailLog.addEventListener('click', () => {
-      if (typeof window.showInstanceDetail === 'function') window.showInstanceDetail('logs');
-      else setView('instances');
-    });
+    if (gotoDetailLog)
+      gotoDetailLog.addEventListener('click', () => {
+        if (typeof window.showInstanceDetail === 'function') window.showInstanceDetail('logs');
+        else setView('instances');
+      });
     const gotoInstances = document.getElementById('homeGotoInstances');
     if (gotoInstances) gotoInstances.addEventListener('click', () => setView('instances'));
     const homePlay = document.getElementById('homePlayButton');
@@ -87,9 +99,14 @@
     const homeFolder = document.getElementById('homeFolderButton');
     if (homeFolder) {
       homeFolder.addEventListener('click', async () => {
-        try { await bridge().openGameFolder(); }
-        catch (err) {
-          if (window.launcherUtil) window.launcherUtil.toast(fmt(tr('play.folderFail', 'Cannot open folder: {msg}'), { msg: err.message }), 'error');
+        try {
+          await bridge().openGameFolder();
+        } catch (err) {
+          if (window.launcherUtil)
+            window.launcherUtil.toast(
+              fmt(tr('play.folderFail', 'Cannot open folder: {msg}'), { msg: err.message }),
+              'error'
+            );
         }
       });
     }
@@ -142,24 +159,33 @@
     const minBtn = document.getElementById('minButton');
     const maxBtn = document.getElementById('maxButton');
     const closeBtn = document.getElementById('closeButton');
-    if (minBtn) minBtn.addEventListener('click', () => {
-      try { bridge().minimizeWindow(); } catch {}
-    });
-    if (maxBtn) maxBtn.addEventListener('click', () => {
-      try { bridge().toggleMaximize(); } catch {}
-    });
-    if (closeBtn) closeBtn.addEventListener('click', () => {
-      try { bridge().closeWindow(); } catch {}
-    });
+    if (minBtn)
+      minBtn.addEventListener('click', () => {
+        try {
+          bridge().minimizeWindow();
+        } catch {}
+      });
+    if (maxBtn)
+      maxBtn.addEventListener('click', () => {
+        try {
+          bridge().toggleMaximize();
+        } catch {}
+      });
+    if (closeBtn)
+      closeBtn.addEventListener('click', () => {
+        try {
+          bridge().closeWindow();
+        } catch {}
+      });
     try {
-      bridge().onMaxState((s) => setMaxIcon(!!(s && s.maximized)));
+      bridge().onMaxState(s => setMaxIcon(!!(s && s.maximized)));
     } catch {}
   }
 
   document.addEventListener('DOMContentLoaded', () => {
     bindNav();
     bindWindowControls();
-    document.addEventListener('mouseup', (e) => {
+    document.addEventListener('mouseup', e => {
       if (e.button === 3) {
         e.preventDefault();
         goViewBack();
@@ -170,7 +196,12 @@
     });
     setView('home');
     const status = document.getElementById('splashStatus');
-    const steps = [tr('app.load1', 'Loading settings…'), tr('app.load2', 'Checking account…'), tr('app.load3', 'Loading instances…'), tr('app.load4', 'Almost there…')];
+    const steps = [
+      tr('app.load1', 'Loading settings…'),
+      tr('app.load2', 'Checking account…'),
+      tr('app.load3', 'Loading instances…'),
+      tr('app.load4', 'Almost there…'),
+    ];
     let i = 0;
     const timer = window.setInterval(() => {
       i += 1;

@@ -74,7 +74,9 @@ function loadSecrets() {
           const legacy = JSON.parse(buf.toString('utf8'));
           if (legacy && typeof legacy === 'object') {
             console.warn('[store] Found legacy plaintext secrets, removing.');
-            try { fs.unlinkSync(secretsFile()); } catch {}
+            try {
+              fs.unlinkSync(secretsFile());
+            } catch {}
           }
         } catch {}
         return null;
@@ -97,5 +99,5 @@ module.exports = {
   saveState,
   saveSecrets,
   loadSecrets,
-  clearSecrets
+  clearSecrets,
 };

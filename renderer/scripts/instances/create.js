@@ -24,7 +24,10 @@
       opt.value = '26.1.2';
       opt.textContent = '26.1.2';
       select.appendChild(opt);
-      toast(fmt(tr('inst.verFallback', 'Version list unavailable, using 26.1.2: {msg}'), { msg: err.message }), 'error');
+      toast(
+        fmt(tr('inst.verFallback', 'Version list unavailable, using 26.1.2: {msg}'), { msg: err.message }),
+        'error'
+      );
     }
   }
 
@@ -80,7 +83,7 @@
       const created = await bridge().createInstance({
         name: nameInput ? nameInput.value : '',
         mc: mcSelect.value,
-        loader: loaderSelect.value
+        loader: loaderSelect.value,
       });
       if (status) status.textContent = '';
       if (nameInput) nameInput.value = '';
@@ -116,7 +119,10 @@
         }
       });
     }
-    if (cancelBtn && panel) cancelBtn.addEventListener('click', () => { panel.hidden = true; });
+    if (cancelBtn && panel)
+      cancelBtn.addEventListener('click', () => {
+        panel.hidden = true;
+      });
     if (createBtn) createBtn.addEventListener('click', create);
     if (mcSelect) mcSelect.addEventListener('change', refreshLoaderNote);
   });

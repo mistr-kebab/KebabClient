@@ -53,7 +53,7 @@
     const b = document.getElementById('updateButton');
     if (b) b.addEventListener('click', onClick);
     try {
-      bridge().onUpdateState((msg) => {
+      bridge().onUpdateState(msg => {
         if (!msg) return;
         if (msg.state === 'available') {
           state = 'available';
@@ -69,9 +69,10 @@
         } else if (msg.state === 'none') {
           if (state !== 'ready') state = 'idle';
         } else if (msg.state === 'error') {
-          const errText = msg.code === 'not-configured'
-            ? t('update.errNotConfigured', 'No update source configured.')
-            : `${t('update.failed', 'Update fehlgeschlagen')}${msg.message ? `: ${msg.message}` : ''}`;
+          const errText =
+            msg.code === 'not-configured'
+              ? t('update.errNotConfigured', 'No update source configured.')
+              : `${t('update.failed', 'Update fehlgeschlagen')}${msg.message ? `: ${msg.message}` : ''}`;
           if (state === 'downloading') {
             state = 'available';
             toast(errText, 'error');

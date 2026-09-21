@@ -36,7 +36,9 @@
       const name = document.getElementById('homeAccountName');
       const state = document.getElementById('homeAccountState');
       if (name) name.textContent = (res && res.profile && res.profile.name) || t('topbar.signin', 'Not signed in');
-      if (state) state.textContent = (res && res.profile) ? t('account.connected', 'Microsoft connected') : t('account.only', 'Microsoft only');
+      if (state)
+        state.textContent =
+          res && res.profile ? t('account.connected', 'Microsoft connected') : t('account.only', 'Microsoft only');
     } catch {}
   }
 
@@ -44,7 +46,10 @@
     const list = document.getElementById('homeRecentList');
     if (!list) return;
     list.textContent = '';
-    const played = (instances || []).filter((i) => i.lastPlayed).sort((a, b) => b.lastPlayed - a.lastPlayed).slice(0, 5);
+    const played = (instances || [])
+      .filter(i => i.lastPlayed)
+      .sort((a, b) => b.lastPlayed - a.lastPlayed)
+      .slice(0, 5);
     if (!played.length) {
       list.appendChild(el('p', 'muted small', t('home.emptyRecent', 'Nothing played yet.')));
       return;

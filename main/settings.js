@@ -16,11 +16,13 @@ const DEFAULTS = {
   java: { path: '', xmx: 4, extraArgs: '' },
   downloads: { threads: 8 },
   language: 'de',
-  telemetry: true
+  telemetry: true,
 };
 
 function sanitizeLanguage(l) {
-  const v = String(l || '').trim().toLowerCase();
+  const v = String(l || '')
+    .trim()
+    .toLowerCase();
   return LANGUAGES.includes(v) ? v : 'de';
 }
 
@@ -43,7 +45,9 @@ function sanitizeJava(j) {
   }
   const xmx = Number(j?.xmx);
   out.xmx = RAM_OPTIONS.includes(xmx) ? xmx : 4;
-  const rawArgs = String(j?.extraArgs || '').trim().slice(0, 500);
+  const rawArgs = String(j?.extraArgs || '')
+    .trim()
+    .slice(0, 500);
   const kept = [];
   for (const token of rawArgs.split(/\s+/).filter(Boolean)) {
     if (token.includes('\0')) continue;
@@ -74,7 +78,7 @@ function getSettings() {
     java,
     downloads: sanitizeDownloads(s.downloads),
     language: sanitizeLanguage(s.language),
-    telemetry: sanitizeTelemetry(s.telemetry)
+    telemetry: sanitizeTelemetry(s.telemetry),
   };
 }
 
@@ -90,7 +94,7 @@ function updateSettings(patch) {
   return next;
 }
 
-function dotenvPath() {
+function _dotenvPath() {
   try {
     const exeDir = path.join(path.dirname(app.getPath('exe')), '.env');
     return exeDir;
@@ -107,7 +111,7 @@ function readDotEnvFile(file) {
   }
 }
 
-function writeDotEnvValue(file, key, value) {
+function _writeDotEnvValue(file, key, value) {
   const lines = readDotEnvFile(file).split(/\r?\n/);
   let found = false;
   const out = [];
@@ -185,7 +189,7 @@ function setDataDir(dir) {
 function dirSize(dir) {
   let total = 0;
   let files = 0;
-  const walk = (d) => {
+  const walk = d => {
     let entries = [];
     try {
       entries = fs.readdirSync(d, { withFileTypes: true });
@@ -197,7 +201,9 @@ function dirSize(dir) {
       if (e.isDirectory()) walk(full);
       else if (e.isFile()) {
         files += 1;
-        try { total += fs.statSync(full).size; } catch {}
+        try {
+          total += fs.statSync(full).size;
+        } catch {}
       }
     }
   };
@@ -222,13 +228,15 @@ function moveDataDir(dir, onStep) {
   }
   const relSrcToDst = path.relative(resolvedSrc, resolvedDst);
   const relDstToSrc = path.relative(resolvedDst, resolvedSrc);
-  if ((relSrcToDst && !relSrcToDst.startsWith('..') && !path.isAbsolute(relSrcToDst)) ||
-      (relDstToSrc && !relDstToSrc.startsWith('..') && !path.isAbsolute(relDstToSrc))) {
+  if (
+    (relSrcToDst && !relSrcToDst.startsWith('..') && !path.isAbsolute(relSrcToDst)) ||
+    (relDstToSrc && !relDstToSrc.startsWith('..') && !path.isAbsolute(relDstToSrc))
+  ) {
     throw new Error('Destination must not be inside the source directory (or vice versa).');
   }
   if (!fs.existsSync(src)) {
     fs.mkdirSync(clean, { recursive: true });
-    const file = writeBootstrap(clean);
+const _file = writeBootstrap(clean);
     return { ok: true, movedFiles: 0, movedBytes: 0, dir: clean, bootstrapFile: file, restartRequired: true };
   }
   const before = dirSize(src);
@@ -252,10 +260,9 @@ function moveDataDir(dir, onStep) {
 async function browseJava(parent) {
   const res = await dialog.showOpenDialog(parent, {
     title: 'Select Java executable',
-    filters: process.platform === 'win32'
-      ? [{ name: 'Java', extensions: ['exe'] }]
-      : [{ name: 'Java', extensions: ['*'] }],
-    properties: ['openFile']
+    filters:
+      process.platform === 'win32' ? [{ name: 'Java', extensions: ['exe'] }] : [{ name: 'Java', extensions: ['*'] }],
+    properties: ['openFile'],
   });
   if (res.canceled || !res.filePaths[0]) return { canceled: true };
   return { canceled: false, path: res.filePaths[0] };
@@ -280,5 +287,5 @@ module.exports = {
   setDataDir,
   moveDataDir,
   browseJava,
-  openDataFolder
+  openDataFolder,
 };

@@ -15,7 +15,7 @@ function listServers() {
 function listCategories() {
   const state = loadState();
   const cats = Array.isArray(state.serverCategories) ? state.serverCategories : [];
-  return cats.filter((c) => c && c.id && c.name);
+  return cats.filter(c => c && c.id && c.name);
 }
 
 function saveCategories(categories) {
@@ -35,14 +35,16 @@ function normalizeInvite(value) {
 }
 
 function findCategory(id) {
-  return listCategories().find((c) => c.id === id) || null;
+  return listCategories().find(c => c.id === id) || null;
 }
 
 function addCategory(name) {
-  const clean = String(name || '').trim().slice(0, 48);
+  const clean = String(name || '')
+    .trim()
+    .slice(0, 48);
   if (!clean) throw new Error('Category name is required.');
   const categories = listCategories();
-  if (categories.some((c) => c.name.toLowerCase() === clean.toLowerCase())) {
+  if (categories.some(c => c.name.toLowerCase() === clean.toLowerCase())) {
     throw new Error('Category already exists.');
   }
   categories.push({ id: crypto.randomUUID(), name: clean });
@@ -50,12 +52,14 @@ function addCategory(name) {
 }
 
 function renameCategory(id, name) {
-  const clean = String(name || '').trim().slice(0, 48);
+  const clean = String(name || '')
+    .trim()
+    .slice(0, 48);
   if (!clean) throw new Error('Category name is required.');
   const categories = listCategories();
-  const entry = categories.find((c) => c.id === id);
+  const entry = categories.find(c => c.id === id);
   if (!entry) throw new Error('Category not found.');
-  if (categories.some((c) => c.id !== id && c.name.toLowerCase() === clean.toLowerCase())) {
+  if (categories.some(c => c.id !== id && c.name.toLowerCase() === clean.toLowerCase())) {
     throw new Error('Category already exists.');
   }
   entry.name = clean;
@@ -63,7 +67,7 @@ function renameCategory(id, name) {
 }
 
 function deleteCategory(id) {
-  const categories = listCategories().filter((c) => c.id !== id);
+  const categories = listCategories().filter(c => c.id !== id);
   saveCategories(categories);
   const servers = listServers();
   let changed = false;
@@ -85,16 +89,19 @@ function saveServers(servers) {
 }
 
 function mergeServers(managed, existing, removedKeys) {
-  const key = (s) => String((s && s.ip) || '').trim().toLowerCase();
+  const key = s =>
+    String((s && s.ip) || '')
+      .trim()
+      .toLowerCase();
   const managedKeys = new Set((managed || []).map(key));
   const removed = removedKeys instanceof Set ? removedKeys : new Set(removedKeys || []);
-  const extras = (existing || []).filter((s) => s && s.ip && !managedKeys.has(key(s)) && !removed.has(key(s)));
-  const clean = (s) => ({ name: String(s.name || ''), ip: String(s.ip || '') });
+  const extras = (existing || []).filter(s => s && s.ip && !managedKeys.has(key(s)) && !removed.has(key(s)));
+  const clean = s => ({ name: String(s.name || ''), ip: String(s.ip || '') });
   return [...(managed || []).map(clean), ...extras.map(clean)];
 }
 
 function activeServers(servers) {
-  return (servers || listServers()).filter((s) => s && !s.disabled);
+  return (servers || listServers()).filter(s => s && !s.disabled);
 }
 
 function removedServerKeys(servers) {
@@ -124,7 +131,9 @@ function syncToAllInstances(servers) {
   let instances = [];
   try {
     instances = require('./instances').listInstances();
-  } catch { return servers || listServers(); }
+  } catch {
+    return servers || listServers();
+  }
   const { dirsFor } = require('./minecraft');
   for (const instance of instances) {
     try {
@@ -163,14 +172,14 @@ function addServer(name, ip, categoryId, invite) {
     ip: cleanIp,
     categoryId: cat ? cat.id : null,
     invite: cleanInvite === undefined ? null : cleanInvite,
-    disabled: false
+    disabled: false,
   });
   return saveServers(servers);
 }
 
 function updateServer(id, name, ip, extra) {
   const servers = listServers();
-  const entry = servers.find((s) => s.id === id);
+  const entry = servers.find(s => s.id === id);
   if (!entry) throw new Error('Server not found.');
   if (name !== undefined) {
     const cleanName = String(name).trim();
@@ -198,20 +207,20 @@ function updateServer(id, name, ip, extra) {
 
 function setServerDisabled(id, disabled) {
   const servers = listServers();
-  const entry = servers.find((s) => s.id === id);
+  const entry = servers.find(s => s.id === id);
   if (!entry) throw new Error('Server not found.');
   entry.disabled = !!disabled;
   return saveServers(servers);
 }
 
 function removeServer(id) {
-  const servers = listServers().filter((s) => s.id !== id);
+  const servers = listServers().filter(s => s.id !== id);
   return saveServers(servers);
 }
 
 function moveServer(id, direction) {
   const servers = listServers();
-  const idx = servers.findIndex((s) => s.id === id);
+  const idx = servers.findIndex(s => s.id === id);
   if (idx === -1) throw new Error('Server not found.');
   const target = direction === 'up' ? idx - 1 : idx + 1;
   if (target < 0 || target >= servers.length) return servers;
@@ -231,5 +240,5 @@ module.exports = {
   removeServer,
   moveServer,
   syncToInstance,
-  syncToAllInstances
+  syncToAllInstances,
 };

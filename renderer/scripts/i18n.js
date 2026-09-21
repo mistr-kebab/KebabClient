@@ -2,7 +2,9 @@
 
 (function () {
   let STRINGS = null;
-  try { STRINGS = window.mc.loadLocales(); } catch {}
+  try {
+    STRINGS = window.mc.loadLocales();
+  } catch {}
   if (!STRINGS || !STRINGS.de) {
     STRINGS = { de: {}, en: {} };
     console.warn('Locales could not be loaded from renderer/locales.');
@@ -27,19 +29,19 @@
 
   function apply() {
     document.documentElement.lang = lang;
-    document.querySelectorAll('[data-i18n]').forEach((node) => {
+    document.querySelectorAll('[data-i18n]').forEach(node => {
       const key = node.getAttribute('data-i18n');
       if (key) node.textContent = t(key);
     });
-    document.querySelectorAll('[data-i18n-ph]').forEach((node) => {
+    document.querySelectorAll('[data-i18n-ph]').forEach(node => {
       const key = node.getAttribute('data-i18n-ph');
       if (key) node.setAttribute('placeholder', t(key));
     });
-    document.querySelectorAll('[data-i18n-aria]').forEach((node) => {
+    document.querySelectorAll('[data-i18n-aria]').forEach(node => {
       const key = node.getAttribute('data-i18n-aria');
       if (key) node.setAttribute('aria-label', t(key));
     });
-    document.querySelectorAll('[data-i18n-title]').forEach((node) => {
+    document.querySelectorAll('[data-i18n-title]').forEach(node => {
       const key = node.getAttribute('data-i18n-title');
       if (key) node.setAttribute('title', t(key));
     });
@@ -56,7 +58,9 @@
         if (b && b.updateSettings) b.updateSettings({ language: v }).catch(() => {});
       } catch {}
     }
-    try { window.localStorage.setItem('kebabLang', v); } catch {}
+    try {
+      window.localStorage.setItem('kebabLang', v);
+    } catch {}
     return v;
   }
 
@@ -71,7 +75,9 @@
         const cached = window.localStorage.getItem('kebabLang');
         if (cached === 'en' || cached === 'de') lang = cached;
         else lang = detect();
-      } catch { lang = detect(); }
+      } catch {
+        lang = detect();
+      }
     }
     apply();
     return lang;

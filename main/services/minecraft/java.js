@@ -14,7 +14,9 @@ function javaSettings() {
     if (customPath && (!path.isAbsolute(customPath) || !fs.existsSync(customPath))) {
       customPath = '';
     }
-    const rawArgs = String(s.extraArgs || '').trim().slice(0, 500);
+    const rawArgs = String(s.extraArgs || '')
+      .trim()
+      .slice(0, 500);
     const kept = [];
     for (const token of rawArgs.split(/\s+/).filter(Boolean)) {
       if (token.includes('\0')) continue;
@@ -25,7 +27,7 @@ function javaSettings() {
     return {
       path: customPath,
       xmx: [2, 4, 6, 8, 12, 16].includes(Number(s.xmx)) ? Number(s.xmx) : 4,
-      extraArgs: kept.join(' ')
+      extraArgs: kept.join(' '),
     };
   } catch {
     return { path: '', xmx: 4, extraArgs: '' };
@@ -36,7 +38,7 @@ function checkJavaRunnable(java) {
   return new Promise((resolve, reject) => {
     let proc = null;
     try {
-      proc = require('node:child_process').execFile(java, ['-version'], (err) => {
+      proc = require('node:child_process').execFile(java, ['-version'], err => {
         if (err) reject(err);
         else resolve(true);
       });
@@ -45,7 +47,7 @@ function checkJavaRunnable(java) {
       return;
     }
     if (proc && typeof proc.on === 'function') {
-      proc.on('error', (err) => reject(err));
+      proc.on('error', err => reject(err));
     }
   });
 }
@@ -58,7 +60,7 @@ async function assertJavaAvailable(java) {
     if (err && (err.code === 'ENOENT' || /ENOENT/i.test(String(err.message || '')))) {
       const e = new Error(
         `Java was not found ("${java}"). Install Java (e.g. Eclipse Temurin from https://adoptium.net) ` +
-        'or pick your Java executable in Settings → Java.'
+          'or pick your Java executable in Settings → Java.'
       );
       e.code = 'JAVA_NOT_FOUND';
       throw e;
@@ -81,15 +83,17 @@ function requiredJavaMajor(versionJson) {
 }
 
 function getJavaMajor(java) {
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     try {
-      require('node:child_process').execFile(java, ['-version'], (err, stdout, stderr) => {
-        const text = `${stdout || ''}\n${stderr || ''}`;
-        const m = text.match(/version "(\d+)(?:\.(\d+))?/);
-        if (!m) return resolve(null);
-        if (m[1] === '1' && m[2] !== undefined) return resolve(Number(m[2]));
-        resolve(Number(m[1]));
-      }).on('error', () => resolve(null));
+      require('node:child_process')
+        .execFile(java, ['-version'], (err, stdout, stderr) => {
+          const text = `${stdout || ''}\n${stderr || ''}`;
+          const m = text.match(/version "(\d+)(?:\.(\d+))?/);
+          if (!m) return resolve(null);
+          if (m[1] === '1' && m[2] !== undefined) return resolve(Number(m[2]));
+          resolve(Number(m[1]));
+        })
+        .on('error', () => resolve(null));
     } catch {
       resolve(null);
     }
@@ -155,7 +159,9 @@ function isBundledJavaPath(p) {
 
 async function downloadBundledJava(major, onProgress) {
   if (process.platform !== 'win32') {
-    throw new Error('Automatic Java install is only supported on Windows. Install Eclipse Temurin manually (https://adoptium.net) or pick java.exe in Settings → Java.');
+    throw new Error(
+      'Automatic Java install is only supported on Windows. Install Eclipse Temurin manually (https://adoptium.net) or pick java.exe in Settings → Java.'
+    );
   }
   let AdmZip;
   try {
@@ -170,7 +176,9 @@ async function downloadBundledJava(major, onProgress) {
   try {
     new AdmZip(tmpZip).extractAllTo(target, true);
   } finally {
-    try { fs.unlinkSync(tmpZip); } catch {}
+    try {
+      fs.unlinkSync(tmpZip);
+    } catch {}
   }
   const found = await findBundledJava(major);
   if (!found) throw new Error('Java download finished but no runtime was found inside.');
@@ -184,7 +192,7 @@ function persistJavaPath(javaPath) {
   } catch {}
 }
 
-let javaSetupInflight = {};
+const javaSetupInflight = {};
 
 async function ensureJavaRuntime(requiredMajorOrOnProgress, maybeOnProgress) {
   let requiredMajor = 21;
@@ -204,7 +212,7 @@ async function ensureJavaRuntime(requiredMajorOrOnProgress, maybeOnProgress) {
         if (err && err.code === 'JAVA_TOO_OLD') {
           throw new Error(
             `Configured Java is version ${err.javaMajor}, but this Minecraft version needs Java ${requiredMajor}+. ` +
-            'Pick a newer executable in Settings → Java or clear the field for automatic setup.'
+              'Pick a newer executable in Settings → Java or clear the field for automatic setup.'
           );
         }
         throw err;
@@ -216,7 +224,10 @@ async function ensureJavaRuntime(requiredMajorOrOnProgress, maybeOnProgress) {
       return opts.path;
     } catch (err) {
       if (!err || (err.code !== 'JAVA_TOO_OLD' && err.code !== 'JAVA_NOT_FOUND')) throw err;
-      emit('game:log', { stream: 'system', line: `Stored Java is outdated (${err.code === 'JAVA_TOO_OLD' ? `Java ${err.javaMajor}` : 'missing'}). Setting up Java ${requiredMajor}…` });
+      emit('game:log', {
+        stream: 'system',
+        line: `Stored Java is outdated (${err.code === 'JAVA_TOO_OLD' ? `Java ${err.javaMajor}` : 'missing'}). Setting up Java ${requiredMajor}…`,
+      });
     }
   }
   const exeName = process.platform === 'win32' ? 'java.exe' : 'java';
@@ -238,17 +249,26 @@ async function ensureJavaRuntime(requiredMajorOrOnProgress, maybeOnProgress) {
     persistJavaPath(bundled);
     return bundled;
   }
-  emit('game:log', { stream: 'system', line: `Java ${requiredMajor} not found. Downloading Eclipse Temurin ${requiredMajor} JRE…` });
+  emit('game:log', {
+    stream: 'system',
+    line: `Java ${requiredMajor} not found. Downloading Eclipse Temurin ${requiredMajor} JRE…`,
+  });
   if (!javaSetupInflight[requiredMajor]) {
-    javaSetupInflight[requiredMajor] = downloadBundledJava(requiredMajor, (r) => {
-      try { onProgress && onProgress(r, `Downloading Java ${requiredMajor} runtime ${Math.round((r || 0) * 100)}%`); } catch {}
-    }).finally(() => { javaSetupInflight[requiredMajor] = null; });
+    javaSetupInflight[requiredMajor] = downloadBundledJava(requiredMajor, r => {
+      try {
+        onProgress && onProgress(r, `Downloading Java ${requiredMajor} runtime ${Math.round((r || 0) * 100)}%`);
+      } catch {}
+    }).finally(() => {
+      javaSetupInflight[requiredMajor] = null;
+    });
   }
   let fresh;
   try {
     fresh = await javaSetupInflight[requiredMajor];
   } catch (err) {
-    throw new Error(`Java download failed (${err?.message || err}). Install Eclipse Temurin manually (https://adoptium.net) or pick java.exe in Settings → Java.`);
+    throw new Error(
+      `Java download failed (${err?.message || err}). Install Eclipse Temurin manually (https://adoptium.net) or pick java.exe in Settings → Java.`
+    );
   }
   persistJavaPath(fresh);
   return fresh;
@@ -259,5 +279,5 @@ module.exports = {
   assertJavaAvailable,
   requiredJavaMajor,
   getJavaMajor,
-  ensureJavaRuntime
+  ensureJavaRuntime,
 };

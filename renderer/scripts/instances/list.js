@@ -8,7 +8,18 @@
   const progressById = new Map();
   const progressTimers = new Map();
 
-  const TILE_BANNERS = ['banner-01.webp', 'banner-02.webp', 'banner-03.webp', 'banner-04.webp', 'banner-05.webp', 'banner-06.webp', 'banner-07.webp', 'banner-08.webp', 'banner-09.webp', 'banner-10.webp'];
+  const TILE_BANNERS = [
+    'banner-01.webp',
+    'banner-02.webp',
+    'banner-03.webp',
+    'banner-04.webp',
+    'banner-05.webp',
+    'banner-06.webp',
+    'banner-07.webp',
+    'banner-08.webp',
+    'banner-09.webp',
+    'banner-10.webp',
+  ];
 
   function paintTileProgress(tile, ratio, label) {
     const prog = tile.querySelector('.tile-progress');
@@ -131,7 +142,9 @@
       if (instance.lastPlayed || instance.playtimeText) {
         const bits = [];
         if (instance.lastPlayed) {
-          bits.push(fmt(tr('inst.playedOn', 'Played {date}'), { date: new Date(instance.lastPlayed).toLocaleDateString() }));
+          bits.push(
+            fmt(tr('inst.playedOn', 'Played {date}'), { date: new Date(instance.lastPlayed).toLocaleDateString() })
+          );
         }
         if (instance.playtimeText) bits.push(fmt(tr('inst.playedTime', '{t} played'), { t: instance.playtimeText }));
         tile.appendChild(el('span', 'tile-played', bits.join(' · ')));
@@ -139,7 +152,7 @@
       const actions = el('span', 'tile-actions');
       const playBtn = el('button', 'btn btn-play btn-sm-pill', tr('home.play', 'Play'));
       playBtn.type = 'button';
-      playBtn.addEventListener('click', async (e) => {
+      playBtn.addEventListener('click', async e => {
         e.stopPropagation();
         try {
           await bridge().setActiveInstance(instance.id);
@@ -158,9 +171,16 @@
       const trash = document.createElement('i');
       trash.setAttribute('data-lucide', 'trash-2');
       delBtn.appendChild(trash);
-      delBtn.addEventListener('click', async (e) => {
+      delBtn.addEventListener('click', async e => {
         e.stopPropagation();
-        if (!window.confirm(fmt(tr('inst.deleteConfirm', 'Delete instance “{name}” including its mods and worlds?'), { name: instance.name }))) return;
+        if (
+          !window.confirm(
+            fmt(tr('inst.deleteConfirm', 'Delete instance “{name}” including its mods and worlds?'), {
+              name: instance.name,
+            })
+          )
+        )
+          return;
         try {
           await bridge().deleteInstance(instance.id);
           toast(fmt(tr('inst.deleted', 'Deleted {name}.'), { name: instance.name }), 'ok');
@@ -178,7 +198,7 @@
       const infoIcon = document.createElement('i');
       infoIcon.setAttribute('data-lucide', 'info');
       infoBtn.appendChild(infoIcon);
-      infoBtn.addEventListener('click', (e) => {
+      infoBtn.addEventListener('click', e => {
         e.stopPropagation();
         ctx.openDetail(instance.id);
       });
@@ -203,11 +223,11 @@
           toast(fmt(tr('inst.selectFail', 'Select failed: {msg}'), { msg: err.message }), 'error');
         }
       };
-      tile.addEventListener('click', (e) => {
+      tile.addEventListener('click', e => {
         if (e.target && e.target.closest && e.target.closest('button')) return;
         select();
       });
-      tile.addEventListener('keydown', (e) => {
+      tile.addEventListener('keydown', e => {
         if (e.target !== tile) return;
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();

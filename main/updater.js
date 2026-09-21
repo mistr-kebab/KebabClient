@@ -48,19 +48,19 @@ function initUpdater(broadcast) {
   autoUpdater.autoInstallOnAppQuit = true;
 
   autoUpdater.on('checking-for-update', () => emit('checking'));
-  autoUpdater.on('update-available', (info) => {
+  autoUpdater.on('update-available', info => {
     emit('available', { version: info?.version || '', notes: info?.releaseNotes || '' });
   });
   autoUpdater.on('update-not-available', () => emit('none', { version: app.getVersion() }));
-  autoUpdater.on('download-progress', (p) => {
+  autoUpdater.on('download-progress', p => {
     const pct = typeof p?.percent === 'number' ? Math.max(0, Math.min(100, p.percent)) : 0;
     emit('downloading', { percent: pct, transferred: p?.transferred || 0, total: p?.total || 0 });
   });
-  autoUpdater.on('update-downloaded', (info) => {
+  autoUpdater.on('update-downloaded', info => {
     downloaded = true;
     emit('ready', { version: info?.version || '' });
   });
-  autoUpdater.on('error', (err) => {
+  autoUpdater.on('error', err => {
     emit('error', { message: String(err?.message || err) });
   });
 
@@ -72,13 +72,17 @@ function initUpdater(broadcast) {
 
 function later(fn, ms) {
   return setTimeout(() => {
-    try { fn(false); } catch {}
+    try {
+      fn(false);
+    } catch {}
   }, ms);
 }
 
 function repeat(fn, ms) {
   return setInterval(() => {
-    try { fn(false); } catch {}
+    try {
+      fn(false);
+    } catch {}
   }, ms);
 }
 
@@ -112,5 +116,5 @@ module.exports = {
   checkNow,
   downloadUpdate,
   installUpdate,
-  currentVersion: () => app.getVersion()
+  currentVersion: () => app.getVersion(),
 };

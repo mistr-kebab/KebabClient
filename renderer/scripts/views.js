@@ -3,7 +3,9 @@
 (function () {
   const mount = document.querySelector('main.content');
   let views = null;
-  try { views = window.mc.loadViews(); } catch {}
+  try {
+    views = window.mc.loadViews();
+  } catch {}
   if (!mount || !views) {
     console.error('View fragments could not be loaded.');
     return;

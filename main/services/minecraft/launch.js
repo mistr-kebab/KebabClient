@@ -60,7 +60,7 @@ function launchFeatures() {
     has_quick_plays_support: false,
     is_quick_play_singleplayer: false,
     is_quick_play_multiplayer: false,
-    is_quick_play_realms: false
+    is_quick_play_realms: false,
   };
 }
 
@@ -116,16 +116,23 @@ async function launchGame(instanceId, serverAddr) {
     throw new Error(`Instance "${instance.name}" is not downloaded yet. Press Download / verify first.`);
   }
   let marker = null;
-  try { marker = JSON.parse(fs.readFileSync(markerFile(inst, variant), 'utf8')); }
-  catch { marker = null; }
+  try {
+    marker = JSON.parse(fs.readFileSync(markerFile(inst, variant), 'utf8'));
+  } catch {
+    marker = null;
+  }
   if (!marker || marker.variant !== variant) {
-    throw new Error(`Instance "${instance.name}" is not fully verified yet. Press Download / verify, wait until it finishes, then press Play.`);
+    throw new Error(
+      `Instance "${instance.name}" is not fully verified yet. Press Download / verify, wait until it finishes, then press Play.`
+    );
   }
   let versionJson;
   try {
     versionJson = JSON.parse(fs.readFileSync(versionFile, 'utf8'));
   } catch {
-    throw new Error(`Instance "${instance.name}" has a corrupt or incomplete version file. Press Download / verify again.`);
+    throw new Error(
+      `Instance "${instance.name}" has a corrupt or incomplete version file. Press Download / verify again.`
+    );
   }
   const profile = getStoredProfile();
   if (!profile) throw new Error('Not signed in. Sign in with Microsoft first.');
@@ -152,7 +159,7 @@ async function launchGame(instanceId, serverAddr) {
     natives_directory: natives,
     launcher_name: 'KebabClient',
     launcher_version: appVersion(),
-    classpath
+    classpath,
   };
 
   const { jvmArgs, gameArgs } = buildLaunchArgs(versionJson, vars);
@@ -164,14 +171,14 @@ async function launchGame(instanceId, serverAddr) {
       gameArgs.push('--server', joinTarget.host, '--port', String(joinTarget.port));
     }
   }
-  if (!jvmArgs.some((a) => a.startsWith('-Djava.library.path='))) {
+  if (!jvmArgs.some(a => a.startsWith('-Djava.library.path='))) {
     jvmArgs.push('-Djava.library.path=' + natives);
   }
   if (!jvmArgs.includes('-cp')) {
     jvmArgs.push('-cp', classpath);
   }
   const javaOpts = javaSettings();
-  if (javaOpts.xmx > 0 && !jvmArgs.some((a) => /^-Xmx/i.test(a))) {
+  if (javaOpts.xmx > 0 && !jvmArgs.some(a => /^-Xmx/i.test(a))) {
     jvmArgs.unshift(`-Xmx${javaOpts.xmx}G`);
   }
   const extra = javaOpts.extraArgs.split(/\s+/).filter(Boolean);
@@ -184,34 +191,48 @@ async function launchGame(instanceId, serverAddr) {
   });
   let launchJvmArgs = jvmArgs;
   const javaMajor = await getJavaMajor(java).catch(() => null);
-  if (javaMajor !== null && javaMajor < 23 && jvmArgs.some((a) => String(a).startsWith('--sun-misc-unsafe-memory-access'))) {
-    launchJvmArgs = jvmArgs.filter((a) => !String(a).startsWith('--sun-misc-unsafe-memory-access'));
-    emit('game:log', { stream: 'system', line: `Ignoring --sun-misc-unsafe-memory-access (needs Java 23+, running Java ${javaMajor}).` });
+  if (
+    javaMajor !== null &&
+    javaMajor < 23 &&
+    jvmArgs.some(a => String(a).startsWith('--sun-misc-unsafe-memory-access'))
+  ) {
+    launchJvmArgs = jvmArgs.filter(a => !String(a).startsWith('--sun-misc-unsafe-memory-access'));
+    emit('game:log', {
+      stream: 'system',
+      line: `Ignoring --sun-misc-unsafe-memory-access (needs Java 23+, running Java ${javaMajor}).`,
+    });
   }
   const args = [...launchJvmArgs, mainClass, ...gameArgs];
 
   emit('game:status', { running: true, pid: null, instanceId: instance.id });
-  emit('game:log', { stream: 'system', line: `Launching ${instance.name} (${variant}) as ${profile.name} [java: ${java}, needs Java ${requiredMajor}+, Xmx: ${javaOpts.xmx}G]` });
+  emit('game:log', {
+    stream: 'system',
+    line: `Launching ${instance.name} (${variant}) as ${profile.name} [java: ${java}, needs Java ${requiredMajor}+, Xmx: ${javaOpts.xmx}G]`,
+  });
 
   child = spawn(java, args, { cwd: inst, env: { ...process.env } });
   touchLastPlayed(instance.id);
   runningInstanceId = instance.id;
   const playStart = Date.now();
   const playId = instance.id;
-  try { require('../discord').showGame(instance.name); } catch {}
+  try {
+    require('../discord').showGame(instance.name);
+  } catch {}
   emit('game:status', { running: true, pid: child.pid || null, instanceId: playId });
 
-  const pump = (stream) => (chunk) => {
+  const pump = stream => chunk => {
     const text = chunk.toString('utf8');
     for (const line of text.split(/\r?\n/)) {
       if (line.length === 0) continue;
-      try { require('../discord').handleGameLine(line); } catch {}
+      try {
+        require('../discord').handleGameLine(line);
+      } catch {}
       emit('game:log', { stream, line: line.slice(0, 4000) });
     }
   };
   child.stdout.on('data', pump('stdout'));
   child.stderr.on('data', pump('stderr'));
-  child.on('error', (err) => {
+  child.on('error', err => {
     emit('game:log', { stream: 'system', line: `Failed to start Java: ${err.message}` });
     emit('game:status', { running: false, pid: null, error: err.message, instanceId: playId });
     child = null;
@@ -221,7 +242,9 @@ async function launchGame(instanceId, serverAddr) {
     try {
       require('../instances').addPlaytime(playId, Date.now() - playStart);
     } catch {}
-    try { require('../discord').clearGame(); } catch {}
+    try {
+      require('../discord').clearGame();
+    } catch {}
     emit('game:log', { stream: 'system', line: `Game exited (code=${code} signal=${signal || '-'})` });
     emit('game:status', { running: false, pid: null, code, instanceId: playId });
     child = null;
@@ -246,5 +269,5 @@ module.exports = {
   stopGame,
   buildLaunchArgs,
   parseServerAddress,
-  supportsQuickPlay
+  supportsQuickPlay,
 };

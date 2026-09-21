@@ -15,20 +15,27 @@
   const DETAIL_CATS = {
     mod: { label: 'mods', ext: '.jar' },
     resourcepack: { label: 'resource packs', ext: '.zip' },
-    shader: { label: 'shaders', ext: '.zip' }
+    shader: { label: 'shaders', ext: '.zip' },
   };
 
   const INSTALLABLE = ['mod', 'resourcepack', 'shader'];
 
   function typeLabel(t) {
     switch (t) {
-      case 'mod': return tr('inst.typeMod', 'Mod');
-      case 'resourcepack': return tr('inst.typeRp', 'Resource Pack');
-      case 'shader': return tr('inst.typeShader', 'Shader');
-      case 'modpack': return tr('inst.typeModpack', 'Modpack');
-      case 'datapack': return tr('inst.typeDatapack', 'Data Pack');
-      case 'plugin': return tr('inst.typePlugin', 'Plugin');
-      default: return tr('inst.typeContent', 'Content');
+      case 'mod':
+        return tr('inst.typeMod', 'Mod');
+      case 'resourcepack':
+        return tr('inst.typeRp', 'Resource Pack');
+      case 'shader':
+        return tr('inst.typeShader', 'Shader');
+      case 'modpack':
+        return tr('inst.typeModpack', 'Modpack');
+      case 'datapack':
+        return tr('inst.typeDatapack', 'Data Pack');
+      case 'plugin':
+        return tr('inst.typePlugin', 'Plugin');
+      default:
+        return tr('inst.typeContent', 'Content');
     }
   }
 
@@ -47,13 +54,21 @@
     const grid = document.getElementById('detailResults');
     if (!grid || resultCardCount()) return;
     grid.textContent = '';
-    grid.appendChild(el('p', 'muted', resultTotal ? tr('inst.allInstalled', 'Everything here is already installed.') : tr('inst.noContent', 'No compatible content found.')));
+    grid.appendChild(
+      el(
+        'p',
+        'muted',
+        resultTotal
+          ? tr('inst.allInstalled', 'Everything here is already installed.')
+          : tr('inst.noContent', 'No compatible content found.')
+      )
+    );
   }
 
   function pruneInstalledCards() {
     const grid = document.getElementById('detailResults');
     if (!grid) return;
-    grid.querySelectorAll('[data-project-id]').forEach((card) => {
+    grid.querySelectorAll('[data-project-id]').forEach(card => {
       if (ctx.installedProjectIds.has(card.dataset.projectId)) card.remove();
     });
     showEmptyResultsMessage();
@@ -63,7 +78,7 @@
     const grid = document.getElementById('detailResults');
     if (!grid) return;
     if (!append) grid.textContent = '';
-    const fresh = (results || []).filter((mod) => mod && !ctx.installedProjectIds.has(mod.id));
+    const fresh = (results || []).filter(mod => mod && !ctx.installedProjectIds.has(mod.id));
     for (const mod of fresh) {
       const card = el('article', 'mod-card');
       card.dataset.projectId = mod.id;
@@ -109,10 +124,24 @@
         btn.addEventListener('click', async () => {
           btn.disabled = true;
           try {
-            const res = await bridge().installContent(mod.id, undefined, ctx.detailId, mod.projectType, { title: mod.title, icon: mod.iconUrl });
-            const extra = res?.dependencies?.length ? fmt(tr('inst.extraDeps', ' (+{n} deps)'), { n: res.dependencies.length }) : '';
-            const missing = res?.depProblems?.length ? fmt(tr('inst.missingDeps', ' Missing: {x}'), { x: res.depProblems.join('; ') }) : '';
-            toast(fmt(tr('inst.installed', 'Installed {file}{extra}.{missing}'), { file: res?.file || mod.title, extra, missing }), res?.depProblems?.length ? 'error' : 'ok');
+            const res = await bridge().installContent(mod.id, undefined, ctx.detailId, mod.projectType, {
+              title: mod.title,
+              icon: mod.iconUrl,
+            });
+            const extra = res?.dependencies?.length
+              ? fmt(tr('inst.extraDeps', ' (+{n} deps)'), { n: res.dependencies.length })
+              : '';
+            const missing = res?.depProblems?.length
+              ? fmt(tr('inst.missingDeps', ' Missing: {x}'), { x: res.depProblems.join('; ') })
+              : '';
+            toast(
+              fmt(tr('inst.installed', 'Installed {file}{extra}.{missing}'), {
+                file: res?.file || mod.title,
+                extra,
+                missing,
+              }),
+              res?.depProblems?.length ? 'error' : 'ok'
+            );
             await ctx.loadDetailInstalled();
             void ctx.checkForUpdates(true);
             pruneInstalledCards();
@@ -135,11 +164,15 @@
     if (!statusEl) return;
     const shown = resultCardCount();
     if (resultLoading && !shown) {
-      statusEl.textContent = resultQ ? fmt(tr('inst.searching', 'Searching for “{q}”…'), { q: resultQ }) : tr('inst.loadingPopular', 'Loading popular content…');
+      statusEl.textContent = resultQ
+        ? fmt(tr('inst.searching', 'Searching for “{q}”…'), { q: resultQ })
+        : tr('inst.loadingPopular', 'Loading popular content…');
     } else if (resultTotal) {
       statusEl.textContent = fmt(tr('inst.shown', '{a} of {b} shown.'), { a: shown, b: resultTotal });
     } else {
-      statusEl.textContent = resultQ ? tr('inst.noResults', 'No results.') : tr('inst.popularNow', 'Popular right now.');
+      statusEl.textContent = resultQ
+        ? tr('inst.noResults', 'No results.')
+        : tr('inst.popularNow', 'Popular right now.');
     }
   }
   ctx.resultStatus = resultStatus;
@@ -156,7 +189,12 @@
     resultLoading = true;
     resultStatus();
     try {
-      const params = { limit: RESULT_LIMIT, offset: resultOffset, instanceId: ctx.detailId, category: ctx.searchFilter };
+      const params = {
+        limit: RESULT_LIMIT,
+        offset: resultOffset,
+        instanceId: ctx.detailId,
+        category: ctx.searchFilter,
+      };
       if (!searching) params.sort = 'popular';
       const res = await bridge().searchContent(resultQ, params);
       if (!ctx.detailId) return;
@@ -165,9 +203,10 @@
       resultOffset += (res.results || []).length;
     } catch (err) {
       const statusEl = document.getElementById('detailSearchStatus');
-      if (statusEl) statusEl.textContent = searching
-        ? fmt(tr('inst.searchFail', 'Search failed: {msg}'), { msg: err.message })
-        : fmt(tr('inst.browseFail', 'Browse failed: {msg}'), { msg: err.message });
+      if (statusEl)
+        statusEl.textContent = searching
+          ? fmt(tr('inst.searchFail', 'Search failed: {msg}'), { msg: err.message })
+          : fmt(tr('inst.browseFail', 'Browse failed: {msg}'), { msg: err.message });
     } finally {
       resultLoading = false;
       resultStatus();
@@ -182,20 +221,23 @@
 
   function onDetailSearchInput() {
     if (detailSearchTimer) window.clearTimeout(detailSearchTimer);
-    detailSearchTimer = window.setTimeout(() => { void fetchResults(true); }, 400);
+    detailSearchTimer = window.setTimeout(() => {
+      void fetchResults(true);
+    }, 400);
   }
 
   function refreshDetailDropText() {
     const text = document.getElementById('detailDropZoneText');
     const cat = DETAIL_CATS[ctx.detailCategory] || DETAIL_CATS.mod;
-    if (text) text.textContent = fmt(tr('detail.drop', 'Drop {ext} files here to add them to this instance'), { ext: cat.ext });
+    if (text)
+      text.textContent = fmt(tr('detail.drop', 'Drop {ext} files here to add them to this instance'), { ext: cat.ext });
   }
   ctx.refreshDetailDropText = refreshDetailDropText;
 
   function resetContentSearch() {
     ctx.detailCategory = 'mod';
     ctx.searchFilter = 'all';
-    document.querySelectorAll('#detailTabs .segment-btn').forEach((x) => {
+    document.querySelectorAll('#detailTabs .segment-btn').forEach(x => {
       x.classList.toggle('is-active', x.dataset.category === 'all');
     });
   }
@@ -204,17 +246,20 @@
   function summarizeImport(res, kind) {
     const parts = [];
     if (res.added?.length) parts.push(fmt(tr('inst.sumAdded', 'added {x}'), { x: res.added.join(', ') }));
-    if (res.skipped?.length) parts.push(fmt(tr('inst.sumSkipped', 'already there: {x}'), { x: res.skipped.join(', ') }));
-    if (!parts.length && !(res.failed?.length)) return fmt(tr('inst.nothingToDo', '{kind}: nothing to do.'), { kind });
+    if (res.skipped?.length)
+      parts.push(fmt(tr('inst.sumSkipped', 'already there: {x}'), { x: res.skipped.join(', ') }));
+    if (!parts.length && !res.failed?.length) return fmt(tr('inst.nothingToDo', '{kind}: nothing to do.'), { kind });
     let msg = `${kind}: ${parts.join('; ') || tr('inst.done', 'done')}.`;
     if (res.depProblems?.length) {
-      res.failed = [...(res.failed || []), ...res.depProblems.map((d) => ({ file: 'dependency', reason: d }))];
+      res.failed = [...(res.failed || []), ...res.depProblems.map(d => ({ file: 'dependency', reason: d }))];
     }
     if (res.installedDeps?.length) {
       msg += fmt(tr('inst.sumDeps', ' Dependencies installed: {x}.'), { x: res.installedDeps.join(', ') });
     }
     if (res.failed?.length) {
-      msg += fmt(tr('inst.sumFailed', ' Failed: {x}'), { x: res.failed.map((f) => `${f.file} (${f.reason})`).join('; ') });
+      msg += fmt(tr('inst.sumFailed', ' Failed: {x}'), {
+        x: res.failed.map(f => `${f.file} (${f.reason})`).join('; '),
+      });
     }
     return msg;
   }
@@ -232,7 +277,7 @@
   }
 
   async function updateAllContent() {
-    const jobs = [...ctx.updateMap.values()].filter((u) => u.updateAvailable && u.latestId && u.projectId);
+    const jobs = [...ctx.updateMap.values()].filter(u => u.updateAvailable && u.latestId && u.projectId);
     if (!ctx.detailId || !jobs.length) return;
     const btn = document.getElementById('detailUpdateAllButton');
     if (btn) btn.disabled = true;
@@ -251,15 +296,18 @@
     await ctx.loadDetailInstalled();
     await ctx.checkForUpdates(true);
     if (btn) btn.disabled = false;
-    toast(fmt(tr('inst.updatedAll', '{ok} updated{failed}.'), {
-      ok,
-      failed: failed ? fmt(tr('inst.updateAllFailed', ' ({f} failed)'), { f: failed }) : ''
-    }), failed ? 'error' : 'ok');
+    toast(
+      fmt(tr('inst.updatedAll', '{ok} updated{failed}.'), {
+        ok,
+        failed: failed ? fmt(tr('inst.updateAllFailed', ' ({f} failed)'), { f: failed }) : '',
+      }),
+      failed ? 'error' : 'ok'
+    );
   }
 
   function collectDropPaths(dt) {
     const out = [];
-    const push = (p) => {
+    const push = p => {
       if (typeof p === 'string' && p.length > 0 && !out.includes(p)) out.push(p);
     };
     try {
@@ -280,11 +328,14 @@
   function dropErrorHint(dt) {
     let hasFiles = false;
     try {
-      const types = [...(dt?.types || [])].map((s) => String(s).toLowerCase());
+      const types = [...(dt?.types || [])].map(s => String(s).toLowerCase());
       hasFiles = types.includes('files');
     } catch {}
     if (hasFiles) {
-      return tr('inst.dropAdmin', 'Drop was blocked (Windows strips file drops when the app runs as administrator — restart it normally or use the file button).');
+      return tr(
+        'inst.dropAdmin',
+        'Drop was blocked (Windows strips file drops when the app runs as administrator — restart it normally or use the file button).'
+      );
     }
     return tr('inst.dropHint', 'Drop files from Explorer (not browser content).');
   }
@@ -294,8 +345,8 @@
     for (const viewId of ['view-instance-detail', 'view-add-content']) {
       const view = document.getElementById(viewId);
       if (view) {
-        view.addEventListener('dragover', (e) => e.preventDefault());
-        view.addEventListener('drop', (e) => e.preventDefault());
+        view.addEventListener('dragover', e => e.preventDefault());
+        view.addEventListener('drop', e => e.preventDefault());
       }
     }
     const importDropped = async (files, dt) => {
@@ -315,7 +366,7 @@
     for (const viewId of ['view-instance-detail', 'view-add-content']) {
       const view = document.getElementById(viewId);
       if (view) {
-        view.addEventListener('drop', async (e) => {
+        view.addEventListener('drop', async e => {
           if (!ctx.detailId) return;
           if (e.target && e.target.closest && e.target.closest('#detailDropZone')) return;
           await importDropped(collectDropPaths(e.dataTransfer), e.dataTransfer);
@@ -323,12 +374,12 @@
       }
     }
     if (!zone) return;
-    const stop = (e) => {
+    const stop = e => {
       e.preventDefault();
       e.stopPropagation();
     };
-    ['dragenter', 'dragover'].forEach((name) => {
-      zone.addEventListener(name, (e) => {
+    ['dragenter', 'dragover'].forEach(name => {
+      zone.addEventListener(name, e => {
         stop(e);
         try {
           if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
@@ -336,25 +387,25 @@
         zone.classList.add('is-drag');
       });
     });
-    ['dragleave', 'drop'].forEach((name) => {
-      zone.addEventListener(name, (e) => {
+    ['dragleave', 'drop'].forEach(name => {
+      zone.addEventListener(name, e => {
         stop(e);
         zone.classList.remove('is-drag');
       });
     });
-    zone.addEventListener('drop', async (e) => {
+    zone.addEventListener('drop', async e => {
       if (!ctx.detailId) return;
       await importDropped(collectDropPaths(e.dataTransfer), e.dataTransfer);
     });
   }
 
   function bindDetailTabs() {
-    document.querySelectorAll('#detailTabs .segment-btn').forEach((btn) => {
+    document.querySelectorAll('#detailTabs .segment-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const cat = btn.dataset.category || 'all';
         ctx.searchFilter = cat;
         if (cat !== 'all') ctx.detailCategory = cat;
-        document.querySelectorAll('#detailTabs .segment-btn').forEach((x) => {
+        document.querySelectorAll('#detailTabs .segment-btn').forEach(x => {
           x.classList.toggle('is-active', x === btn);
         });
         refreshDetailDropText();
@@ -371,7 +422,7 @@
     const detailInput = document.getElementById('detailSearchInput');
     if (detailInput) {
       detailInput.addEventListener('input', onDetailSearchInput);
-      detailInput.addEventListener('keydown', (e) => {
+      detailInput.addEventListener('keydown', e => {
         if (e.key === 'Enter') {
           e.preventDefault();
           void fetchResults(true);
@@ -379,21 +430,26 @@
       });
     }
     const detailAddContentButton = document.getElementById('detailAddContentButton');
-    if (detailAddContentButton) detailAddContentButton.addEventListener('click', () => {
-      if (!ctx.detailId) return;
-      window.showView('add-content');
-      void fetchResults(true);
-    });
+    if (detailAddContentButton)
+      detailAddContentButton.addEventListener('click', () => {
+        if (!ctx.detailId) return;
+        window.showView('add-content');
+        void fetchResults(true);
+      });
     const detailAddBackButton = document.getElementById('detailAddBackButton');
-    if (detailAddBackButton) detailAddBackButton.addEventListener('click', async () => {
-      window.showView('instance-detail');
-      await ctx.loadDetailInstalled();
-    });
+    if (detailAddBackButton)
+      detailAddBackButton.addEventListener('click', async () => {
+        window.showView('instance-detail');
+        await ctx.loadDetailInstalled();
+      });
     const sentinel = document.getElementById('detailSentinel');
     if (sentinel && window.IntersectionObserver) {
-      new IntersectionObserver((entries) => {
-        if (entries.some((e) => e.isIntersecting)) loadMoreResults();
-      }, { rootMargin: '600px' }).observe(sentinel);
+      new IntersectionObserver(
+        entries => {
+          if (entries.some(e => e.isIntersecting)) loadMoreResults();
+        },
+        { rootMargin: '600px' }
+      ).observe(sentinel);
     }
     const detailUploadBtn = document.getElementById('detailUploadButton');
     if (detailUploadBtn) detailUploadBtn.addEventListener('click', detailUpload);

@@ -213,7 +213,9 @@
   border: 1px solid var(--line-soft);
   border-radius: var(--radius-md);
   padding: var(--space-4);
-  transition: border-color 0.12s ease, transform 0.12s ease;
+  transition:
+    border-color 0.12s ease,
+    transform 0.12s ease;
 }
 
 .mod-card:hover {
@@ -348,7 +350,10 @@
   border-radius: var(--radius-md);
   padding: var(--space-3) var(--space-4);
   min-width: 0;
-  transition: border-color 0.12s ease, transform 0.12s ease, opacity 0.12s ease;
+  transition:
+    border-color 0.12s ease,
+    transform 0.12s ease,
+    opacity 0.12s ease;
 }
 
 .content-card:hover {
@@ -697,11 +702,13 @@
   border: 1px solid var(--line);
   border-radius: var(--radius-full);
   cursor: pointer;
-  transition: background 0.12s ease, border-color 0.12s ease;
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease;
 }
 
 .switch .track::after {
-  content: "";
+  content: '';
   position: absolute;
   top: 2px;
   left: 2px;
@@ -709,7 +716,9 @@
   height: 14px;
   border-radius: 50%;
   background: var(--text-faint);
-  transition: transform 0.12s ease, background 0.12s ease;
+  transition:
+    transform 0.12s ease,
+    background 0.12s ease;
 }
 
 .switch input:checked + .track {
@@ -950,7 +959,9 @@ select.input {
   font: inherit;
   color: inherit;
   cursor: pointer;
-  transition: border-color 0.12s ease, transform 0.12s ease;
+  transition:
+    border-color 0.12s ease,
+    transform 0.12s ease;
 }
 
 button.skin-card {
@@ -1297,7 +1308,10 @@ button.skin-card {
   border-radius: 16px;
   padding: var(--space-4);
   cursor: pointer;
-  transition: transform 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
+  transition:
+    transform 0.12s ease,
+    border-color 0.12s ease,
+    box-shadow 0.12s ease;
 }
 
 .instance-tile:hover {
@@ -1467,7 +1481,9 @@ button.skin-card {
   background: var(--bg-raised);
   color: var(--text-dim);
   font-size: var(--text-sm);
-  transition: border-color 0.12s ease, background 0.12s ease;
+  transition:
+    border-color 0.12s ease,
+    background 0.12s ease;
 }
 
 .dropzone.is-drag {
@@ -1542,8 +1558,12 @@ button.skin-card {
 }
 
 @keyframes splash-slide {
-  0% { margin-left: -40%; }
-  100% { margin-left: 100%; }
+  0% {
+    margin-left: -40%;
+  }
+  100% {
+    margin-left: 100%;
+  }
 }
 
 .detail-head {
@@ -1816,7 +1836,9 @@ button#detailIconButton:focus-visible .detail-icon-hover {
   flex-direction: column;
   gap: var(--space-3);
   align-items: flex-start;
-  transition: border-color 0.12s ease, transform 0.12s ease;
+  transition:
+    border-color 0.12s ease,
+    transform 0.12s ease;
 }
 
 .home-card:hover {
@@ -1849,7 +1871,7 @@ button#detailIconButton:focus-visible .detail-icon-hover {
 }
 
 .tile-banner::after {
-  content: "";
+  content: '';
   position: absolute;
   inset: 0;
   background: linear-gradient(180deg, rgba(0, 0, 0, 0.05) 30%, rgba(0, 0, 0, 0.55) 100%);
@@ -1927,13 +1949,13 @@ button#detailIconButton:focus-visible .detail-icon-hover {
   color: var(--text-faint);
 }
 
-:root[data-theme="light"] .mini-log,
-:root[data-theme="light"] .log-view {
+:root[data-theme='light'] .mini-log,
+:root[data-theme='light'] .log-view {
   background: #17171a;
   color: #e8e4d8;
 }
 
-:root[data-theme="light"] .skin-stage,
-:root[data-theme="light"] .skin-card-preview {
+:root[data-theme='light'] .skin-stage,
+:root[data-theme='light'] .skin-card-preview {
   background: radial-gradient(80% 80% at 50% 30%, #2a2a30 0%, #141416 70%);
 }

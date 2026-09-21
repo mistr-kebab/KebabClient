@@ -9,24 +9,30 @@ function register(ipcMain, ctx) {
   const { broadcast, getWindow } = ctx;
 
   ipcMain.handle('instances:list', async () => ({
-    instances: instances.listInstances().map((i) => instances.describeInstance(i)),
-    activeId: instances.getActiveInstance()?.id || null
+    instances: instances.listInstances().map(i => instances.describeInstance(i)),
+    activeId: instances.getActiveInstance()?.id || null,
   }));
   ipcMain.handle('instances:setIcon', async (_e, args) => {
     const id = String(args?.id || '');
     const picked = await dialog.showOpenDialog(getWindow(), {
       title: 'Choose instance icon',
       filters: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'webp'] }],
-      properties: ['openFile']
+      properties: ['openFile'],
     });
     if (picked.canceled || !picked.filePaths[0]) return { canceled: true };
     const entry = instances.setInstanceIcon(id, picked.filePaths[0]);
-    broadcast('instances:changed', { instances: instances.listInstances(), activeId: instances.getActiveInstance()?.id || null });
+    broadcast('instances:changed', {
+      instances: instances.listInstances(),
+      activeId: instances.getActiveInstance()?.id || null,
+    });
     return { canceled: false, entry: instances.describeInstance(entry) };
   });
   ipcMain.handle('instances:clearIcon', async (_e, args) => {
     const entry = instances.clearInstanceIcon(String(args?.id || ''));
-    broadcast('instances:changed', { instances: instances.listInstances(), activeId: instances.getActiveInstance()?.id || null });
+    broadcast('instances:changed', {
+      instances: instances.listInstances(),
+      activeId: instances.getActiveInstance()?.id || null,
+    });
     return { ok: true, entry: instances.describeInstance(entry) };
   });
   ipcMain.handle('instances:create', async (_e, args) => {
@@ -36,7 +42,10 @@ function register(ipcMain, ctx) {
   });
   ipcMain.handle('instances:rename', async (_e, args) => {
     const renamed = instances.renameInstance(args?.id, args?.name);
-    broadcast('instances:changed', { instances: instances.listInstances(), activeId: instances.getActiveInstance()?.id || null });
+    broadcast('instances:changed', {
+      instances: instances.listInstances(),
+      activeId: instances.getActiveInstance()?.id || null,
+    });
     return renamed;
   });
   ipcMain.handle('instances:delete', async (_e, args) => {
@@ -59,9 +68,9 @@ function register(ipcMain, ctx) {
       if (!res.ok) throw new Error(`Version manifest failed (${res.status}).`);
       const manifest = await res.json();
       return (manifest.versions || [])
-        .filter((v) => v.type === 'release')
+        .filter(v => v.type === 'release')
         .slice(0, 40)
-        .map((v) => v.id);
+        .map(v => v.id);
     } finally {
       clearTimeout(timer);
     }
@@ -73,7 +82,7 @@ function register(ipcMain, ctx) {
       fabric: { supported: true, versions: [] },
       quilt: { supported: true, versions: [] },
       forge: { supported: false, note: 'Forge support is coming soon.' },
-      neoforge: { supported: false, note: 'NeoForge support is coming soon.' }
+      neoforge: { supported: false, note: 'NeoForge support is coming soon.' },
     };
     for (const key of ['fabric', 'quilt']) {
       try {

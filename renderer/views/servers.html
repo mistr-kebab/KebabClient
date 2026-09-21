@@ -1,38 +1,73 @@
-          <section class="view" id="view-servers" aria-label="Servers">
-            <h1 class="section-title" data-i18n="servers.title">Server</h1>
-            <p class="page-sub" data-i18n="servers.sub">Added servers are written into every instance's server list automatically, before every launch.</p>
-            <div class="panel server-form-panel collapsible is-collapsed">
-              <h3 class="panel-title collapsible-head" tabindex="0" role="button" aria-expanded="false">
-                <i data-lucide="plus-circle" class="panel-icon"></i>
-                <span data-i18n="servers.addTitle">Add server</span>
-                <i data-lucide="chevron-down" class="collapse-icon"></i>
-              </h3>
-              <div class="server-form">
-                <input type="text" id="serverNameInput" class="input input-plain" placeholder="Server name" data-i18n-ph="servers.namePh" autocomplete="off" spellcheck="false">
-                <input type="text" id="serverIpInput" class="input input-plain" placeholder="IP or address:port" data-i18n-ph="servers.ipPh" autocomplete="off" spellcheck="false">
-                <input type="text" id="serverInviteInput" class="input input-plain" placeholder="Discord link (optional)" data-i18n-ph="servers.invitePh" autocomplete="off" spellcheck="false">
-                <select id="serverCategoryInput" class="input input-plain server-cat-select" aria-label="Category"></select>
-                <button type="button" class="btn btn-play btn-sm" id="serverAddButton">
-                  <i data-lucide="plus" class="btn-icon"></i>
-                  <span data-i18n="servers.add">Add</span>
-                </button>
-              </div>
-              <p class="status-line" id="serverFormStatus"></p>
-            </div>
-            <div class="panel server-form-panel collapsible is-collapsed">
-              <h3 class="panel-title collapsible-head" tabindex="0" role="button" aria-expanded="false">
-                <i data-lucide="tags" class="panel-icon"></i>
-                <span data-i18n="servers.categories">Categories</span>
-                <i data-lucide="chevron-down" class="collapse-icon"></i>
-              </h3>
-              <div class="row">
-                <input type="text" id="serverCategoryNameInput" class="input input-plain" placeholder="Category name" data-i18n-ph="servers.categoryNamePh" autocomplete="off" spellcheck="false" maxlength="48">
-                <button type="button" class="btn btn-primary btn-sm" id="serverCategoryAddButton">
-                  <i data-lucide="plus" class="btn-icon"></i>
-                  <span data-i18n="servers.add">Add</span>
-                </button>
-              </div>
-              <div class="cat-bar" id="serverCategoryBar"></div>
-            </div>
-            <ul class="server-list" id="serverList"></ul>
-          </section>
+<section class="view" id="view-servers" aria-label="Servers">
+  <h1 class="section-title" data-i18n="servers.title">Server</h1>
+  <p class="page-sub" data-i18n="servers.sub">
+    Added servers are written into every instance's server list automatically, before every launch.
+  </p>
+  <div class="panel server-form-panel collapsible is-collapsed">
+    <h3 class="panel-title collapsible-head" tabindex="0" role="button" aria-expanded="false">
+      <i data-lucide="plus-circle" class="panel-icon"></i>
+      <span data-i18n="servers.addTitle">Add server</span>
+      <i data-lucide="chevron-down" class="collapse-icon"></i>
+    </h3>
+    <div class="server-form">
+      <input
+        type="text"
+        id="serverNameInput"
+        class="input input-plain"
+        placeholder="Server name"
+        data-i18n-ph="servers.namePh"
+        autocomplete="off"
+        spellcheck="false"
+      />
+      <input
+        type="text"
+        id="serverIpInput"
+        class="input input-plain"
+        placeholder="IP or address:port"
+        data-i18n-ph="servers.ipPh"
+        autocomplete="off"
+        spellcheck="false"
+      />
+      <input
+        type="text"
+        id="serverInviteInput"
+        class="input input-plain"
+        placeholder="Discord link (optional)"
+        data-i18n-ph="servers.invitePh"
+        autocomplete="off"
+        spellcheck="false"
+      />
+      <select id="serverCategoryInput" class="input input-plain server-cat-select" aria-label="Category"></select>
+      <button type="button" class="btn btn-play btn-sm" id="serverAddButton">
+        <i data-lucide="plus" class="btn-icon"></i>
+        <span data-i18n="servers.add">Add</span>
+      </button>
+    </div>
+    <p class="status-line" id="serverFormStatus"></p>
+  </div>
+  <div class="panel server-form-panel collapsible is-collapsed">
+    <h3 class="panel-title collapsible-head" tabindex="0" role="button" aria-expanded="false">
+      <i data-lucide="tags" class="panel-icon"></i>
+      <span data-i18n="servers.categories">Categories</span>
+      <i data-lucide="chevron-down" class="collapse-icon"></i>
+    </h3>
+    <div class="row">
+      <input
+        type="text"
+        id="serverCategoryNameInput"
+        class="input input-plain"
+        placeholder="Category name"
+        data-i18n-ph="servers.categoryNamePh"
+        autocomplete="off"
+        spellcheck="false"
+        maxlength="48"
+      />
+      <button type="button" class="btn btn-primary btn-sm" id="serverCategoryAddButton">
+        <i data-lucide="plus" class="btn-icon"></i>
+        <span data-i18n="servers.add">Add</span>
+      </button>
+    </div>
+    <div class="cat-bar" id="serverCategoryBar"></div>
+  </div>
+  <ul class="server-list" id="serverList"></ul>
+</section>

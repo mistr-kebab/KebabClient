@@ -8,7 +8,7 @@
     crimson: { label: 'Crimson', accent: '#e5484d', strong: '#f2555a', rgb: '229, 72, 77', ink: '#1c0607' },
     azure: { label: 'Azure', accent: '#4aa8ff', strong: '#6db9ff', rgb: '74, 168, 255', ink: '#06121f' },
     violet: { label: 'Violet', accent: '#9b8cff', strong: '#b3a6ff', rgb: '155, 140, 255', ink: '#100c22' },
-    emerald: { label: 'Emerald', accent: '#3ecf6e', strong: '#5be386', rgb: '62, 207, 110', ink: '#04140a' }
+    emerald: { label: 'Emerald', accent: '#3ecf6e', strong: '#5be386', rgb: '62, 207, 110', ink: '#04140a' },
   };
 
   const THEME_MODES = ['oled', 'dark', 'light', 'system'];
@@ -39,20 +39,24 @@
     const effective = resolveMode(currentMode);
     if (effective === 'oled') root.removeAttribute('data-theme');
     else root.setAttribute('data-theme', effective);
-    document.querySelectorAll('#accentSwatches .swatch').forEach((b) => {
+    document.querySelectorAll('#accentSwatches .swatch').forEach(b => {
       b.classList.toggle('is-active', b.dataset.accent === currentAccent);
     });
-    document.querySelectorAll('#themeModeSegment .segment-btn').forEach((b) => {
+    document.querySelectorAll('#themeModeSegment .segment-btn').forEach(b => {
       b.classList.toggle('is-active', b.dataset.themeMode === currentMode);
     });
-    document.querySelectorAll('#langSegment .segment-btn').forEach((b) => {
+    document.querySelectorAll('#langSegment .segment-btn').forEach(b => {
       b.classList.toggle('is-active', b.dataset.lang === currentLanguage);
     });
     if (window.matchMedia) {
       if (!systemQuery) systemQuery = window.matchMedia('(prefers-color-scheme: light)');
-      try { systemQuery.removeEventListener('change', onSystemChange); } catch {}
+      try {
+        systemQuery.removeEventListener('change', onSystemChange);
+      } catch {}
       if (currentMode === 'system') {
-        try { systemQuery.addEventListener('change', onSystemChange); } catch {}
+        try {
+          systemQuery.addEventListener('change', onSystemChange);
+        } catch {}
       }
     }
   }
@@ -120,9 +124,7 @@
         const current = (data.dataDir && data.dataDir.current) || '';
         const source = data.dataDir && data.dataDir.source;
         const custom = data.dataDir && data.dataDir.custom;
-        const suffix = source === 'env'
-          ? ' (from environment)'
-          : custom ? ' (custom)' : ' (default)';
+        const suffix = source === 'env' ? ' (from environment)' : custom ? ' (custom)' : ' (default)';
         dirLabel.textContent = current + suffix;
       }
       const dirInput = document.getElementById('dataDirInput');
@@ -141,7 +143,7 @@
 
   document.addEventListener('DOMContentLoaded', () => {
     if (window.i18n) window.i18n.initLanguage(null);
-    document.querySelectorAll('#themeModeSegment .segment-btn').forEach((b) => {
+    document.querySelectorAll('#themeModeSegment .segment-btn').forEach(b => {
       b.addEventListener('click', async () => {
         const mode = b.dataset.themeMode;
         try {
@@ -153,7 +155,7 @@
         }
       });
     });
-    document.querySelectorAll('#langSegment .segment-btn').forEach((b) => {
+    document.querySelectorAll('#langSegment .segment-btn').forEach(b => {
       b.addEventListener('click', async () => {
         const next = b.dataset.lang === 'en' ? 'en' : 'de';
         currentLanguage = next;
@@ -161,7 +163,9 @@
         applyTheme(currentAccent, currentMode);
         try {
           await bridge().updateSettings({ language: next });
-          try { await bridge().refreshDiscord(); } catch {}
+          try {
+            await bridge().refreshDiscord();
+          } catch {}
           toast(next === 'de' ? 'Sprache: Deutsch.' : 'Language: English.', 'ok');
         } catch (err) {
           toast(fmt(tr('settings.langFail', 'Language failed: {msg}'), { msg: err.message }), 'error');
@@ -179,8 +183,8 @@
             java: {
               path: pathInput ? pathInput.value : '',
               xmx: ramSelect ? Number(ramSelect.value) : 4,
-              extraArgs: argsInput ? argsInput.value : ''
-            }
+              extraArgs: argsInput ? argsInput.value : '',
+            },
           });
           setStatus('javaStatus', tr('settings.javaApplies', 'Saved. Applies to the next launch.'));
           toast(tr('settings.javaSaved', 'Java settings saved.'), 'ok');
@@ -209,7 +213,7 @@
         const threadSelect = document.getElementById('threadSelect');
         try {
           await bridge().updateSettings({
-            downloads: { threads: threadSelect ? Number(threadSelect.value) : 8 }
+            downloads: { threads: threadSelect ? Number(threadSelect.value) : 8 },
           });
           setStatus('downloadsStatus', tr('settings.dlApplies', 'Saved. Applies to the next download.'));
           toast(tr('settings.dlSaved', 'Download settings saved.'), 'ok');
@@ -238,7 +242,16 @@
         const dirInput = document.getElementById('dataDirInput');
         try {
           const res = await bridge().setDataDir(dirInput ? dirInput.value : '');
-          setStatus('dataDirStatus', fmt(tr('settings.dirSavedStatus', 'Saved ({file}). Restart the app to use it. Nothing is moved automatically — use “Move everything here” to move now.'), { file: res.bootstrapFile }));
+          setStatus(
+            'dataDirStatus',
+            fmt(
+              tr(
+                'settings.dirSavedStatus',
+                'Saved ({file}). Restart the app to use it. Nothing is moved automatically — use “Move everything here” to move now.'
+              ),
+              { file: res.bootstrapFile }
+            )
+          );
           toast(tr('settings.dirSaved', 'Data directory saved. Restart to apply.'), 'ok');
           load().catch(() => {});
         } catch (err) {
@@ -266,7 +279,17 @@
           setStatus('dataDirStatus', tr('settings.needTarget', 'Enter a destination path first.'));
           return;
         }
-        if (!window.confirm(fmt(tr('settings.moveConfirm', 'Move ALL launcher data to\n{target}\nand switch over? The app must be restarted afterwards. Do not start the game during the move.'), { target }))) {
+        if (
+          !window.confirm(
+            fmt(
+              tr(
+                'settings.moveConfirm',
+                'Move ALL launcher data to\n{target}\nand switch over? The app must be restarted afterwards. Do not start the game during the move.'
+              ),
+              { target }
+            )
+          )
+        ) {
           return;
         }
         moveDir.disabled = true;
@@ -274,7 +297,14 @@
         try {
           const res = await bridge().moveDataDir(target);
           const mb = Math.round((res.movedBytes || 0) / 1048576);
-          setStatus('dataDirStatus', fmt(tr('settings.moved', 'Moved {n} files ({mb} MB) to {dir}. Restart the app to use it.'), { n: res.movedFiles, mb, dir: res.dir }));
+          setStatus(
+            'dataDirStatus',
+            fmt(tr('settings.moved', 'Moved {n} files ({mb} MB) to {dir}. Restart the app to use it.'), {
+              n: res.movedFiles,
+              mb,
+              dir: res.dir,
+            })
+          );
           toast(fmt(tr('settings.movedToast', 'Moved {n} files. Restart to apply.'), { n: res.movedFiles }), 'ok');
           load().catch(() => {});
         } catch (err) {

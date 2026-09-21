@@ -11,7 +11,10 @@
   font-weight: 600;
   font-size: var(--text-sm);
   white-space: nowrap;
-  transition: transform 0.08s ease, background 0.12s ease, border-color 0.12s ease;
+  transition:
+    transform 0.08s ease,
+    background 0.12s ease,
+    border-color 0.12s ease;
 }
 
 .btn:active:not(:disabled) {
@@ -195,7 +198,9 @@
   cursor: pointer;
   font-size: var(--text-sm);
   font-weight: 600;
-  transition: background 0.12s ease, color 0.12s ease;
+  transition:
+    background 0.12s ease,
+    color 0.12s ease;
 }
 
 .segment-btn.is-active {
@@ -279,11 +284,13 @@
   transform: translateX(0);
   opacity: 1;
   animation: toast-in var(--toast-in);
-  transition: transform 0.22s ease, opacity 0.22s ease;
+  transition:
+    transform 0.22s ease,
+    opacity 0.22s ease;
   color: var(--text);
 }
 
-:root[data-theme="light"] .toast {
+:root[data-theme='light'] .toast {
   background: rgba(255, 255, 255, 0.96);
 }
 
@@ -431,7 +438,11 @@
   background: transparent;
   color: var(--text-dim);
   cursor: pointer;
-  transition: transform 0.08s ease, background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+  transition:
+    transform 0.08s ease,
+    background 0.12s ease,
+    border-color 0.12s ease,
+    color 0.12s ease;
 }
 
 .icon-btn:active:not(:disabled) {
@@ -570,7 +581,9 @@
   border: 2px solid transparent;
   cursor: pointer;
   padding: 0;
-  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease;
 }
 
 .swatch:hover {
@@ -579,14 +592,26 @@
 
 .swatch.is-active {
   border-color: var(--text);
-  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--text);
+  box-shadow:
+    0 0 0 2px var(--bg),
+    0 0 0 4px var(--text);
 }
 
-.swatch[data-accent="amber"] { background: #e8a020; }
-.swatch[data-accent="crimson"] { background: #e5484d; }
-.swatch[data-accent="azure"] { background: #4aa8ff; }
-.swatch[data-accent="violet"] { background: #9b8cff; }
-.swatch[data-accent="emerald"] { background: #3ecf6e; }
+.swatch[data-accent='amber'] {
+  background: #e8a020;
+}
+.swatch[data-accent='crimson'] {
+  background: #e5484d;
+}
+.swatch[data-accent='azure'] {
+  background: #4aa8ff;
+}
+.swatch[data-accent='violet'] {
+  background: #9b8cff;
+}
+.swatch[data-accent='emerald'] {
+  background: #3ecf6e;
+}
 
 .settings-panel {
   display: flex;

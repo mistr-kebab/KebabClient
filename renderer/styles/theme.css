@@ -24,8 +24,8 @@
   --danger: #e5484d;
   --info: #4aa8ff;
 
-  --font-sans: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
-  --font-mono: "JetBrains Mono", "Cascadia Code", Consolas, monospace;
+  --font-sans: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Cascadia Code', Consolas, monospace;
 
   --text-xs: 11px;
   --text-sm: 13px;
@@ -61,7 +61,7 @@
   --hero-image: url('../assets/banner.jpg');
 }
 
-:root[data-theme="dark"] {
+:root[data-theme='dark'] {
   --bg: #101013;
   --bg-raised: #17171b;
   --bg-panel: #1f1f25;
@@ -74,7 +74,7 @@
   --text-faint: #7d7970;
 }
 
-:root[data-theme="light"] {
+:root[data-theme='light'] {
   --bg: #f4f2ec;
   --bg-raised: #ffffff;
   --bg-panel: #ffffff;

@@ -10,7 +10,7 @@ function register(ipcMain, ctx) {
   const { broadcast } = ctx;
 
   ipcMain.handle('game:ensure', async (_e, args) => {
-    const res = await minecraft.ensureClient(args?.instanceId, (p) => broadcast('game:progress', p));
+    const res = await minecraft.ensureClient(args?.instanceId, p => broadcast('game:progress', p));
     servers.syncToAllInstances();
     return { ok: true, ...res };
   });
@@ -26,7 +26,7 @@ function register(ipcMain, ctx) {
       runningInstanceId: minecraft.runningInstanceId(),
       instance: active ? instances.describeInstance(active) : null,
       instanceDir: active ? minecraft.dirsFor(active).root : null,
-      profile: auth.getStoredProfile()
+      profile: auth.getStoredProfile(),
     };
   });
   ipcMain.handle('game:openFolder', async (_e, args) => {

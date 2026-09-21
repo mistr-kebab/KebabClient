@@ -1,6 +1,5 @@
 'use strict';
 
-
 const { loadState } = require('../store');
 const { URLS } = require('../config');
 
@@ -54,10 +53,16 @@ function appVersion() {
 
 function appLanguage() {
   try {
-    const forced = String(process.env.KEBAB_LANG || '').trim().toLowerCase();
+    const forced = String(process.env.KEBAB_LANG || '')
+      .trim()
+      .toLowerCase();
     if (forced === 'en' || forced === 'de') return forced;
     const s = loadState().settings || {};
-    return String(s.language || '').trim().toLowerCase() === 'en' ? 'en' : 'de';
+    return String(s.language || '')
+      .trim()
+      .toLowerCase() === 'en'
+      ? 'en'
+      : 'de';
   } catch {
     return 'de';
   }
@@ -67,15 +72,15 @@ const RPC_STRINGS = {
   de: {
     singleplayer: 'Singleplayer-Welt',
     menu: 'Im Menü',
-    playingOn: (server) => `Spielt auf ${server}`,
-    download: 'Herunterladen'
+    playingOn: server => `Spielt auf ${server}`,
+    download: 'Herunterladen',
   },
   en: {
     singleplayer: 'Singleplayer World',
     menu: 'In Menu',
-    playingOn: (server) => `Playing on ${server}`,
-    download: 'Download'
-  }
+    playingOn: server => `Playing on ${server}`,
+    download: 'Download',
+  },
 };
 
 function buildActivity() {
@@ -86,7 +91,7 @@ function buildActivity() {
     details: current.instance ? `KebabClient · ${current.instance}` : 'KebabClient',
     largeImageKey: 'logo',
     largeImageText: ver ? `KebabClient v${ver}` : 'KebabClient',
-    instance: false
+    instance: false,
   };
   if (current.server) {
     activity.state = current.server === 'singleplayer' ? t.singleplayer : t.playingOn(current.server);
@@ -271,5 +276,5 @@ module.exports = {
   refresh,
   shutdown,
   _buildActivity: buildActivity,
-  _state: () => current
+  _state: () => current,
 };

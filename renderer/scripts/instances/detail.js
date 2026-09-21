@@ -9,7 +9,7 @@
     let found = null;
     try {
       const res = await bridge().listInstances();
-      found = (res?.instances || []).find((i) => i.id === id) || null;
+      found = (res?.instances || []).find(i => i.id === id) || null;
     } catch (err) {
       toast(fmt(tr('inst.openFail', 'Could not open instance: {msg}'), { msg: err.message }), 'error');
       return;
@@ -30,7 +30,10 @@
     if (nameEl) nameEl.textContent = found.name;
     if (subEl) {
       subEl.textContent = `${loaderLabel(found.loader)}, ${found.mc}`;
-      if (found.playtimeText) subEl.appendChild(document.createTextNode(` · ${fmt(tr('inst.playedTime', '{t} played'), { t: found.playtimeText })}`));
+      if (found.playtimeText)
+        subEl.appendChild(
+          document.createTextNode(` · ${fmt(tr('inst.playedTime', '{t} played'), { t: found.playtimeText })}`)
+        );
     }
     const iconBox = document.querySelector('#detailIconButton .detail-icon-img');
     if (iconBox) {
@@ -80,7 +83,9 @@
 
   function closeVersionModal() {
     if (versionModal) {
-      try { versionModal.remove(); } catch {}
+      try {
+        versionModal.remove();
+      } catch {}
       versionModal = null;
     }
     document.removeEventListener('keydown', onVersionModalKey);
@@ -161,7 +166,11 @@
     body.appendChild(detail);
     modal.appendChild(body);
     const foot = el('div', 'modal-foot');
-    const warn = el('p', 'warn-line', tr('inst.switchWarn', 'Updating can break your instance. Review version changelogs and back up first.'));
+    const warn = el(
+      'p',
+      'warn-line',
+      tr('inst.switchWarn', 'Updating can break your instance. Review version changelogs and back up first.')
+    );
     foot.appendChild(warn);
     const cancelBtn = el('button', 'btn btn-ghost', tr('inst.cancelBtn', 'Cancel'));
     cancelBtn.type = 'button';
@@ -174,7 +183,7 @@
     document.body.appendChild(overlay);
     versionModal = overlay;
     document.addEventListener('keydown', onVersionModalKey);
-    overlay.addEventListener('mousedown', (e) => {
+    overlay.addEventListener('mousedown', e => {
       if (e.target === overlay) closeVersionModal();
     });
     if (window.refreshIcons) window.refreshIcons();
@@ -191,13 +200,15 @@
 
     function visibleVersions() {
       const q = search.value.trim().toLowerCase();
-      return versions.filter((v) => (showAll || v.compatible !== false) && (
-        !q || (v.version_number || '').toLowerCase().includes(q) || (v.name || '').toLowerCase().includes(q)
-      ));
+      return versions.filter(
+        v =>
+          (showAll || v.compatible !== false) &&
+          (!q || (v.version_number || '').toLowerCase().includes(q) || (v.name || '').toLowerCase().includes(q))
+      );
     }
 
     function paintGo() {
-      const v = versions.find((x) => x.id === selectedId) || null;
+      const v = versions.find(x => x.id === selectedId) || null;
       goBtn.disabled = !v || isCurrent(v);
       goBtn.textContent = '';
       const dl = document.createElement('i');
@@ -210,10 +221,8 @@
 
     function paintDetail() {
       detail.textContent = '';
-      const v = versions.find((x) => x.id === selectedId)
-        || versions.find((x) => x.compatible !== false)
-        || versions[0]
-        || null;
+      const v =
+        versions.find(x => x.id === selectedId) || versions.find(x => x.compatible !== false) || versions[0] || null;
       if (!v) {
         detail.appendChild(el('p', 'muted', tr('inst.noContent', 'No compatible content found.')));
       } else {
@@ -228,7 +237,9 @@
         const games = (v.gameVersions || []).join(', ');
         if (games) sub.appendChild(el('span', 'muted', ` · ${games}`));
         detail.appendChild(sub);
-        detail.appendChild(el('div', 'ver-changelog', (v.changelog || '').trim() || tr('inst.noChangelog', 'No changelog provided.')));
+        detail.appendChild(
+          el('div', 'ver-changelog', (v.changelog || '').trim() || tr('inst.noChangelog', 'No changelog provided.'))
+        );
       }
       paintGo();
     }
@@ -241,9 +252,14 @@
         return;
       }
       for (const v of vis) {
-        const row = el('button', 'ver-row' + (v.id === selectedId ? ' is-active' : '') + (v.compatible === false ? ' is-dim' : ''));
+        const row = el(
+          'button',
+          'ver-row' + (v.id === selectedId ? ' is-active' : '') + (v.compatible === false ? ' is-dim' : '')
+        );
         row.type = 'button';
-        row.appendChild(el('span', `vtype vtype-${v.type || 'release'}`, (v.type || 'release').charAt(0).toUpperCase()));
+        row.appendChild(
+          el('span', `vtype vtype-${v.type || 'release'}`, (v.type || 'release').charAt(0).toUpperCase())
+        );
         row.appendChild(el('span', 'ver-num', v.version_number));
         if (isCurrent(v)) row.appendChild(el('span', 'current-pill', tr('inst.currentTag', 'Current')));
         row.addEventListener('click', () => {
@@ -261,13 +277,19 @@
       paintList();
     });
     goBtn.addEventListener('click', async () => {
-      const v = versions.find((x) => x.id === selectedId);
+      const v = versions.find(x => x.id === selectedId);
       if (!v || !modalDetailId) return;
       goBtn.disabled = true;
       try {
         const res = await bridge().switchContentVersion(m.file, projectId, v.id, modalDetailId, key);
         closeVersionModal();
-        toast(fmt(tr('inst.switchedTo', 'Installed {file} ({v}).'), { file: res?.file || m.file, v: res?.version || v.version_number }), 'ok');
+        toast(
+          fmt(tr('inst.switchedTo', 'Installed {file} ({v}).'), {
+            file: res?.file || m.file,
+            v: res?.version || v.version_number,
+          }),
+          'ok'
+        );
         if (res?.depProblems?.length) toast(res.depProblems.join('; '), 'error');
         await ctx.loadDetailInstalled();
         await ctx.checkForUpdates(true);
@@ -287,8 +309,8 @@
           ctx.versionCache.set(cacheKey, cached);
         }
         versions = cached || [];
-        if (!versions.some((x) => x.id === selectedId)) {
-          const cur = versions.find(isCurrent) || versions.find((x) => x.compatible !== false) || versions[0];
+        if (!versions.some(x => x.id === selectedId)) {
+          const cur = versions.find(isCurrent) || versions.find(x => x.compatible !== false) || versions[0];
           selectedId = cur ? cur.id : null;
         }
       } catch (err) {
@@ -298,11 +320,17 @@
       paintList();
       paintDetail();
     })();
-    try { search.focus(); } catch {}
+    try {
+      search.focus();
+    } catch {}
   }
 
   function appendVersionButton(card, m, key, projectId, info) {
-    const btn = el('button', 'btn btn-ghost btn-sm btn-block version-open', (info && info.installedVersion) || tr('inst.versionPick', 'Version…'));
+    const btn = el(
+      'button',
+      'btn btn-ghost btn-sm btn-block version-open',
+      (info && info.installedVersion) || tr('inst.versionPick', 'Version…')
+    );
     btn.type = 'button';
     btn.title = tr('inst.switchVersion', 'Switch version');
     const ico = document.createElement('i');
@@ -340,13 +368,23 @@
     if (projectId) appendVersionButton(card, m, key, projectId, info);
     const foot = el('div', 'card-foot');
     if (info && info.updateAvailable && info.latestId) {
-      const up = el('button', 'btn btn-primary btn-sm content-update', fmt(tr('inst.updateOne', 'Update{latest}'), { latest: info.latestVersion ? ` ${info.latestVersion}` : '' }));
+      const up = el(
+        'button',
+        'btn btn-primary btn-sm content-update',
+        fmt(tr('inst.updateOne', 'Update{latest}'), { latest: info.latestVersion ? ` ${info.latestVersion}` : '' })
+      );
       up.type = 'button';
       up.addEventListener('click', async () => {
         up.disabled = true;
         try {
           const res = await bridge().switchContentVersion(m.file, projectId, info.latestId, ctx.detailId, key);
-          toast(fmt(tr('inst.switchedTo', 'Installed {file} ({v}).'), { file: res?.file || m.file, v: res?.version || info.latestVersion || '' }), 'ok');
+          toast(
+            fmt(tr('inst.switchedTo', 'Installed {file} ({v}).'), {
+              file: res?.file || m.file,
+              v: res?.version || info.latestVersion || '',
+            }),
+            'ok'
+          );
           if (res?.depProblems?.length) toast(res.depProblems.join('; '), 'error');
           await ctx.loadDetailInstalled();
           void ctx.checkForUpdates(true);
@@ -361,7 +399,8 @@
     const box = document.createElement('input');
     box.type = 'checkbox';
     box.checked = !m.disabled;
-    const switchLabel = (on) => fmt(tr(on ? 'inst.disable' : 'inst.enable', on ? 'Disable {name}' : 'Enable {name}'), { name: m.name || m.file });
+    const switchLabel = on =>
+      fmt(tr(on ? 'inst.disable' : 'inst.enable', on ? 'Disable {name}' : 'Enable {name}'), { name: m.name || m.file });
     box.title = m.disabled ? tr('inst.enableShort', 'Enable') : tr('inst.disableShort', 'Disable');
     box.setAttribute('aria-label', switchLabel(!m.disabled));
     box.addEventListener('change', async () => {
@@ -377,7 +416,16 @@
         const sub = card.querySelector('.card-sub');
         if (sub) sub.textContent = res.file;
         main.title = res.file;
-        toast(fmt(tr(res.disabled ? 'inst.disabledToast' : 'inst.enabledToast', res.disabled ? 'Disabled {name}.' : 'Enabled {name}.'), { name: m.name || res.file }), 'ok');
+        toast(
+          fmt(
+            tr(
+              res.disabled ? 'inst.disabledToast' : 'inst.enabledToast',
+              res.disabled ? 'Disabled {name}.' : 'Enabled {name}.'
+            ),
+            { name: m.name || res.file }
+          ),
+          'ok'
+        );
         void ctx.checkForUpdates(true);
       } catch (err) {
         box.checked = !m.disabled;
@@ -399,7 +447,12 @@
     trash.setAttribute('data-lucide', 'trash-2');
     del.appendChild(trash);
     del.addEventListener('click', async () => {
-      if (!window.confirm(fmt(tr('inst.delContentConfirm', 'Delete “{name}” from this instance?'), { name: m.name || m.file }))) return;
+      if (
+        !window.confirm(
+          fmt(tr('inst.delContentConfirm', 'Delete “{name}” from this instance?'), { name: m.name || m.file })
+        )
+      )
+        return;
       try {
         await bridge().uninstallContent(m.file, key, ctx.detailId);
         toast(fmt(tr('inst.removedToast', 'Removed {name}.'), { name: m.name || m.file }), 'ok');
@@ -420,7 +473,7 @@
     if (backBtn) backBtn.addEventListener('click', () => window.showView('instances'));
     const detailReload = document.getElementById('detailReloadButton');
     if (detailReload) detailReload.addEventListener('click', () => ctx.loadDetailInstalled());
-    document.querySelectorAll('#detailContentTabs .segment-btn').forEach((btn) => {
+    document.querySelectorAll('#detailContentTabs .segment-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         ctx.installedTab = btn.dataset.contentTab || 'mod';
         ctx.syncContentTabs();
@@ -432,7 +485,12 @@
       detailDelete.addEventListener('click', async () => {
         if (!ctx.detailId) return;
         const name = ctx.detailName || 'Instance';
-        if (!window.confirm(fmt(tr('inst.deleteConfirm', 'Delete instance “{name}” including its mods and worlds?'), { name }))) return;
+        if (
+          !window.confirm(
+            fmt(tr('inst.deleteConfirm', 'Delete instance “{name}” including its mods and worlds?'), { name })
+          )
+        )
+          return;
         try {
           await bridge().deleteInstance(ctx.detailId);
           toast(fmt(tr('inst.deleted', 'Deleted {name}.'), { name }), 'ok');

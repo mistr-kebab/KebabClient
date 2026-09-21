@@ -5,18 +5,18 @@ const { URLS } = require('../config');
 const LOADERS = {
   fabric: {
     label: 'Fabric',
-    meta: (mc) => `${URLS.fabricMeta}/versions/loader/${encodeURIComponent(mc)}`,
+    meta: mc => `${URLS.fabricMeta}/versions/loader/${encodeURIComponent(mc)}`,
     profile: (mc, loaderVersion) =>
       `${URLS.fabricMeta}/versions/loader/${encodeURIComponent(mc)}/${encodeURIComponent(loaderVersion)}/profile/json`,
-    maven: URLS.fabricMaven
+    maven: URLS.fabricMaven,
   },
   quilt: {
     label: 'Quilt',
-    meta: (mc) => `${URLS.quiltMeta}/versions/loader/${encodeURIComponent(mc)}`,
+    meta: mc => `${URLS.quiltMeta}/versions/loader/${encodeURIComponent(mc)}`,
     profile: (mc, loaderVersion) =>
       `${URLS.quiltMeta}/versions/loader/${encodeURIComponent(mc)}/${encodeURIComponent(loaderVersion)}/profile/json`,
-    maven: URLS.quiltMaven
-  }
+    maven: URLS.quiltMaven,
+  },
 };
 
 function isSupported(loader) {
@@ -48,15 +48,15 @@ async function listLoaderVersions(mc, loader) {
     throw new Error(`No ${cfg.label} builds found for ${mc} (${err.message}).`);
   }
   const versions = (Array.isArray(data) ? data : [])
-    .filter((e) => e?.loader?.version)
-    .map((e) => ({ version: String(e.loader.version), stable: e.loader.stable !== false }));
+    .filter(e => e?.loader?.version)
+    .map(e => ({ version: String(e.loader.version), stable: e.loader.stable !== false }));
   if (!versions.length) throw new Error(`No ${cfg.label} builds found for ${mc}.`);
   return versions;
 }
 
 async function resolveLatestLoader(mc, loader) {
   const versions = await listLoaderVersions(mc, loader);
-  const stable = versions.find((v) => v.stable);
+  const stable = versions.find(v => v.stable);
   return (stable || versions[0]).version;
 }
 
@@ -101,11 +101,11 @@ function mergeProfile(vanillaJson, profile, baseMc) {
     kebabLoader: true,
     arguments: {
       game: [...(vanillaJson.arguments?.game || []), ...(profile.arguments?.game || [])],
-      jvm: [...(vanillaJson.arguments?.jvm || []), ...(profile.arguments?.jvm || [])]
+      jvm: [...(vanillaJson.arguments?.jvm || []), ...(profile.arguments?.jvm || [])],
     },
-    libraries: [...(vanillaJson.libraries || [])]
+    libraries: [...(vanillaJson.libraries || [])],
   };
-  const seen = new Set(merged.libraries.map((l) => l.name).filter(Boolean));
+  const seen = new Set(merged.libraries.map(l => l.name).filter(Boolean));
   for (const lib of profile.libraries || []) {
     if (lib.name && seen.has(lib.name)) continue;
     merged.libraries.push(lib);
@@ -121,5 +121,5 @@ module.exports = {
   resolveLatestLoader,
   fetchProfile,
   normalizeProfileLibrary,
-  mergeProfile
+  mergeProfile,
 };

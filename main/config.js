@@ -18,15 +18,21 @@ function loadDotEnv() {
   candidates.push(path.join(__dirname, '..', '.env'));
   for (const file of candidates) {
     let text;
-    try { text = fs.readFileSync(file, 'utf8'); }
-    catch { continue; }
+    try {
+      text = fs.readFileSync(file, 'utf8');
+    } catch {
+      continue;
+    }
     for (const rawLine of text.split(/\r?\n/)) {
       const line = rawLine.trim();
       if (!line || line.startsWith('#')) continue;
       const match = line.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/);
       if (!match) continue;
       let val = match[2].trim();
-      if (val.length >= 2 && ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'")))) {
+      if (
+        val.length >= 2 &&
+        ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'")))
+      ) {
         val = val.slice(1, -1);
       }
       if (!(match[1] in process.env)) process.env[match[1]] = val;
@@ -113,7 +119,7 @@ const URLS = {
   sessionServerJoin: 'https://sessionserver.mojang.com/session/minecraft/join',
   downloadPage: 'https://kebabdev.de/download/',
   telemetryPing: 'https://kebabdev.de/api/ping',
-  latestRelease: 'https://kebabdev.de/api/latest.json'
+  latestRelease: 'https://kebabdev.de/api/latest.json',
 };
 
 function temurinDownloadUrl(major) {
@@ -147,5 +153,5 @@ module.exports = {
   instancesRoot,
   sharedLibrariesDir,
   sharedAssetsDir,
-  msRedirectUri
+  msRedirectUri,
 };

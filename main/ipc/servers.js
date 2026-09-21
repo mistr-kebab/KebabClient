@@ -5,7 +5,9 @@ const servers = require('../services/servers');
 
 function register(ipcMain) {
   ipcMain.handle('servers:list', async () => servers.listServers());
-  ipcMain.handle('servers:add', async (_e, args) => servers.addServer(args?.name, args?.ip, args?.categoryId, args?.invite));
+  ipcMain.handle('servers:add', async (_e, args) =>
+    servers.addServer(args?.name, args?.ip, args?.categoryId, args?.invite)
+  );
   ipcMain.handle('servers:update', async (_e, args) => {
     const extra = {};
     if (args && args.categoryId !== undefined) extra.categoryId = args.categoryId;

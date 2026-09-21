@@ -12,7 +12,7 @@ const { dirsFor, markerFile } = require('./paths');
 let tmpCounter = 0;
 
 function makeTally() {
-  const tally = (res) => {
+  const tally = res => {
     if (res?.skipped) tally.cached += 1;
     else tally.downloaded += 1;
   };
@@ -37,7 +37,7 @@ async function fetchJson(url) {
 }
 
 function sleep(ms) {
-  return new Promise((r) => setTimeout(r, ms));
+  return new Promise(r => setTimeout(r, ms));
 }
 
 function isRetryable(err) {
@@ -57,7 +57,10 @@ async function retryAsync(fn, label, maxAttempts = 6) {
         throw new Error(`${label} failed after ${attempt} attempt(s): ${err.message}`);
       }
       const wait = Math.min(15000, 500 * 2 ** attempt) + Math.random() * 500;
-      emit('game:log', { stream: 'system', line: `Retrying ${label} (attempt ${attempt + 1}) after ${Math.round(wait)}ms: ${err.message}` });
+      emit('game:log', {
+        stream: 'system',
+        line: `Retrying ${label} (attempt ${attempt + 1}) after ${Math.round(wait)}ms: ${err.message}`,
+      });
       await sleep(wait);
     }
   }
@@ -83,7 +86,7 @@ function sha1File(file) {
   return new Promise((resolve, reject) => {
     const h = crypto.createHash('sha1');
     const s = fs.createReadStream(file);
-    s.on('data', (c) => h.update(c));
+    s.on('data', c => h.update(c));
     s.on('end', () => resolve(h.digest('hex')));
     s.on('error', reject);
   });
@@ -93,8 +96,11 @@ async function downloadFile(url, dest, expectedSha1, expectedSize, onProgress) {
   if (fs.existsSync(dest)) {
     let sizeOk = true;
     if (expectedSize) {
-      try { sizeOk = fs.statSync(dest).size === expectedSize; }
-      catch { sizeOk = false; }
+      try {
+        sizeOk = fs.statSync(dest).size === expectedSize;
+      } catch {
+        sizeOk = false;
+      }
     }
     if (sizeOk && expectedSha1) {
       try {
@@ -119,12 +125,16 @@ async function downloadFile(url, dest, expectedSha1, expectedSize, onProgress) {
       if (onProgress && total) onProgress(done / total);
     }
   } catch (e) {
-    try { out.close(); } catch {}
-    try { fs.unlinkSync(tmp); } catch {}
+    try {
+      out.close();
+    } catch {}
+    try {
+      fs.unlinkSync(tmp);
+    } catch {}
     throw e;
   }
   await new Promise((resolve, reject) => {
-    out.end((err) => (err ? reject(err) : resolve()));
+    out.end(err => (err ? reject(err) : resolve()));
   });
   if (expectedSha1) {
     const actual = await sha1File(tmp);
@@ -143,7 +153,8 @@ function rulesAllow(rules, features) {
   let allowed = false;
   for (const r of rules) {
     const osName = r?.os?.name;
-    const osMatches = !osName ||
+    const osMatches =
+      !osName ||
       (osName === 'windows' && process.platform === 'win32') ||
       (osName === 'osx' && process.platform === 'darwin') ||
       (osName === 'linux' && process.platform === 'linux');
@@ -151,7 +162,10 @@ function rulesAllow(rules, features) {
     const required = r?.features || {};
     let featMatches = true;
     for (const [name, want] of Object.entries(required)) {
-      if (!!feat[name] !== !!want) { featMatches = false; break; }
+      if (!!feat[name] !== !!want) {
+        featMatches = false;
+        break;
+      }
     }
     if (!featMatches) continue;
     if (r.action === 'allow') allowed = true;
@@ -179,8 +193,11 @@ function safeNativesTarget(nativesDir, entryName) {
 
 function extractNatives(versionJson, librariesDir, nativesDir) {
   let AdmZip;
-  try { AdmZip = require('adm-zip'); }
-  catch { throw new Error('Missing dependency adm-zip. Run npm install.'); }
+  try {
+    AdmZip = require('adm-zip');
+  } catch {
+    throw new Error('Missing dependency adm-zip. Run npm install.');
+  }
   const key = process.platform === 'win32' ? 'windows' : process.platform === 'darwin' ? 'osx' : 'linux';
   for (const lib of versionJson.libraries || []) {
     if (!rulesAllow(lib.rules)) continue;
@@ -205,7 +222,7 @@ function extractNatives(versionJson, librariesDir, nativesDir) {
 }
 
 async function ensureVanilla(mc, layout, manifest, progress, tally) {
-  const entry = (manifest.versions || []).find((v) => v.id === mc);
+  const entry = (manifest.versions || []).find(v => v.id === mc);
   if (!entry) throw new Error(`Minecraft version ${mc} not found in piston-meta manifest.`);
   progress('version-json', 0, `Fetching version details for ${mc}`);
   const versionJson = await fetchJson(entry.url);
@@ -218,9 +235,11 @@ async function ensureVanilla(mc, layout, manifest, progress, tally) {
   const client = versionJson.downloads?.client;
   if (!client?.url) throw new Error('Version JSON has no client download.');
   progress('client', 0, 'Checking client jar');
-  tally(await downloadFileResilient(client.url, path.join(versionDir, `${mc}.jar`), client.sha1, client.size, (r) =>
-    progress('client', r, `Downloading client jar ${Math.round(r * 100)}%`)
-  ));
+  tally(
+    await downloadFileResilient(client.url, path.join(versionDir, `${mc}.jar`), client.sha1, client.size, r =>
+      progress('client', r, `Downloading client jar ${Math.round(r * 100)}%`)
+    )
+  );
   progress('client', 1, 'Client jar checked');
 
   await ensureLibraries(versionJson, layout.libraries, progress, tally);
@@ -232,13 +251,17 @@ async function ensureLibraries(versionJson, libraries, progress, tally) {
   const libs = versionJson.libraries || [];
   let doneLibs = 0;
   for (const lib of libs) {
-    if (!rulesAllow(lib.rules)) { doneLibs += 1; continue; }
+    if (!rulesAllow(lib.rules)) {
+      doneLibs += 1;
+      continue;
+    }
     const dest = libraryArtifactPath(lib, libraries);
     const art = lib?.downloads?.artifact;
     if (dest && art?.url) {
       tally(await downloadFileResilient(art.url, dest, art.sha1, art.size));
     }
-    const nativesKey = lib?.natives?.[process.platform === 'win32' ? 'windows' : process.platform === 'darwin' ? 'osx' : 'linux'];
+    const nativesKey =
+      lib?.natives?.[process.platform === 'win32' ? 'windows' : process.platform === 'darwin' ? 'osx' : 'linux'];
     if (nativesKey && lib?.downloads?.classifiers?.[nativesKey]) {
       const nat = lib.downloads.classifiers[nativesKey];
       const natDest = path.join(libraries, nat.path.replace(/\//g, path.sep));
@@ -246,7 +269,11 @@ async function ensureLibraries(versionJson, libraries, progress, tally) {
     }
     doneLibs += 1;
     if (doneLibs % 5 === 0 || doneLibs === libs.length) {
-      progress('libraries', doneLibs / libs.length, `Checking libraries ${doneLibs}/${libs.length} (${tally.downloaded} downloaded)`);
+      progress(
+        'libraries',
+        doneLibs / libs.length,
+        `Checking libraries ${doneLibs}/${libs.length} (${tally.downloaded} downloaded)`
+      );
     }
   }
   progress('libraries', 1, `Libraries verified (${tally.downloaded} downloaded so far)`);
@@ -269,15 +296,21 @@ async function ensureAssets(versionJson, assets, progress, tally) {
   await mapPool(entries, downloadThreads(), async ([, obj]) => {
     const hash = obj.hash;
     const sub = path.join('objects', hash.slice(0, 2), hash);
-    tally(await downloadFileResilient(
-      `${URLS.minecraftResources}/${hash.slice(0, 2)}/${hash}`,
-      path.join(assets, sub),
-      hash,
-      obj.size
-    ));
+    tally(
+      await downloadFileResilient(
+        `${URLS.minecraftResources}/${hash.slice(0, 2)}/${hash}`,
+        path.join(assets, sub),
+        hash,
+        obj.size
+      )
+    );
     done += 1;
     if (done % 100 === 0 || done === entries.length) {
-      progress('assets', done / entries.length, `Checking assets ${done}/${entries.length} (${tally.downloaded} downloaded)`);
+      progress(
+        'assets',
+        done / entries.length,
+        `Checking assets ${done}/${entries.length} (${tally.downloaded} downloaded)`
+      );
     }
   });
   progress('assets', 1, `Assets verified (${tally.downloaded} downloaded so far)`);
@@ -346,9 +379,7 @@ async function ensureClient(instanceOrId, onProgress) {
     onProgress = instanceOrId;
     instanceOrId = undefined;
   }
-  const instance = typeof instanceOrId === 'string'
-    ? getInstance(instanceOrId)
-    : (instanceOrId || getActiveInstance());
+  const instance = typeof instanceOrId === 'string' ? getInstance(instanceOrId) : instanceOrId || getActiveInstance();
   if (!instance) throw new Error('No instance selected. Create one first.');
   if (ensuring.has(instance.id)) {
     throw new Error(`Verify is already running for "${instance.name}".`);
@@ -365,7 +396,9 @@ async function ensureClientInner(instance, onProgress) {
   const layout = dirsFor(instance);
   const progress = (phase, ratio, label) => {
     const payload = { phase, ratio, label, instanceId: instance.id, instanceName: instance.name };
-    try { onProgress && onProgress(payload); } catch {}
+    try {
+      onProgress && onProgress(payload);
+    } catch {}
     emit('game:progress', payload);
   };
   const tally = makeTally();
@@ -394,7 +427,10 @@ async function ensureClientInner(instance, onProgress) {
     progress('natives', 1, 'Natives extracted');
   }
 
-  emit('game:log', { stream: 'system', line: `Verify complete: ${tally.cached} file(s) cached, ${tally.downloaded} downloaded.` });
+  emit('game:log', {
+    stream: 'system',
+    line: `Verify complete: ${tally.cached} file(s) cached, ${tally.downloaded} downloaded.`,
+  });
   progress('done', 1, `Verified (${tally.cached} cached, ${tally.downloaded} downloaded)`);
   writeJsonAtomic(markerFile(layout.root, variant), {
     variant,
@@ -403,10 +439,17 @@ async function ensureClientInner(instance, onProgress) {
     loaderVersion: instance.loaderVersion,
     cached: tally.cached,
     downloaded: tally.downloaded,
-    verifiedAt: Date.now()
+    verifiedAt: Date.now(),
   });
 
-  return { instanceDir: layout.root, versionFile, cached: tally.cached, downloaded: tally.downloaded, instance: describeInstance(instance), variant };
+  return {
+    instanceDir: layout.root,
+    versionFile,
+    cached: tally.cached,
+    downloaded: tally.downloaded,
+    instance: describeInstance(instance),
+    variant,
+  };
 }
 
 module.exports = {
@@ -420,5 +463,5 @@ module.exports = {
   libraryArtifactPath,
   extractNatives,
   ensureClient,
-  isEnsuring
+  isEnsuring,
 };

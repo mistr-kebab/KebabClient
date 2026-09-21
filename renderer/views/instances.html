@@ -1,47 +1,59 @@
-          <section class="view" id="view-instances" aria-label="Instances">
-            <h1 class="section-title" data-i18n="instances.title">Instanzen</h1>
-            <p class="page-sub" data-i18n="instances.sub">Jede Instanz hat eigene Version, Loader und Mods. Kachel anklicken zum Auswählen.</p>
-            <div class="row">
-              <button type="button" class="btn btn-play btn-sm" id="newInstanceButton">
-                <i data-lucide="plus" class="btn-icon"></i>
-                <span data-i18n="instances.new">Neue Instanz</span>
-              </button>
-            </div>
-            <div class="panel" id="newInstancePanel" hidden>
-              <h3 class="panel-title">
-                <i data-lucide="plus-circle" class="panel-icon"></i>
-                <span data-i18n="instances.createTitle">Create instance</span>
-              </h3>
-              <div class="form-grid">
-                <label class="form-field" for="newInstanceName">
-                  <span data-i18n="instances.nameLabel">Name (optional — default: loader + version)</span>
-                  <input type="text" id="newInstanceName" class="input input-plain" placeholder="Empty = e.g. Fabric 1.21" autocomplete="off" spellcheck="false" maxlength="48">
-                </label>
-                <label class="form-field" for="newInstanceMc">
-                  <span data-i18n="instances.mcLabel">Minecraft version</span>
-                  <select id="newInstanceMc" class="input input-plain"></select>
-                </label>
-                <label class="form-field" for="newInstanceLoader">
-                  <span data-i18n="instances.loaderLabel">Loader</span>
-                  <select id="newInstanceLoader" class="input input-plain">
-                    <option value="vanilla">Vanilla</option>
-                    <option value="fabric">Fabric</option>
-                    <option value="quilt">Quilt</option>
-                    <option value="forge" disabled data-i18n="inst.forgeSoon">Forge (soon)</option>
-                    <option value="neoforge" disabled data-i18n="inst.neoSoon">NeoForge (soon)</option>
-                  </select>
-                </label>
-              </div>
-              <p class="status-line" id="newInstanceNote" data-i18n="instances.note">Fabric/Quilt install the latest stable loader for the chosen version.</p>
-              <div class="row">
-                <button type="button" class="btn btn-play btn-sm" id="createInstanceButton">
-                  <span data-i18n="instances.create">Create</span>
-                </button>
-                <button type="button" class="btn btn-ghost btn-sm" id="cancelInstanceButton">
-                  <span data-i18n="instances.cancel">Cancel</span>
-                </button>
-              </div>
-              <p class="status-line" id="newInstanceStatus"></p>
-            </div>
-            <div class="instance-grid" id="instanceGrid"></div>
-          </section>
+<section class="view" id="view-instances" aria-label="Instances">
+  <h1 class="section-title" data-i18n="instances.title">Instanzen</h1>
+  <p class="page-sub" data-i18n="instances.sub">
+    Jede Instanz hat eigene Version, Loader und Mods. Kachel anklicken zum Auswählen.
+  </p>
+  <div class="row">
+    <button type="button" class="btn btn-play btn-sm" id="newInstanceButton">
+      <i data-lucide="plus" class="btn-icon"></i>
+      <span data-i18n="instances.new">Neue Instanz</span>
+    </button>
+  </div>
+  <div class="panel" id="newInstancePanel" hidden>
+    <h3 class="panel-title">
+      <i data-lucide="plus-circle" class="panel-icon"></i>
+      <span data-i18n="instances.createTitle">Create instance</span>
+    </h3>
+    <div class="form-grid">
+      <label class="form-field" for="newInstanceName">
+        <span data-i18n="instances.nameLabel">Name (optional — default: loader + version)</span>
+        <input
+          type="text"
+          id="newInstanceName"
+          class="input input-plain"
+          placeholder="Empty = e.g. Fabric 1.21"
+          autocomplete="off"
+          spellcheck="false"
+          maxlength="48"
+        />
+      </label>
+      <label class="form-field" for="newInstanceMc">
+        <span data-i18n="instances.mcLabel">Minecraft version</span>
+        <select id="newInstanceMc" class="input input-plain"></select>
+      </label>
+      <label class="form-field" for="newInstanceLoader">
+        <span data-i18n="instances.loaderLabel">Loader</span>
+        <select id="newInstanceLoader" class="input input-plain">
+          <option value="vanilla">Vanilla</option>
+          <option value="fabric">Fabric</option>
+          <option value="quilt">Quilt</option>
+          <option value="forge" disabled data-i18n="inst.forgeSoon">Forge (soon)</option>
+          <option value="neoforge" disabled data-i18n="inst.neoSoon">NeoForge (soon)</option>
+        </select>
+      </label>
+    </div>
+    <p class="status-line" id="newInstanceNote" data-i18n="instances.note">
+      Fabric/Quilt install the latest stable loader for the chosen version.
+    </p>
+    <div class="row">
+      <button type="button" class="btn btn-play btn-sm" id="createInstanceButton">
+        <span data-i18n="instances.create">Create</span>
+      </button>
+      <button type="button" class="btn btn-ghost btn-sm" id="cancelInstanceButton">
+        <span data-i18n="instances.cancel">Cancel</span>
+      </button>
+    </div>
+    <p class="status-line" id="newInstanceStatus"></p>
+  </div>
+  <div class="instance-grid" id="instanceGrid"></div>
+</section>

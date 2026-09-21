@@ -7,7 +7,7 @@ const updater = require('../updater');
 const { URLS } = require('../config');
 
 function register(ipcMain) {
-  ipcMain.on('views:load', (event) => {
+  ipcMain.on('views:load', event => {
     const dir = path.join(app.getAppPath(), 'renderer', 'views');
     const out = {};
     try {
@@ -19,7 +19,7 @@ function register(ipcMain) {
     event.returnValue = out;
   });
 
-  ipcMain.on('locales:load', (event) => {
+  ipcMain.on('locales:load', event => {
     const dir = path.join(app.getAppPath(), 'renderer', 'locales');
     const out = {};
     try {
@@ -36,7 +36,13 @@ function register(ipcMain) {
 
   ipcMain.handle('assets:banners', async () => {
     const dir = path.join(app.getAppPath(), 'renderer', 'assets');
-    const MIME = { '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp', '.avif': 'image/avif' };
+    const MIME = {
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.png': 'image/png',
+      '.webp': 'image/webp',
+      '.avif': 'image/avif',
+    };
     let files = [];
     try {
       files = fs.readdirSync(dir);

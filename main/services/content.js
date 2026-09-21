@@ -21,7 +21,7 @@ function clientUA() {
 const CATEGORIES = {
   mod: { dir: 'mods', exts: ['.jar'], label: 'mod' },
   resourcepack: { dir: 'resourcepacks', exts: ['.zip'], label: 'resource pack' },
-  shader: { dir: 'shaderpacks', exts: ['.zip'], label: 'shader' }
+  shader: { dir: 'shaderpacks', exts: ['.zip'], label: 'shader' },
 };
 
 const DISABLED_SUFFIX = '.disabled';
@@ -63,16 +63,17 @@ async function apiGet(p, params) {
   const url = new URL(API + p);
   if (params) for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
   const res = await fetch(url, {
-    headers: { Accept: 'application/json', 'User-Agent': clientUA() }
+    headers: { Accept: 'application/json', 'User-Agent': clientUA() },
   });
   if (!res.ok) throw new Error(`Modrinth request failed (${res.status}): ${p}`);
   return res.json();
 }
 
 async function searchContent(query, options) {
-  const opts = options && typeof options === 'object'
-    ? options
-    : { limit: options, offset: arguments[2], instanceId: arguments[3] };
+  const opts =
+    options && typeof options === 'object'
+      ? options
+      : { limit: options, offset: arguments[2], instanceId: arguments[3] };
   const instance = resolveInstance(opts.instanceId);
   const catKey = String(opts.category || 'mod').toLowerCase();
   const facets = [[`versions:${instance.mc}`]];
@@ -84,13 +85,13 @@ async function searchContent(query, options) {
     query: query || '',
     facets: JSON.stringify(facets),
     limit: String(opts.limit || 24),
-    offset: String(opts.offset || 0)
+    offset: String(opts.offset || 0),
   };
   if (opts.sort === 'popular') params.index = 'downloads';
   const data = await apiGet('/search', params);
   return {
     total: data.total_hits || 0,
-    results: (data.hits || []).map((h) => ({
+    results: (data.hits || []).map(h => ({
       id: h.project_id,
       slug: h.slug,
       title: h.title,
@@ -100,8 +101,8 @@ async function searchContent(query, options) {
       author: h.author || '',
       categories: h.categories || [],
       projectType: h.project_type || 'mod',
-      versions: h.versions || []
-    }))
+      versions: h.versions || [],
+    })),
   };
 }
 
@@ -114,14 +115,12 @@ async function getProjectVersions(projectId, loaders, mcVersion, instanceId) {
 
 function pickVersion(versions, preferredLoaders) {
   const ranked = [...(versions || [])].sort((a, b) => {
-    const rank = (v) => (v.version_type === 'release' ? 0 : v.version_type === 'beta' ? 1 : 2);
+    const rank = v => (v.version_type === 'release' ? 0 : v.version_type === 'beta' ? 1 : 2);
     if (rank(a) !== rank(b)) return rank(a) - rank(b);
     return new Date(b.date_published) - new Date(a.date_published);
   });
   if (!preferredLoaders || !preferredLoaders.length) return ranked[0] || null;
-  const matches = (v) => (v.files || []).some((f) =>
-    (f.loaders || []).some((l) => preferredLoaders.includes(l))
-  );
+  const matches = v => (v.files || []).some(f => (f.loaders || []).some(l => preferredLoaders.includes(l)));
   return ranked.find(matches) || ranked[0] || null;
 }
 
@@ -130,7 +129,7 @@ function sanitizeContentFilename(filename, exts) {
   if (!base || base === '.' || base === '..') throw new Error('Invalid content filename.');
   if (base.includes('\0')) throw new Error('Invalid content filename.');
   const lower = base.toLowerCase();
-  const ok = (exts || []).some((e) => lower.endsWith(e.toLowerCase()));
+  const ok = (exts || []).some(e => lower.endsWith(e.toLowerCase()));
   if (!ok) throw new Error(`Unexpected file extension: ${base}`);
   return base;
 }
@@ -155,7 +154,7 @@ async function checkContentUpdates(instanceId, category) {
     const dir = contentDir(instance.id, catKey);
     const loaders = catKey === 'mod' ? loaderFilter(instance) : null;
     const items = listInstalled(instance.id, catKey);
-    await mapPool(items, 4, async (item) => {
+    await mapPool(items, 4, async item => {
       const full = path.join(dir, path.basename(String(item.file)));
       let installed = null;
       try {
@@ -180,11 +179,12 @@ async function checkContentUpdates(instanceId, category) {
       }
       const latest = pickVersion(versions, loaders);
       const installedId = installed ? installed.id : null;
-      const installedVersion = installed ? installed.version_number : (item.version || null);
+      const installedVersion = installed ? installed.version_number : item.version || null;
       let updateAvailable = false;
       if (latest) {
         if (installedId) updateAvailable = latest.id !== installedId;
-        else if (installedVersion && latest.version_number) updateAvailable = latest.version_number !== installedVersion;
+        else if (installedVersion && latest.version_number)
+          updateAvailable = latest.version_number !== installedVersion;
         else updateAvailable = true;
       }
       out.push({
@@ -193,7 +193,7 @@ async function checkContentUpdates(instanceId, category) {
         installedId,
         latestVersion: latest ? latest.version_number : null,
         latestId: latest ? latest.id : null,
-        updateAvailable
+        updateAvailable,
       });
     });
   }
@@ -204,7 +204,7 @@ function versionMatchesInstance(v, loaders, mc) {
   const games = v.game_versions || v.gameVersions || [];
   if (mc && games.length && !games.includes(mc)) return false;
   if (loaders && loaders.length) {
-    const ok = (v.files || []).some((f) => (f.loaders || []).some((l) => loaders.includes(l)));
+    const ok = (v.files || []).some(f => (f.loaders || []).some(l => loaders.includes(l)));
     if (!ok) return false;
   }
   return true;
@@ -217,12 +217,12 @@ async function listContentVersions(projectId, instanceId, category) {
   const pid = String(projectId);
   const [all, compat] = await Promise.all([
     apiGet(`/project/${encodeURIComponent(pid)}/version`),
-    getProjectVersions(pid, loaders, instance.mc).catch(() => null)
+    getProjectVersions(pid, loaders, instance.mc).catch(() => null),
   ]);
-  const compatIds = new Set((compat || []).map((v) => v.id));
+  const compatIds = new Set((compat || []).map(v => v.id));
   const hadCompat = Array.isArray(compat);
   return (all || [])
-    .map((v) => {
+    .map(v => {
       const fileLoaders = [];
       for (const f of v.files || []) {
         for (const l of f.loaders || []) {
@@ -238,7 +238,7 @@ async function listContentVersions(projectId, instanceId, category) {
         changelog: v.changelog || '',
         gameVersions: v.game_versions || [],
         loaders: fileLoaders,
-        compatible: hadCompat ? compatIds.has(v.id) : versionMatchesInstance(v, loaders, instance.mc)
+        compatible: hadCompat ? compatIds.has(v.id) : versionMatchesInstance(v, loaders, instance.mc),
       };
     })
     .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
@@ -252,7 +252,7 @@ async function switchContentVersion(filename, projectId, versionId, instanceId, 
   const instance = resolveInstance(instanceId);
   const loaders = cat.key === 'mod' ? loaderFilter(instance) : null;
   const available = await getProjectVersions(String(projectId), loaders, instance.mc);
-  if (!available.some((v) => v.id === versionId)) {
+  if (!available.some(v => v.id === versionId)) {
     throw new Error('Selected version is not available for this instance.');
   }
   const installed = await installContent(projectId, versionId, instanceId, onStep, cat.key);
@@ -275,11 +275,15 @@ async function downloadToFile(url, dest) {
   try {
     for await (const chunk of res.body) out.write(chunk);
   } catch (e) {
-    try { out.close(); } catch {}
-    try { fs.unlinkSync(tmp); } catch {}
+    try {
+      out.close();
+    } catch {}
+    try {
+      fs.unlinkSync(tmp);
+    } catch {}
     throw e;
   }
-  await new Promise((resolve, reject) => out.end((err) => (err ? reject(err) : resolve())));
+  await new Promise((resolve, reject) => out.end(err => (err ? reject(err) : resolve())));
   fs.renameSync(tmp, dest);
 }
 
@@ -287,7 +291,9 @@ async function verifySha512(file, expected) {
   if (!expected) return;
   const actual = await sha512File(file);
   if (actual.toLowerCase() !== String(expected).toLowerCase()) {
-    try { fs.unlinkSync(file); } catch {}
+    try {
+      fs.unlinkSync(file);
+    } catch {}
     throw new Error(`Checksum mismatch for ${path.basename(file)} (expected sha512).`);
   }
 }
@@ -299,10 +305,10 @@ async function installContent(projectId, versionId, instanceId, onStep, category
   const loaders = cat.key === 'mod' ? loaderFilter(instance) : null;
   const versions = await getProjectVersions(projectId, loaders, mc);
   let version = null;
-  if (versionId) version = versions.find((v) => v.id === versionId) || null;
+  if (versionId) version = versions.find(v => v.id === versionId) || null;
   if (!version) version = pickVersion(versions, loaders);
   if (!version) throw new Error(`No ${mc}-compatible files found for this ${cat.label}.`);
-  const primary = (version.files || []).find((f) => f.primary) || version.files[0];
+  const primary = (version.files || []).find(f => f.primary) || version.files[0];
   if (!primary?.url) throw new Error(`Selected ${cat.label} version has no downloadable file.`);
 
   const safeName = sanitizeContentFilename(primary.filename, cat.exts);
@@ -319,7 +325,7 @@ async function installContent(projectId, versionId, instanceId, onStep, category
       title: (meta && meta.title) || prettifyFilename(safeName),
       icon: (meta && meta.icon) || null,
       projectId,
-      version: version.version_number || null
+      version: version.version_number || null,
     };
     saveMeta(dir, dirMeta);
   } catch {}
@@ -335,7 +341,7 @@ function sha512File(file) {
   return new Promise((resolve, reject) => {
     const h = crypto.createHash('sha512');
     const s = fs.createReadStream(file);
-    s.on('data', (c) => h.update(c));
+    s.on('data', c => h.update(c));
     s.on('end', () => resolve(h.digest('hex')));
     s.on('error', reject);
   });
@@ -372,7 +378,7 @@ async function installRequiredDeps(version, loaders, mc, dir, onStep) {
     try {
       const depVersions = await getProjectVersions(dep.project_id, loaders, mc);
       let depVersion = null;
-      if (dep.version_id) depVersion = depVersions.find((v) => v.id === dep.version_id);
+      if (dep.version_id) depVersion = depVersions.find(v => v.id === dep.version_id);
       if (!depVersion && dep.version_id) {
         depVersion = await fetchPinnedVersion(dep.project_id, dep.version_id);
       }
@@ -381,7 +387,7 @@ async function installRequiredDeps(version, loaders, mc, dir, onStep) {
         depProblems.push(`${dep.project_id}: no compatible file`);
         continue;
       }
-      const depFile = (depVersion.files || []).find((f) => f.primary) || depVersion.files[0];
+      const depFile = (depVersion.files || []).find(f => f.primary) || depVersion.files[0];
       if (!depFile?.url) {
         depProblems.push(`${dep.project_id}: no downloadable file`);
         continue;
@@ -451,12 +457,12 @@ function stripDisabled(filename) {
 
 function matchesExt(filename, exts) {
   const lower = String(filename || '').toLowerCase();
-  return exts.some((e) => lower.endsWith(e) || lower.endsWith(`${e}${DISABLED_SUFFIX}`));
+  return exts.some(e => lower.endsWith(e) || lower.endsWith(`${e}${DISABLED_SUFFIX}`));
 }
 
 function baseMatchesExt(filename, exts) {
   const lower = String(filename || '').toLowerCase();
-  return exts.some((e) => lower.endsWith(e));
+  return exts.some(e => lower.endsWith(e));
 }
 
 function loadMeta(dir) {
@@ -497,10 +503,12 @@ function prettifyFilename(filename) {
     kept.push(tok);
   }
   if (!kept.length) return base;
-  return kept.map((w) => {
-    if (PRETTIFY_ACRONYMS.has(w.toLowerCase())) return w.toUpperCase();
-    return w.charAt(0).toUpperCase() + w.slice(1);
-  }).join(' ');
+  return kept
+    .map(w => {
+      if (PRETTIFY_ACRONYMS.has(w.toLowerCase())) return w.toUpperCase();
+      return w.charAt(0).toUpperCase() + w.slice(1);
+    })
+    .join(' ');
 }
 
 function iconDataUrl(buf, filename) {
@@ -522,17 +530,26 @@ function readZipEntry(zip, entryName) {
 
 function parseJarMeta(full) {
   let AdmZip;
-  try { AdmZip = require('adm-zip'); }
-  catch { return null; }
+  try {
+    AdmZip = require('adm-zip');
+  } catch {
+    return null;
+  }
   let zip;
-  try { zip = new AdmZip(full); }
-  catch { return null; }
+  try {
+    zip = new AdmZip(full);
+  } catch {
+    return null;
+  }
   let modJson = null;
   for (const cand of ['fabric.mod.json', 'quilt.mod.json']) {
     const buf = readZipEntry(zip, cand);
     if (buf) {
-      try { modJson = JSON.parse(buf.toString('utf8')); }
-      catch { modJson = null; }
+      try {
+        modJson = JSON.parse(buf.toString('utf8'));
+      } catch {
+        modJson = null;
+      }
       if (modJson) break;
     }
   }
@@ -554,11 +571,17 @@ function parseJarMeta(full) {
 
 function parsePackMeta(full) {
   let AdmZip;
-  try { AdmZip = require('adm-zip'); }
-  catch { return null; }
+  try {
+    AdmZip = require('adm-zip');
+  } catch {
+    return null;
+  }
   let zip;
-  try { zip = new AdmZip(full); }
-  catch { return null; }
+  try {
+    zip = new AdmZip(full);
+  } catch {
+    return null;
+  }
   const out = {};
   const iconBuf = readZipEntry(zip, 'pack.png');
   const url = iconBuf && iconDataUrl(iconBuf, 'pack.png');
@@ -571,16 +594,28 @@ function resolveFileMeta(dir, file, catKey, meta) {
   const full = path.join(dir, safe);
   const { disabled } = stripDisabled(safe);
   let stat = null;
-  try { stat = fs.statSync(full); }
-  catch { return null; }
+  try {
+    stat = fs.statSync(full);
+  } catch {
+    return null;
+  }
   const cached = meta && meta[safe];
   if (cached && cached.v === META_VERSION && cached.mtime === stat.mtimeMs && (cached.title || cached.icon)) {
-    return { file: safe, name: cached.title || prettifyFilename(safe), icon: cached.icon || null, disabled, projectId: cached.projectId || null, version: cached.version || null, size: stat.size };
+    return {
+      file: safe,
+      name: cached.title || prettifyFilename(safe),
+      icon: cached.icon || null,
+      disabled,
+      projectId: cached.projectId || null,
+      version: cached.version || null,
+      size: stat.size,
+    };
   }
   let found = null;
   if (catKey === 'mod') found = parseJarMeta(full);
   else found = parsePackMeta(full);
-  const name = (found && found.title) || (cached && cached.v === META_VERSION && cached.title) || prettifyFilename(safe);
+  const name =
+    (found && found.title) || (cached && cached.v === META_VERSION && cached.title) || prettifyFilename(safe);
   const icon = (found && found.icon) || (cached && cached.icon) || null;
   const projectId = (cached && cached.projectId) || null;
   const version = (cached && cached.version) || null;
@@ -631,7 +666,7 @@ function listInstalled(instanceId, category) {
   return {
     mod: enrich(instanceId, 'mod'),
     resourcepack: enrich(instanceId, 'resourcepack'),
-    shader: enrich(instanceId, 'shader')
+    shader: enrich(instanceId, 'shader'),
   };
 }
 
@@ -684,7 +719,7 @@ async function importContent(category, sourcePaths, instanceId) {
   const failed = [];
   for (const src of sourcePaths || []) {
     const safe = path.basename(String(src || ''));
-    if (!safe || !cat.exts.some((e) => safe.toLowerCase().endsWith(e))) {
+    if (!safe || !cat.exts.some(e => safe.toLowerCase().endsWith(e))) {
       failed.push({ file: safe || String(src), reason: `Expected ${cat.exts.join(' or ')} for ${cat.label}s.` });
       continue;
     }
@@ -730,5 +765,5 @@ module.exports = {
   listContentVersions,
   switchContentVersion,
   modsDir,
-  contentDir
+  contentDir,
 };

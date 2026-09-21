@@ -51,11 +51,13 @@ async function postForm(url, params) {
   const res = await fetchWithTimeout(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json' },
-    body
+    body,
   });
   const text = await res.text();
   let json = null;
-  try { json = JSON.parse(text); } catch {}
+  try {
+    json = JSON.parse(text);
+  } catch {}
   if (!res.ok) {
     const msg = (json && (json.error_description || json.error || json.message)) || text.slice(0, 500);
     throw new Error(`Token request failed (${res.status}): ${msg}`);
@@ -69,7 +71,9 @@ async function postJson(url, payload, token) {
   const res = await fetchWithTimeout(url, { method: 'POST', headers, body: JSON.stringify(payload) });
   const text = await res.text();
   let json = null;
-  try { json = JSON.parse(text); } catch {}
+  try {
+    json = JSON.parse(text);
+  } catch {}
   if (!res.ok) {
     throw new Error(`Request failed (${res.status}) ${url}: ${String(text).slice(0, 500)}`);
   }
@@ -95,18 +99,24 @@ function listenForAuthCode(parent, cfg) {
       width: 480,
       height: 720,
       autoHideMenuBar: true,
-      webPreferences: { contextIsolation: true, nodeIntegration: false }
+      webPreferences: { contextIsolation: true, nodeIntegration: false },
     });
     let settled = false;
     const cleanup = () => {
-      try { win.webContents.session.webRequest.onBeforeRequest(null); } catch {}
-      try { win.webContents.removeAllListeners('will-redirect'); } catch {}
+      try {
+        win.webContents.session.webRequest.onBeforeRequest(null);
+      } catch {}
+      try {
+        win.webContents.removeAllListeners('will-redirect');
+      } catch {}
     };
     const done = (err, code) => {
       if (settled) return;
       settled = true;
       cleanup();
-      try { win.close(); } catch {}
+      try {
+        win.close();
+      } catch {}
       if (err) reject(err);
       else resolve({ code, verifier });
     };
@@ -152,13 +162,14 @@ function listenForAuthCode(parent, cfg) {
           if (code || err) {
             event.preventDefault();
             if (err) done(new Error(`Microsoft sign-in failed: ${err}`));
-            else if (!gotState || gotState !== state) done(new Error('Microsoft sign-in failed: state mismatch (possible CSRF).'));
+            else if (!gotState || gotState !== state)
+              done(new Error('Microsoft sign-in failed: state mismatch (possible CSRF).'));
             else done(null, code);
           }
         }
       } catch {}
     });
-    win.loadURL(authUrl).catch((e) => done(e));
+    win.loadURL(authUrl).catch(e => done(e));
   });
 }
 
@@ -169,7 +180,7 @@ async function exchangeCodeForTokens(code, verifier, cfg) {
     code,
     redirect_uri: cfg.redirectUri,
     code_verifier: verifier,
-    scope: SCOPES.join(' ')
+    scope: SCOPES.join(' '),
   });
 }
 
@@ -178,7 +189,7 @@ async function refreshMsTokens(refreshToken, clientId) {
     client_id: clientId,
     grant_type: 'refresh_token',
     refresh_token: refreshToken,
-    scope: SCOPES.join(' ')
+    scope: SCOPES.join(' '),
   });
 }
 
@@ -186,7 +197,7 @@ async function xboxAuthenticate(msAccessToken) {
   const body = await postJson(URLS.xboxUserAuth, {
     Properties: { AuthMethod: 'RPS', SiteName: 'user.auth.xboxlive.com', RpsTicket: `d=${msAccessToken}` },
     RelyingParty: URLS.xboxRelyingParty,
-    TokenType: 'JWT'
+    TokenType: 'JWT',
   });
   if (!body || !body.Token) throw new Error('Xbox Live authentication returned no token.');
   return { token: body.Token, uhs: body?.DisplayClaims?.xui?.[0]?.uhs };
@@ -196,7 +207,7 @@ async function xstsAuthorize(xblToken) {
   const body = await postJson(URLS.xstsAuthorize, {
     Properties: { SandboxId: 'RETAIL', UserTokens: [xblToken] },
     RelyingParty: 'rp://api.minecraftservices.com/',
-    TokenType: 'JWT'
+    TokenType: 'JWT',
   });
   if (!body || !body.Token) throw new Error('XSTS authorization returned no token.');
   const uhs = body?.DisplayClaims?.xui?.[0]?.uhs;
@@ -205,7 +216,7 @@ async function xstsAuthorize(xblToken) {
 
 async function mcLoginWithXbox(uhs, xstsToken) {
   const body = await postJson(URLS.mcLoginXbox, {
-    identityToken: `XBL3.0 x=${uhs};${xstsToken}`
+    identityToken: `XBL3.0 x=${uhs};${xstsToken}`,
   });
   if (!body || !body.access_token) throw new Error('Minecraft Services login returned no access token.');
   return body;
@@ -215,7 +226,10 @@ async function fetchMcProfile(mcAccessToken) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 20000);
   try {
-    const res = await fetch(URLS.mcProfile, { headers: { Authorization: `Bearer ${mcAccessToken}` }, signal: ctrl.signal });
+    const res = await fetch(URLS.mcProfile, {
+      headers: { Authorization: `Bearer ${mcAccessToken}` },
+      signal: ctrl.signal,
+    });
     if (res.status === 404) throw new Error('No Minecraft profile found for this Microsoft account (game not owned?).');
     if (!res.ok) throw new Error(`Failed to fetch Minecraft profile (${res.status}).`);
     return res.json();
@@ -247,13 +261,13 @@ async function finishLoginWithMsTokens(msTokens) {
     msRefreshToken: msTokens.refresh_token || null,
     mcAccessToken: mc.access_token,
     mcExpiresIn: mc.expires_in || 86400,
-    obtainedAt: Date.now()
+    obtainedAt: Date.now(),
   };
   saveSecrets(secrets);
   saveState({
     profile: { id: profile.id, name: profile.name },
     mcTokenObtainedAt: Date.now(),
-    mcTokenExpiresIn: mc.expires_in || 86400
+    mcTokenExpiresIn: mc.expires_in || 86400,
   });
   return { profile, mcAccessToken: mc.access_token };
 }
@@ -276,7 +290,7 @@ async function refreshSessionInner() {
   }
   return finishLoginWithMsTokens({
     access_token: msTokens.access_token,
-    refresh_token: msTokens.refresh_token || secrets.msRefreshToken
+    refresh_token: msTokens.refresh_token || secrets.msRefreshToken,
   });
 }
 
@@ -284,7 +298,9 @@ let refreshInflight = null;
 
 async function refreshSession() {
   if (refreshInflight) return refreshInflight;
-  refreshInflight = refreshSessionInner().finally(() => { refreshInflight = null; });
+  refreshInflight = refreshSessionInner().finally(() => {
+    refreshInflight = null;
+  });
   return refreshInflight;
 }
 
@@ -319,5 +335,5 @@ module.exports = {
   getStoredProfile,
   getValidMcAccessToken,
   getClientIdInfo,
-  logout
+  logout,
 };

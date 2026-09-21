@@ -1,147 +1,173 @@
-          <section class="view" id="view-settings" aria-label="Settings">
-            <h1 class="section-title" data-i18n="settings.title">Settings</h1>
-            <p class="page-sub" data-i18n="settings.sub">Theme, storage location, Java and downloads. Changes apply immediately, except the data directory (restart required).</p>
+<section class="view" id="view-settings" aria-label="Settings">
+  <h1 class="section-title" data-i18n="settings.title">Settings</h1>
+  <p class="page-sub" data-i18n="settings.sub">
+    Theme, storage location, Java and downloads. Changes apply immediately, except the data directory (restart
+    required).
+  </p>
 
-            <div class="panel">
-              <h3 class="panel-title">
-                <i data-lucide="languages" class="panel-icon"></i>
-                <span data-i18n="settings.language">Sprache</span>
-              </h3>
-              <div class="segment" role="group" aria-label="Language" id="langSegment">
-                <button type="button" class="segment-btn" data-lang="de">Deutsch</button>
-                <button type="button" class="segment-btn" data-lang="en">English</button>
-              </div>
-            </div>
+  <div class="panel">
+    <h3 class="panel-title">
+      <i data-lucide="languages" class="panel-icon"></i>
+      <span data-i18n="settings.language">Sprache</span>
+    </h3>
+    <div class="segment" role="group" aria-label="Language" id="langSegment">
+      <button type="button" class="segment-btn" data-lang="de">Deutsch</button>
+      <button type="button" class="segment-btn" data-lang="en">English</button>
+    </div>
+  </div>
 
-            <div class="panel">
-              <h3 class="panel-title">
-                <i data-lucide="palette" class="panel-icon"></i>
-                <span data-i18n="settings.theme">Theme</span>
-              </h3>
-              <p class="muted" data-i18n="settings.appearance">Appearance and accent color.</p>
-              <div class="segment" role="group" aria-label="Appearance" id="themeModeSegment">
-                <button type="button" class="segment-btn" data-theme-mode="oled">OLED</button>
-                <button type="button" class="segment-btn" data-theme-mode="dark" data-i18n="settings.mDark">Dark</button>
-                <button type="button" class="segment-btn" data-theme-mode="light" data-i18n="settings.mLight">Light</button>
-                <button type="button" class="segment-btn" data-theme-mode="system" data-i18n="settings.mSystem">System</button>
-              </div>
-              <div class="swatch-row" id="accentSwatches" role="group" aria-label="Accent color"></div>
-            </div>
+  <div class="panel">
+    <h3 class="panel-title">
+      <i data-lucide="palette" class="panel-icon"></i>
+      <span data-i18n="settings.theme">Theme</span>
+    </h3>
+    <p class="muted" data-i18n="settings.appearance">Appearance and accent color.</p>
+    <div class="segment" role="group" aria-label="Appearance" id="themeModeSegment">
+      <button type="button" class="segment-btn" data-theme-mode="oled">OLED</button>
+      <button type="button" class="segment-btn" data-theme-mode="dark" data-i18n="settings.mDark">Dark</button>
+      <button type="button" class="segment-btn" data-theme-mode="light" data-i18n="settings.mLight">Light</button>
+      <button type="button" class="segment-btn" data-theme-mode="system" data-i18n="settings.mSystem">System</button>
+    </div>
+    <div class="swatch-row" id="accentSwatches" role="group" aria-label="Accent color"></div>
+  </div>
 
-            <div class="panel settings-panel">
-              <h3 class="panel-title">
-                <i data-lucide="hard-drive" class="panel-icon"></i>
-                <span data-i18n="settings.storage">Storage</span>
-              </h3>
-              <p class="muted" data-i18n="settings.currentDir">Current data directory:</p>
-              <p class="status-line" id="dataDirLabel">…</p>
-              <div class="row">
-                <button type="button" class="btn btn-ghost btn-sm" id="openDataFolderButton">
-                  <i data-lucide="folder-open" class="btn-icon"></i>
-                  <span data-i18n="settings.openFolder">Open folder</span>
-                </button>
-              </div>
-              <label class="form-field" for="dataDirInput">
-                <span data-i18n="settings.moveLabel">Move data to (absolute path, restart required)</span>
-                <input type="text" id="dataDirInput" class="input input-plain" placeholder="D:\Games\KebabClient" autocomplete="off" spellcheck="false">
-              </label>
-              <div class="row">
-                <button type="button" class="btn btn-primary btn-sm" id="saveDataDirButton">
-                  <span data-i18n="settings.saveLocation">Save location</span>
-                </button>
-                <button type="button" class="btn btn-ghost btn-sm" id="moveDataDirButton">
-                  <i data-lucide="truck" class="btn-icon"></i>
-                  <span data-i18n="settings.moveAll">Move everything here</span>
-                </button>
-              </div>
-              <p class="status-line" id="dataDirStatus"></p>
-            </div>
+  <div class="panel settings-panel">
+    <h3 class="panel-title">
+      <i data-lucide="hard-drive" class="panel-icon"></i>
+      <span data-i18n="settings.storage">Storage</span>
+    </h3>
+    <p class="muted" data-i18n="settings.currentDir">Current data directory:</p>
+    <p class="status-line" id="dataDirLabel">…</p>
+    <div class="row">
+      <button type="button" class="btn btn-ghost btn-sm" id="openDataFolderButton">
+        <i data-lucide="folder-open" class="btn-icon"></i>
+        <span data-i18n="settings.openFolder">Open folder</span>
+      </button>
+    </div>
+    <label class="form-field" for="dataDirInput">
+      <span data-i18n="settings.moveLabel">Move data to (absolute path, restart required)</span>
+      <input
+        type="text"
+        id="dataDirInput"
+        class="input input-plain"
+        placeholder="D:\Games\KebabClient"
+        autocomplete="off"
+        spellcheck="false"
+      />
+    </label>
+    <div class="row">
+      <button type="button" class="btn btn-primary btn-sm" id="saveDataDirButton">
+        <span data-i18n="settings.saveLocation">Save location</span>
+      </button>
+      <button type="button" class="btn btn-ghost btn-sm" id="moveDataDirButton">
+        <i data-lucide="truck" class="btn-icon"></i>
+        <span data-i18n="settings.moveAll">Move everything here</span>
+      </button>
+    </div>
+    <p class="status-line" id="dataDirStatus"></p>
+  </div>
 
-            <div class="panel settings-panel">
-              <h3 class="panel-title">
-                <i data-lucide="coffee" class="panel-icon"></i>
-                <span data-i18n="settings.java">Java</span>
-              </h3>
-              <label class="form-field" for="javaPathInput">
-                <span data-i18n="settings.javaPath">Java executable (empty = auto-detect)</span>
-                <input type="text" id="javaPathInput" class="input input-plain" placeholder="auto-detect" autocomplete="off" spellcheck="false">
-              </label>
-              <div class="row">
-                <button type="button" class="btn btn-ghost btn-sm" id="browseJavaButton">
-                  <i data-lucide="folder-search" class="btn-icon"></i>
-                  <span data-i18n="settings.browse">Browse…</span>
-                </button>
-              </div>
-              <div class="form-grid">
-                <label class="form-field" for="javaRamSelect">
-                  <span data-i18n="settings.maxMem">Max memory (Xmx)</span>
-                  <select id="javaRamSelect" class="input input-plain"></select>
-                </label>
-              </div>
-              <label class="form-field" for="javaArgsInput">
-                <span data-i18n="settings.extraArgs">Extra JVM arguments</span>
-                <input type="text" id="javaArgsInput" class="input input-plain" placeholder="-XX:+UseG1GC" autocomplete="off" spellcheck="false">
-              </label>
-              <div class="row">
-                <button type="button" class="btn btn-primary btn-sm" id="saveJavaButton">
-                  <span data-i18n="settings.saveJava">Save Java settings</span>
-                </button>
-              </div>
-              <p class="status-line" id="javaStatus"></p>
-            </div>
+  <div class="panel settings-panel">
+    <h3 class="panel-title">
+      <i data-lucide="coffee" class="panel-icon"></i>
+      <span data-i18n="settings.java">Java</span>
+    </h3>
+    <label class="form-field" for="javaPathInput">
+      <span data-i18n="settings.javaPath">Java executable (empty = auto-detect)</span>
+      <input
+        type="text"
+        id="javaPathInput"
+        class="input input-plain"
+        placeholder="auto-detect"
+        autocomplete="off"
+        spellcheck="false"
+      />
+    </label>
+    <div class="row">
+      <button type="button" class="btn btn-ghost btn-sm" id="browseJavaButton">
+        <i data-lucide="folder-search" class="btn-icon"></i>
+        <span data-i18n="settings.browse">Browse…</span>
+      </button>
+    </div>
+    <div class="form-grid">
+      <label class="form-field" for="javaRamSelect">
+        <span data-i18n="settings.maxMem">Max memory (Xmx)</span>
+        <select id="javaRamSelect" class="input input-plain"></select>
+      </label>
+    </div>
+    <label class="form-field" for="javaArgsInput">
+      <span data-i18n="settings.extraArgs">Extra JVM arguments</span>
+      <input
+        type="text"
+        id="javaArgsInput"
+        class="input input-plain"
+        placeholder="-XX:+UseG1GC"
+        autocomplete="off"
+        spellcheck="false"
+      />
+    </label>
+    <div class="row">
+      <button type="button" class="btn btn-primary btn-sm" id="saveJavaButton">
+        <span data-i18n="settings.saveJava">Save Java settings</span>
+      </button>
+    </div>
+    <p class="status-line" id="javaStatus"></p>
+  </div>
 
-            <div class="panel settings-panel">
-              <h3 class="panel-title">
-                <i data-lucide="download" class="panel-icon"></i>
-                <span data-i18n="settings.downloads">Downloads</span>
-              </h3>
-              <div class="form-grid">
-                <label class="form-field" for="threadSelect">
-                  <span data-i18n="settings.parallel">Parallel asset downloads</span>
-                  <select id="threadSelect" class="input input-plain"></select>
-                </label>
-              </div>
-              <div class="row">
-                <button type="button" class="btn btn-primary btn-sm" id="saveDownloadsButton">
-                  <span data-i18n="settings.save">Save</span>
-                </button>
-              </div>
-              <p class="status-line" id="downloadsStatus"></p>
-            </div>
+  <div class="panel settings-panel">
+    <h3 class="panel-title">
+      <i data-lucide="download" class="panel-icon"></i>
+      <span data-i18n="settings.downloads">Downloads</span>
+    </h3>
+    <div class="form-grid">
+      <label class="form-field" for="threadSelect">
+        <span data-i18n="settings.parallel">Parallel asset downloads</span>
+        <select id="threadSelect" class="input input-plain"></select>
+      </label>
+    </div>
+    <div class="row">
+      <button type="button" class="btn btn-primary btn-sm" id="saveDownloadsButton">
+        <span data-i18n="settings.save">Save</span>
+      </button>
+    </div>
+    <p class="status-line" id="downloadsStatus"></p>
+  </div>
 
-            <div class="panel settings-panel">
-              <h3 class="panel-title">
-                <i data-lucide="shield-check" class="panel-icon"></i>
-                <span data-i18n="settings.privacy">Privacy</span>
-              </h3>
-              <p class="muted" data-i18n="settings.telemetryHint">Sends the app version and a random install ID to kebabdev.de once a day. No personal data.</p>
-              <label class="check-row" for="telemetryCheck">
-                <input type="checkbox" id="telemetryCheck" checked>
-                <span data-i18n="settings.telemetry">Send anonymous usage statistics</span>
-              </label>
-              <p class="status-line" id="telemetryStatus"></p>
-            </div>
+  <div class="panel settings-panel">
+    <h3 class="panel-title">
+      <i data-lucide="shield-check" class="panel-icon"></i>
+      <span data-i18n="settings.privacy">Privacy</span>
+    </h3>
+    <p class="muted" data-i18n="settings.telemetryHint">
+      Sends the app version and a random install ID to kebabdev.de once a day. No personal data.
+    </p>
+    <label class="check-row" for="telemetryCheck">
+      <input type="checkbox" id="telemetryCheck" checked />
+      <span data-i18n="settings.telemetry">Send anonymous usage statistics</span>
+    </label>
+    <p class="status-line" id="telemetryStatus"></p>
+  </div>
 
-            <div class="panel settings-panel">
-              <h3 class="panel-title">
-                <i data-lucide="info" class="panel-icon"></i>
-                <span data-i18n="about.title">KebabClient</span>
-              </h3>
-              <div class="mini-row">
-                <span class="mini-key" data-i18n="about.installed">Installierte Version</span>
-                <span class="mini-val" id="aboutVersion">…</span>
-              </div>
-              <div class="mini-row">
-                <span class="mini-key" data-i18n="about.latest">Neueste Version</span>
-                <span class="mini-val" id="aboutLatest">…</span>
-              </div>
-              <p class="muted" id="aboutChangelog" hidden></p>
-              <div class="row">
-                <button type="button" class="btn btn-ghost btn-sm" id="aboutCheckButton">
-                  <i data-lucide="refresh-cw" class="btn-icon"></i>
-                  <span data-i18n="about.check">Nach Updates suchen</span>
-                </button>
-              </div>
-              <p class="status-line" id="aboutStatus"></p>
-            </div>
-          </section>
+  <div class="panel settings-panel">
+    <h3 class="panel-title">
+      <i data-lucide="info" class="panel-icon"></i>
+      <span data-i18n="about.title">KebabClient</span>
+    </h3>
+    <div class="mini-row">
+      <span class="mini-key" data-i18n="about.installed">Installierte Version</span>
+      <span class="mini-val" id="aboutVersion">…</span>
+    </div>
+    <div class="mini-row">
+      <span class="mini-key" data-i18n="about.latest">Neueste Version</span>
+      <span class="mini-val" id="aboutLatest">…</span>
+    </div>
+    <p class="muted" id="aboutChangelog" hidden></p>
+    <div class="row">
+      <button type="button" class="btn btn-ghost btn-sm" id="aboutCheckButton">
+        <i data-lucide="refresh-cw" class="btn-icon"></i>
+        <span data-i18n="about.check">Nach Updates suchen</span>
+      </button>
+    </div>
+    <p class="status-line" id="aboutStatus"></p>
+  </div>
+</section>

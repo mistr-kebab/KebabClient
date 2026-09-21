@@ -11,7 +11,7 @@ function encodeVarInt(value) {
   let v = value >>> 0;
   const out = [];
   for (;;) {
-    let part = v & 0x7f;
+    const part = v & 0x7f;
     v >>>= 7;
     if (v) out.push(part | 0x80);
     else {
@@ -47,7 +47,7 @@ function createPacketReader(onPacket) {
         if (!id) break;
         onPacket(id.value, body.subarray(id.bytes));
       }
-    }
+    },
   };
 }
 
@@ -97,7 +97,12 @@ function chatToPlain(node) {
 
 function cleanMotd(raw) {
   const plain = chatToPlain(raw).replace(/\u00a7[0-9a-fk-or]/gi, '');
-  return plain.split('\n').map((l) => l.replace(/\s+/g, ' ').trim()).filter(Boolean).slice(0, 2).join(' · ');
+  return plain
+    .split('\n')
+    .map(l => l.replace(/\s+/g, ' ').trim())
+    .filter(Boolean)
+    .slice(0, 2)
+    .join(' · ');
 }
 
 function parseAddress(input) {
@@ -142,10 +147,12 @@ function pingOnce(host, port) {
     const socket = new net.Socket();
     let settled = false;
     const reader = createPacketReader((id, body) => onPacket(id, body));
-    const fail = (err) => {
+    const fail = err => {
       if (settled) return;
       settled = true;
-      try { socket.destroy(); } catch {}
+      try {
+        socket.destroy();
+      } catch {}
       reject(err);
     };
     const totalTimer = setTimeout(() => fail(new Error('Timed out.')), TOTAL_TIMEOUT_MS);
@@ -159,8 +166,11 @@ function pingOnce(host, port) {
           const ref = { off: 0 };
           const json = readStringPacket(body, ref);
           let status;
-          try { status = JSON.parse(json); }
-          catch { throw new Error('Invalid status response.'); }
+          try {
+            status = JSON.parse(json);
+          } catch {
+            throw new Error('Invalid status response.');
+          }
           const result = {
             online: true,
             motd: cleanMotd(status && status.description),
@@ -168,7 +178,7 @@ function pingOnce(host, port) {
             playersMax: status?.players?.max ?? null,
             version: (status && status.version && status.version.name) || null,
             favicon: null,
-            latencyMs: null
+            latencyMs: null,
           };
           const fav = status && status.favicon;
           if (typeof fav === 'string' && fav.startsWith('data:image/png;base64,')) {
@@ -189,9 +199,17 @@ function pingOnce(host, port) {
           delete result._partial;
           try {
             result.latencyMs = Math.max(0, Math.round(Number(process.hrtime.bigint() - pingSentAt) / 1e6));
-          } catch { result.latencyMs = null; }
-          try { socket.end(); } catch {}
-          setTimeout(() => { try { socket.destroy(); } catch {} }, 250).unref?.();
+          } catch {
+            result.latencyMs = null;
+          }
+          try {
+            socket.end();
+          } catch {}
+          setTimeout(() => {
+            try {
+              socket.destroy();
+            } catch {}
+          }, 250).unref?.();
           resolve(result);
         }
       } catch (err) {
@@ -201,27 +219,39 @@ function pingOnce(host, port) {
 
     socket.setTimeout(CONNECT_TIMEOUT_MS);
     socket.on('timeout', () => fail(new Error('Timed out.')));
-    socket.on('error', (err) => fail(new Error(connectionHint(err))));
+    socket.on('error', err => fail(new Error(connectionHint(err))));
     socket.on('close', () => {
       if (!settled) fail(new Error('Connection closed.'));
     });
     socket.connect(port, host, () => {
       try {
-        socket.write(encodePacket(0x00, Buffer.concat([
-          encodeVarInt(-1),
-          encodeString(host),
-          (() => { const b = Buffer.alloc(2); b.writeUInt16BE(port); return b; })(),
-          encodeVarInt(1)
-        ])));
+        socket.write(
+          encodePacket(
+            0x00,
+            Buffer.concat([
+              encodeVarInt(-1),
+              encodeString(host),
+              (() => {
+                const b = Buffer.alloc(2);
+                b.writeUInt16BE(port);
+                return b;
+              })(),
+              encodeVarInt(1),
+            ])
+          )
+        );
         socket.write(encodePacket(0x00));
       } catch (err) {
         fail(err);
       }
     });
     reader.push(Buffer.alloc(0));
-    socket.on('data', (chunk) => {
-      try { reader.push(chunk); }
-      catch (err) { fail(err); }
+    socket.on('data', chunk => {
+      try {
+        reader.push(chunk);
+      } catch (err) {
+        fail(err);
+      }
     });
   });
 }

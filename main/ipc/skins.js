@@ -10,7 +10,7 @@ function register(ipcMain, ctx) {
 
   ipcMain.handle('skins:preview', async () => skins.getPreview());
   ipcMain.handle('skins:state', async () => skins.getSkinState());
-  ipcMain.handle('skins:capes', async () => skins.getSkinState().then((s) => s.capes));
+  ipcMain.handle('skins:capes', async () => skins.getSkinState().then(s => s.capes));
   ipcMain.handle('skins:upload', async (_e, args) => {
     const raw = String(args?.dataBase64 || '');
     if (!raw.length) throw new Error('No skin data received.');
@@ -24,7 +24,7 @@ function register(ipcMain, ctx) {
     const res = await dialog.showOpenDialog(getWindow(), {
       title: 'Choose skin PNG',
       filters: [{ name: 'PNG image', extensions: ['png'] }],
-      properties: ['openFile']
+      properties: ['openFile'],
     });
     if (res.canceled || !res.filePaths[0]) return { canceled: true };
     const buf = fs.readFileSync(res.filePaths[0]);
@@ -33,7 +33,7 @@ function register(ipcMain, ctx) {
       canceled: false,
       fileName: path.basename(res.filePaths[0]),
       dataBase64: buf.toString('base64'),
-      ...meta
+      ...meta,
     };
   });
   ipcMain.handle('skins:equipCape', async (_e, args) => skins.equipCape(args?.capeId));

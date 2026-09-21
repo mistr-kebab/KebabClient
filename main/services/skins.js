@@ -12,7 +12,7 @@ const HISTORY_LIMIT = 12;
 async function mcGet(p) {
   const token = await getValidMcAccessToken();
   const res = await fetch(`${URLS.mcServicesBase}${p}`, {
-    headers: { Authorization: `Bearer ${token}` }
+    headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error(`Mojang API request failed (${res.status}): ${p}`);
   return res.json();
@@ -24,7 +24,7 @@ async function getSkinState() {
     id: profile.id,
     name: profile.name,
     skins: profile.skins || [],
-    capes: profile.capes || []
+    capes: profile.capes || [],
   };
 }
 
@@ -48,7 +48,7 @@ function validateSkinPng(buffer) {
     if (type === 'IEND') break;
   }
   if (!width || !height) throw new Error('Could not read PNG dimensions.');
-  const ok = (width === 64 && (height === 64 || height === 32));
+  const ok = width === 64 && (height === 64 || height === 32);
   if (!ok) throw new Error(`Invalid skin dimensions ${width}x${height}. Must be 64x64 or 64x32.`);
   return { width, height };
 }
@@ -60,8 +60,8 @@ async function fetchUrlAsDataUrl(url, retries = 1) {
       const res = await fetch(url, {
         headers: {
           'User-Agent': 'KebabClient (Minecraft launcher)',
-          Accept: 'image/png,image/*,*/*'
-        }
+          Accept: 'image/png,image/*,*/*',
+        },
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const buf = Buffer.from(await res.arrayBuffer());
@@ -73,7 +73,7 @@ async function fetchUrlAsDataUrl(url, retries = 1) {
         console.error(`[skins] texture download failed: ${url} — ${err?.message || err}`);
         return null;
       }
-      await new Promise((r) => setTimeout(r, 600));
+      await new Promise(r => setTimeout(r, 600));
     }
   }
   return null;
@@ -96,11 +96,13 @@ async function rememberSkin(buffer, variant) {
     fs.writeFileSync(historyFile(id), buf);
     const state = loadState();
     const prev = Array.isArray(state.skinHistory) ? state.skinHistory : [];
-    const next = [{ id, variant, addedAt: Date.now() }, ...prev.filter((h) => h.id !== id)].slice(0, HISTORY_LIMIT);
-    const keep = new Set(next.map((h) => `${h.id}.png`));
+    const next = [{ id, variant, addedAt: Date.now() }, ...prev.filter(h => h.id !== id)].slice(0, HISTORY_LIMIT);
+    const keep = new Set(next.map(h => `${h.id}.png`));
     for (const f of fs.readdirSync(skinsDir())) {
       if (f.endsWith('.png') && !keep.has(f)) {
-        try { fs.unlinkSync(path.join(skinsDir(), f)); } catch {}
+        try {
+          fs.unlinkSync(path.join(skinsDir(), f));
+        } catch {}
       }
     }
     saveState({ skinHistory: next });
@@ -123,7 +125,7 @@ async function getHistory() {
 async function applyHistory(id) {
   const state = loadState();
   const hist = Array.isArray(state.skinHistory) ? state.skinHistory : [];
-  const entry = hist.find((h) => h.id === String(id));
+  const entry = hist.find(h => h.id === String(id));
   if (!entry) throw new Error('Skin not found in history.');
   const buf = fs.readFileSync(historyFile(entry.id));
   return uploadSkin(buf, entry.variant || 'classic');
@@ -132,11 +134,11 @@ async function applyHistory(id) {
 async function getPreview() {
   const profile = getStoredProfile();
   const state = await getSkinState();
-  const activeSkin = (state.skins || []).find((s) => s.state === 'ACTIVE') || state.skins[0] || null;
-  const activeCape = (state.capes || []).find((c) => c.state === 'ACTIVE') || null;
+  const activeSkin = (state.skins || []).find(s => s.state === 'ACTIVE') || state.skins[0] || null;
+  const activeCape = (state.capes || []).find(c => c.state === 'ACTIVE') || null;
   const [skinDataUrl, capeDataUrl] = await Promise.all([
     fetchUrlAsDataUrl(activeSkin?.url),
-    fetchUrlAsDataUrl(activeCape?.url)
+    fetchUrlAsDataUrl(activeCape?.url),
   ]);
   if (skinDataUrl) {
     const model = activeSkin?.variant === 'SLIM' ? 'slim' : 'classic';
@@ -144,15 +146,17 @@ async function getPreview() {
       await rememberSkin(Buffer.from(skinDataUrl.split(',')[1], 'base64'), model);
     } catch {}
   }
-  const capes = await Promise.all((state.capes || []).map(async (c) => ({
-    ...c,
-    dataUrl: await fetchUrlAsDataUrl(c.url)
-  })));
+  const capes = await Promise.all(
+    (state.capes || []).map(async c => ({
+      ...c,
+      dataUrl: await fetchUrlAsDataUrl(c.url),
+    }))
+  );
   return {
     playerName: profile?.name || state.name,
     skin: activeSkin ? { ...activeSkin, dataUrl: skinDataUrl } : null,
     cape: activeCape ? { ...activeCape, dataUrl: capeDataUrl } : null,
-    capes
+    capes,
   };
 }
 
@@ -167,7 +171,7 @@ async function uploadSkin(buffer, variant) {
   const res = await fetch(URLS.mcProfileSkins, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}` },
-    body: form
+    body: form,
   });
   if (!res.ok) {
     const text = await res.text().catch(() => '');
@@ -184,7 +188,7 @@ async function equipCape(capeId) {
   const res = await fetch(`${URLS.mcProfileCapes}/active`, {
     method: 'PUT',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ capeId: id })
+    body: JSON.stringify({ capeId: id }),
   });
   if (!res.ok) {
     const text = await res.text().catch(() => '');
@@ -200,5 +204,5 @@ module.exports = {
   equipCape,
   getHistory,
   applyHistory,
-  validateSkinPng
+  validateSkinPng,
 };

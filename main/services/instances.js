@@ -15,15 +15,20 @@ function loaderDisplayName(loader) {
 
 function defaultInstanceName(instances, mc, loader) {
   const base = `${loaderDisplayName(loader)} ${mc}`;
-  if (!instances.some((i) => i.name === base)) return base;
+  if (!instances.some(i => i.name === base)) return base;
   let n = 2;
-  while (instances.some((i) => i.name === `${base} ${n}`)) n += 1;
+  while (instances.some(i => i.name === `${base} ${n}`)) n += 1;
   return `${base} ${n}`;
 }
 
 function sanitizeDirName(name) {
-  let s = String(name || '').trim().replace(/[<>:\"/\\|?*\x00-\x1f]/g, '_');
-  s = s.replace(/\s+/g, ' ').trim().replace(/[. ]+$/g, '');
+  let s = String(name || '')
+    .trim()
+    .replace(/[<>:\"/\\|?*\x00-\x1f]/g, '_');
+  s = s
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/[. ]+$/g, '');
   if (!s) s = 'instance';
   return s.slice(0, 80);
 }
@@ -44,9 +49,7 @@ function migrateInstanceDirs(state) {
   for (const entry of list) {
     const base = sanitizeDirName(entry.name);
     if (entry.dir === base) continue;
-    const taken = new Set(
-      list.filter((i) => i.id !== entry.id).map((i) => String(i.dir || '').toLowerCase())
-    );
+    const taken = new Set(list.filter(i => i.id !== entry.id).map(i => String(i.dir || '').toLowerCase()));
     let candidate = base;
     let n = 2;
     const oldLower = String(entry.dir || '').toLowerCase();
@@ -78,15 +81,10 @@ function migrateInstanceDirs(state) {
 }
 
 function uniqueDirName(instances, base, selfId) {
-  const taken = new Set(
-    instances.filter((i) => i.id !== selfId).map((i) => String(i.dir || '').toLowerCase())
-  );
+  const taken = new Set(instances.filter(i => i.id !== selfId).map(i => String(i.dir || '').toLowerCase()));
   let candidate = base;
   let n = 2;
-  while (
-    taken.has(candidate.toLowerCase()) ||
-    fs.existsSync(path.join(instancesRoot(), candidate))
-  ) {
+  while (taken.has(candidate.toLowerCase()) || fs.existsSync(path.join(instancesRoot(), candidate))) {
     candidate = `${base} ${n}`;
     n += 1;
   }
@@ -106,7 +104,7 @@ function ensureSeeded() {
       variantId: MC_VERSION,
       dir: MC_VERSION,
       createdAt: Date.now(),
-      lastPlayed: 0
+      lastPlayed: 0,
     };
     saveState({ instances: [seed], activeInstanceId: 'default' });
   }
@@ -138,7 +136,7 @@ function listInstances() {
 }
 
 function getInstance(id) {
-  const found = listInstances().find((i) => i.id === id);
+  const found = listInstances().find(i => i.id === id);
   if (!found) throw new Error(`Instance not found: ${id}`);
   return found;
 }
@@ -147,7 +145,7 @@ function getActiveInstance() {
   const state = ensureSeeded();
   const list = state.instances || [];
   if (!list.length) return null;
-  return list.find((i) => i.id === state.activeInstanceId) || list[0];
+  return list.find(i => i.id === state.activeInstanceId) || list[0];
 }
 
 function setActiveInstance(id) {
@@ -173,7 +171,10 @@ function createInstance({ name, mc, loader }) {
   if (!/^[0-9a-z._-]+$/i.test(cleanMc)) throw new Error('Invalid Minecraft version.');
   if (!LOADERS.includes(loader)) throw new Error(`Unsupported loader: ${loader}.`);
   const instances = listInstances();
-  const cleanName = String(name || '').trim().slice(0, 48) || defaultInstanceName(instances, cleanMc, loader);
+  const cleanName =
+    String(name || '')
+      .trim()
+      .slice(0, 48) || defaultInstanceName(instances, cleanMc, loader);
   const instance = {
     id: 'i' + crypto.randomBytes(4).toString('hex'),
     name: cleanName,
@@ -183,7 +184,7 @@ function createInstance({ name, mc, loader }) {
     variantId: provisionalVariantId(cleanMc, loader, 'latest'),
     dir: uniqueDirName(instances, sanitizeDirName(cleanName)),
     createdAt: Date.now(),
-    lastPlayed: 0
+    lastPlayed: 0,
   };
   if (loader !== 'vanilla') {
     instance.variantId = provisionalVariantId(cleanMc, loader, 'pending');
@@ -195,7 +196,7 @@ function createInstance({ name, mc, loader }) {
 
 function setLoaderVersion(id, loaderVersion, variantId) {
   const instances = listInstances();
-  const entry = instances.find((i) => i.id === id);
+  const entry = instances.find(i => i.id === id);
   if (!entry) throw new Error('Instance not found.');
   entry.loaderVersion = loaderVersion;
   if (variantId) entry.variantId = variantId;
@@ -205,10 +206,17 @@ function setLoaderVersion(id, loaderVersion, variantId) {
 
 function renameInstance(id, name) {
   const instances = listInstances();
-  const entry = instances.find((i) => i.id === id);
+  const entry = instances.find(i => i.id === id);
   if (!entry) throw new Error('Instance not found.');
-  const cleanName = String(name || '').trim().slice(0, 48)
-    || defaultInstanceName(instances.filter((i) => i.id !== id), entry.mc, entry.loader);
+  const cleanName =
+    String(name || '')
+      .trim()
+      .slice(0, 48) ||
+    defaultInstanceName(
+      instances.filter(i => i.id !== id),
+      entry.mc,
+      entry.loader
+    );
   const newDir = uniqueDirName(instances, sanitizeDirName(cleanName), entry.id);
   if (newDir !== entry.dir) {
     if (isGameRunning()) throw new Error('Stop the game before renaming the instance.');
@@ -229,14 +237,12 @@ function renameInstance(id, name) {
 
 function deleteInstance(id) {
   const instances = listInstances();
-  const entry = instances.find((i) => i.id === id);
+  const entry = instances.find(i => i.id === id);
   if (!entry) throw new Error('Instance not found.');
   if (isGameRunning()) throw new Error('Stop the game before deleting the instance.');
-  const rest = instances.filter((i) => i.id !== id);
+  const rest = instances.filter(i => i.id !== id);
   const state = loadState();
-  const nextActive = state.activeInstanceId === id
-    ? (rest.length ? rest[0].id : null)
-    : (state.activeInstanceId || null);
+  const nextActive = state.activeInstanceId === id ? (rest.length ? rest[0].id : null) : state.activeInstanceId || null;
   persistInstances(rest, nextActive);
   try {
     fs.rmSync(path.join(instancesRoot(), entry.dir), { recursive: true, force: true });
@@ -247,7 +253,7 @@ function deleteInstance(id) {
 function touchLastPlayed(id) {
   try {
     const instances = listInstances();
-    const entry = instances.find((i) => i.id === id);
+    const entry = instances.find(i => i.id === id);
     if (entry) {
       entry.lastPlayed = Date.now();
       persistInstances(instances);
@@ -257,7 +263,7 @@ function touchLastPlayed(id) {
 
 function backupInstanceSaves(id) {
   const instances = listInstances();
-  const entry = instances.find((i) => i.id === id);
+  const entry = instances.find(i => i.id === id);
   if (!entry) throw new Error('Instance not found.');
   if (isGameRunning()) throw new Error('Stop the game before backing up.');
   const saves = path.join(instanceDir(entry), 'saves');
@@ -275,7 +281,7 @@ function backupInstanceSaves(id) {
     throw new Error('Missing dependency adm-zip. Run npm install.');
   }
   const now = new Date();
-  const pad = (n) => String(n).padStart(2, '0');
+  const pad = n => String(n).padStart(2, '0');
   const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
   const outDir = path.join(instanceDir(entry), 'backups');
   fs.mkdirSync(outDir, { recursive: true });
@@ -301,7 +307,7 @@ function iconPathFor(entry) {
 
 function setInstanceIcon(id, srcPath) {
   const instances = listInstances();
-  const entry = instances.find((i) => i.id === id);
+  const entry = instances.find(i => i.id === id);
   if (!entry) throw new Error('Instance not found.');
   const src = String(srcPath || '');
   if (!src || !fs.existsSync(src)) throw new Error('Image file not found.');
@@ -324,7 +330,7 @@ function setInstanceIcon(id, srcPath) {
 
 function clearInstanceIcon(id) {
   const instances = listInstances();
-  const entry = instances.find((i) => i.id === id);
+  const entry = instances.find(i => i.id === id);
   if (!entry) throw new Error('Instance not found.');
   try {
     const old = iconPathFor(entry);
@@ -364,7 +370,7 @@ function describeInstance(entry) {
 function addPlaytime(id, ms) {
   try {
     const instances = listInstances();
-    const entry = instances.find((i) => i.id === id);
+    const entry = instances.find(i => i.id === id);
     if (!entry || !(ms > 0)) return;
     entry.totalPlayMs = (Number(entry.totalPlayMs) || 0) + Math.round(ms);
     persistInstances(instances);
@@ -388,5 +394,5 @@ module.exports = {
   addPlaytime,
   describeInstance,
   provisionalVariantId,
-  ensureSeeded
+  ensureSeeded,
 };
