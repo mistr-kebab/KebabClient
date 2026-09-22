@@ -48,6 +48,7 @@
       canvas,
       width: startSize,
       height: startSize,
+      pixelRatio: Math.min(window.devicePixelRatio || 1, 2),
     });
     viewer.controls.enablePan = false;
     viewer.autoRotate = false;
@@ -197,13 +198,14 @@
   function getSnapViewer() {
     if (snapViewer) return snapViewer;
     if (!window.skinview3d) throw new Error(tr('skins.libFail', '3D viewer library failed to load.'));
+    // Render thumbs oversized (256px backing store) so card images stay crisp.
     snapCanvas = document.createElement('canvas');
-    snapCanvas.width = 96;
-    snapCanvas.height = 96;
+    snapCanvas.width = 256;
+    snapCanvas.height = 256;
     snapViewer = new window.skinview3d.SkinViewer({
       canvas: snapCanvas,
-      width: 96,
-      height: 96,
+      width: 256,
+      height: 256,
       preserveDrawingBuffer: true,
       renderPaused: true,
       enableControls: false,
@@ -234,7 +236,8 @@
   async function snapshotSkin(skinDataUrl, model) {
     return withSnapViewer(async () => {
       const v = getSnapViewer();
-      v.zoom = 1.0;
+      // Same framing as cape thumbs (0.8): slightly smaller, centered.
+      v.zoom = 0.8;
       try {
         v.resetCameraPose();
       } catch {}
@@ -310,10 +313,10 @@
     for (const entry of history) {
       const btn = el('button', 'skin-card', '');
       btn.type = 'button';
-      const label = modelLabel(entry.variant);
-      btn.title = fmt(tr('skins.wear', 'Wear this skin ({model})'), { model: label });
-      btn.setAttribute('aria-label', fmt(tr('skins.wear', 'Wear this skin ({model})'), { model: label }));
-      btn.dataset.search = `${label} ${entry.variant || ''} ${entry.addedAt ? new Date(entry.addedAt).toLocaleString() : ''}`;
+      const displayName = entry.name || modelLabel(entry.variant);
+      btn.title = fmt(tr('skins.wear', 'Wear this skin ({model})'), { model: displayName });
+      btn.setAttribute('aria-label', fmt(tr('skins.wear', 'Wear this skin ({model})'), { model: displayName }));
+      btn.dataset.search = `${displayName} ${entry.variant || ''} ${entry.addedAt ? new Date(entry.addedAt).toLocaleString() : ''}`;
       const prev = el('span', 'skin-card-preview');
       const canvas = document.createElement('canvas');
       canvas.width = 64;
@@ -326,7 +329,42 @@
       } catch {}
       btn.appendChild(prev);
       const foot = el('span', 'skin-card-foot');
-      foot.appendChild(el('span', 'skin-card-name', label));
+      const nameSpan = el('span', 'skin-card-name', displayName);
+      nameSpan.style.cursor = 'pointer';
+      nameSpan.title = tr('skins.renameHint', 'Click to rename');
+      nameSpan.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const newName = window.prompt(tr('skins.renamePrompt', 'New name for this skin:'), entry.name || '');
+        if (newName === null || newName.trim() === '') return;
+        try {
+          await bridge().renameSkinHistory(entry.id, newName.trim());
+          await loadHistory();
+        } catch (err) {
+          toast(fmt(tr('skins.actionFail', 'Failed: {msg}'), { msg: err.message }), 'error');
+        }
+      });
+      foot.appendChild(nameSpan);
+      const actions = el('span', 'skin-card-actions');
+      const deleteBtn = el('button', 'icon-btn icon-btn-tiny', '');
+      deleteBtn.type = 'button';
+      deleteBtn.setAttribute('aria-label', tr('skins.delete', 'Delete'));
+      deleteBtn.title = tr('skins.delete', 'Delete');
+      const delIcon = document.createElement('i');
+      delIcon.setAttribute('data-lucide', 'trash-2');
+      deleteBtn.appendChild(delIcon);
+      deleteBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        if (!window.confirm(fmt(tr('skins.deleteConfirm', 'Delete "{name}" from history?'), { name: displayName }))) return;
+        try {
+          await bridge().deleteSkinHistory(entry.id);
+          await loadHistory();
+          toast(tr('skins.deleted', 'Deleted.'), 'ok');
+        } catch (err) {
+          toast(fmt(tr('skins.actionFail', 'Failed: {msg}'), { msg: err.message }), 'error');
+        }
+      });
+      actions.appendChild(deleteBtn);
+      foot.appendChild(actions);
       btn.appendChild(foot);
       if (entry.dataUrl) void upgradeHistoryThumb(btn, entry);
       btn.addEventListener('click', async () => {
@@ -539,6 +577,39 @@
           toast(fmt(tr('skins.capePreviewFail', 'Cape preview failed: {msg}'), { msg: err.message }), 'error');
         }
       });
+    }
+    const elytraCheck = document.getElementById('elytraCheck');
+    const elytraRow = document.getElementById('elytraRow');
+    if (elytraCheck && elytraRow) {
+      elytraCheck.addEventListener('change', async () => {
+        const isElytra = elytraCheck.checked;
+        if (!viewer) return;
+        try {
+          viewer.elytra = isElytra;
+          viewer.render();
+        } catch (err) {
+          toast(fmt(tr('skins.previewFail', 'Preview failed: {msg}'), { msg: err.message }), 'error');
+        }
+      });
+      const capeTabBtn = document.querySelector('[data-outfit="capes"]');
+      if (capeTabBtn) {
+        capeTabBtn.addEventListener('click', () => {
+          elytraRow.hidden = false;
+        });
+      }
+      const skinsTabBtn = document.querySelector('[data-outfit="skins"]');
+      if (skinsTabBtn) {
+        skinsTabBtn.addEventListener('click', () => {
+          elytraRow.hidden = true;
+          if (elytraCheck.checked) {
+            elytraCheck.checked = false;
+            try {
+              viewer.elytra = false;
+              viewer.render();
+            } catch {}
+          }
+        });
+      }
     }
 
     const reloadBtn = document.getElementById('reloadSkinButton');

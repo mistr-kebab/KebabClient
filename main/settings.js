@@ -203,7 +203,9 @@ function dirSize(dir) {
         files += 1;
         try {
           total += fs.statSync(full).size;
-        } catch {}
+        } catch (err) {
+          console.warn('[settings] stat failed for file:', full, err?.message || err);
+        }
       }
     }
   };

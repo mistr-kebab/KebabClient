@@ -102,7 +102,9 @@ async function rememberSkin(buffer, variant) {
       if (f.endsWith('.png') && !keep.has(f)) {
         try {
           fs.unlinkSync(path.join(skinsDir(), f));
-        } catch {}
+} catch (err) {
+      console.warn('[skins] Failed to remove old skin file:', err?.message || err);
+    }
       }
     }
     saveState({ skinHistory: next });
@@ -113,11 +115,13 @@ async function getHistory() {
   const state = loadState();
   const hist = Array.isArray(state.skinHistory) ? state.skinHistory : [];
   const out = [];
-  for (const h of hist) {
+for (const h of hist) {
     try {
       const dataUrl = 'data:image/png;base64,' + fs.readFileSync(historyFile(h.id)).toString('base64');
       out.push({ id: h.id, variant: h.variant, addedAt: h.addedAt, dataUrl });
-    } catch {}
+    } catch (err) {
+      console.warn('[skins] Failed to read history entry:', h.id, err?.message || err);
+    }
   }
   return out;
 }
@@ -131,6 +135,30 @@ async function applyHistory(id) {
   return uploadSkin(buf, entry.variant || 'classic');
 }
 
+async function renameHistory(id, newName) {
+  const state = loadState();
+  const hist = Array.isArray(state.skinHistory) ? state.skinHistory : [];
+  const entry = hist.find(h => h.id === String(id));
+  if (!entry) throw new Error('Skin not found in history.');
+  entry.name = String(newName || '').trim().slice(0, 64);
+  saveState({ skinHistory: hist });
+  return { ok: true };
+}
+
+async function deleteHistory(id) {
+  const state = loadState();
+  const hist = Array.isArray(state.skinHistory) ? state.skinHistory : [];
+  const idx = hist.findIndex(h => h.id === String(id));
+  if (idx === -1) throw new Error('Skin not found in history.');
+  const entry = hist[idx];
+  hist.splice(idx, 1);
+  try {
+    fs.unlinkSync(historyFile(entry.id));
+  } catch {}
+  saveState({ skinHistory: hist });
+  return { ok: true };
+}
+
 async function getPreview() {
   const profile = getStoredProfile();
   const state = await getSkinState();
@@ -140,12 +168,6 @@ async function getPreview() {
     fetchUrlAsDataUrl(activeSkin?.url),
     fetchUrlAsDataUrl(activeCape?.url),
   ]);
-  if (skinDataUrl) {
-    const model = activeSkin?.variant === 'SLIM' ? 'slim' : 'classic';
-    try {
-      await rememberSkin(Buffer.from(skinDataUrl.split(',')[1], 'base64'), model);
-    } catch {}
-  }
   const capes = await Promise.all(
     (state.capes || []).map(async c => ({
       ...c,
@@ -204,5 +226,7 @@ module.exports = {
   equipCape,
   getHistory,
   applyHistory,
+  renameHistory,
+  deleteHistory,
   validateSkinPng,
 };

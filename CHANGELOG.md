@@ -2,6 +2,11 @@
 
 All notable changes to KebabClient are documented here.
 
+## [0.3.2] – 2026-09-22
+
+- **Async IPC**: Replaced synchronous `ipcRenderer.sendSync` calls with asynchronous `ipcRenderer.invoke`/`ipcMain.handle` for view and locale loading. This removes main-thread blocking during startup and improves UI responsiveness.
+- **Error handling**: Eliminated silent `catch {}` blocks across main process, preload, and renderer. Errors are now logged with context (console.warn with component prefix) so issues are visible during development and debugging. User-facing errors still surface via toast notifications where appropriate.
+
 ## [0.3.1] – 2026-09-21
 
 - **English by default**: fresh installs start in English (app, Discord

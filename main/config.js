@@ -14,7 +14,9 @@ function loadDotEnv() {
   const candidates = [];
   try {
     candidates.push(path.join(path.dirname(process.execPath), '.env'));
-  } catch {}
+  } catch (err) {
+    console.warn('[config] Could not resolve execPath for .env:', err?.message || err);
+  }
   candidates.push(path.join(__dirname, '..', '.env'));
   for (const file of candidates) {
     let text;
@@ -66,7 +68,9 @@ function readBootstrapDir() {
   try {
     const raw = fs.readFileSync(bootstrapFile(), 'utf8').trim();
     if (raw && path.isAbsolute(raw)) return raw;
-  } catch {}
+  } catch (err) {
+    console.warn('[config] Could not read bootstrap dir:', err?.message || err);
+  }
   return '';
 }
 

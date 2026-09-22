@@ -152,7 +152,9 @@ function pingOnce(host, port) {
       settled = true;
       try {
         socket.destroy();
-      } catch {}
+      } catch (err) {
+        console.warn('[ping] socket.destroy failed:', err?.message || err);
+      }
       reject(err);
     };
     const totalTimer = setTimeout(() => fail(new Error('Timed out.')), TOTAL_TIMEOUT_MS);
@@ -199,16 +201,21 @@ function pingOnce(host, port) {
           delete result._partial;
           try {
             result.latencyMs = Math.max(0, Math.round(Number(process.hrtime.bigint() - pingSentAt) / 1e6));
-          } catch {
+          } catch (err) {
+            console.warn('[ping] latency calculation failed:', err?.message || err);
             result.latencyMs = null;
           }
           try {
             socket.end();
-          } catch {}
+          } catch (err) {
+            console.warn('[ping] socket.end failed:', err?.message || err);
+          }
           setTimeout(() => {
             try {
               socket.destroy();
-            } catch {}
+            } catch (err) {
+              console.warn('[ping] socket.destroy failed:', err?.message || err);
+            }
           }, 250).unref?.();
           resolve(result);
         }

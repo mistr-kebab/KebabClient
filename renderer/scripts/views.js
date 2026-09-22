@@ -1,11 +1,13 @@
 'use strict';
 
-(function () {
+(async function () {
   const mount = document.querySelector('main.content');
   let views = null;
   try {
-    views = window.mc.loadViews();
-  } catch {}
+    views = await window.mc.loadViews();
+  } catch (err) {
+    console.error('[views] Failed to load views:', err);
+  }
   if (!mount || !views) {
     console.error('View fragments could not be loaded.');
     return;

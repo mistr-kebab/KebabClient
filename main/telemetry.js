@@ -11,7 +11,8 @@ const DAY = 24 * 60 * 60 * 1000;
 function userAgent() {
   try {
     return `KebabClient/${app.getVersion()}`;
-  } catch {
+  } catch (err) {
+    console.warn('[telemetry] Could not get app version:', err?.message || err);
     return 'KebabClient/unknown';
   }
 }
@@ -23,9 +24,12 @@ function installId() {
     const id = randomUUID();
     try {
       saveState({ installId: id });
-    } catch {}
+    } catch (err) {
+      console.warn('[telemetry] Could not save installId:', err?.message || err);
+    }
     return id;
-  } catch {
+  } catch (err) {
+    console.warn('[telemetry] installId failed:', err?.message || err);
     return 'unknown';
   }
 }
@@ -55,7 +59,8 @@ async function pingOnce() {
 function telemetryEnabled() {
   try {
     return loadState().settings?.telemetry !== false;
-  } catch {
+  } catch (err) {
+    console.warn('[telemetry] Could not read telemetry setting:', err?.message || err);
     return true;
   }
 }
@@ -71,7 +76,9 @@ function startTelemetry() {
     if (await pingOnce()) {
       try {
         saveState({ lastPing: Date.now() });
-      } catch {}
+      } catch (err) {
+        console.warn('[telemetry] Could not save lastPing:', err?.message || err);
+      }
     }
   }, 20000);
   setInterval(async () => {
@@ -79,7 +86,9 @@ function startTelemetry() {
     if (await pingOnce()) {
       try {
         saveState({ lastPing: Date.now() });
-      } catch {}
+      } catch (err) {
+        console.warn('[telemetry] Could not save lastPing:', err?.message || err);
+      }
     }
   }, DAY);
 }

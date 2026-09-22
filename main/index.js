@@ -55,7 +55,9 @@ minecraft.setEmitter((channel, payload) => broadcast(channel, payload));
 
 try {
   require('./services/discord').setLogger(text => broadcast('game:log', { stream: 'system', line: text }));
-} catch {}
+} catch (err) {
+  console.warn('[main] Discord logger setup failed:', err?.message || err);
+}
 
 function registerIpc() {
   const ctx = { broadcast, getWindow };
@@ -100,7 +102,9 @@ if (!gotSingleInstanceLock) {
     telemetry.startTelemetry();
     try {
       require('./services/discord').showMenu();
-    } catch {}
+    } catch (err) {
+      console.warn('[main] Discord showMenu failed:', err?.message || err);
+    }
     autoRefresh();
     try {
       servers.syncToAllInstances();

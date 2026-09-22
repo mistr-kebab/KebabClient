@@ -6,15 +6,17 @@ function on(channel, callback) {
   const sub = (_event, payload) => {
     try {
       callback(payload);
-    } catch {}
+    } catch (err) {
+      console.warn('[preload] IPC callback failed:', err?.message || err);
+    }
   };
   ipcRenderer.on(channel, sub);
   return () => ipcRenderer.removeListener(channel, sub);
 }
 
 contextBridge.exposeInMainWorld('mc', {
-  loadViews: () => ipcRenderer.sendSync('views:load'),
-  loadLocales: () => ipcRenderer.sendSync('locales:load'),
+  loadViews: () => ipcRenderer.invoke('views:load'),
+  loadLocales: () => ipcRenderer.invoke('locales:load'),
   minimizeWindow: () => ipcRenderer.invoke('window:minimize'),
   toggleMaximize: () => ipcRenderer.invoke('window:toggleMaximize'),
   closeWindow: () => ipcRenderer.invoke('window:close'),
@@ -78,6 +80,8 @@ contextBridge.exposeInMainWorld('mc', {
   equipCape: capeId => ipcRenderer.invoke('skins:equipCape', { capeId }),
   skinsHistory: () => ipcRenderer.invoke('skins:history'),
   applySkinHistory: id => ipcRenderer.invoke('skins:applyHistory', { id }),
+  renameSkinHistory: (id, name) => ipcRenderer.invoke('skins:renameHistory', { id, name }),
+  deleteSkinHistory: id => ipcRenderer.invoke('skins:deleteHistory', { id }),
 
   listServers: () => ipcRenderer.invoke('servers:list'),
   addServer: (name, ip, categoryId, invite) => ipcRenderer.invoke('servers:add', { name, ip, categoryId, invite }),

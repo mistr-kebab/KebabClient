@@ -1,10 +1,12 @@
 'use strict';
 
-(function () {
+(async function () {
   let STRINGS = null;
   try {
-    STRINGS = window.mc.loadLocales();
-  } catch {}
+    STRINGS = await window.mc.loadLocales();
+  } catch (err) {
+    console.error('[i18n] Failed to load locales:', err);
+  }
   if (!STRINGS || !STRINGS.de) {
     STRINGS = { de: {}, en: {} };
     console.warn('Locales could not be loaded from renderer/locales.');

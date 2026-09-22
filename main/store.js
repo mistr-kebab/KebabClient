@@ -24,7 +24,8 @@ function secretsFile() {
 function readJson(file, fallback) {
   try {
     return JSON.parse(fs.readFileSync(file, 'utf8'));
-  } catch {
+  } catch (err) {
+    console.warn(`[store] Failed to read JSON from ${file}:`, err?.message || err);
     return fallback;
   }
 }
@@ -35,7 +36,9 @@ function writeAtomic(file, data) {
   fs.writeFileSync(tmp, data);
   try {
     fs.chmodSync(tmp, 0o600);
-  } catch {}
+  } catch (err) {
+    console.warn('[store] chmod failed:', err?.message || err);
+  }
   fs.renameSync(tmp, file);
 }
 
@@ -69,21 +72,27 @@ function loadSecrets() {
     if (safeStorage.isEncryptionAvailable()) {
       try {
         return JSON.parse(safeStorage.decryptString(buf));
-      } catch {
+      } catch (err) {
+        console.warn('[store] Failed to decrypt secrets:', err?.message || err);
         try {
           const legacy = JSON.parse(buf.toString('utf8'));
           if (legacy && typeof legacy === 'object') {
             console.warn('[store] Found legacy plaintext secrets, removing.');
             try {
               fs.unlinkSync(secretsFile());
-            } catch {}
+            } catch (err) {
+              console.warn('[store] Could not remove legacy secrets file:', err?.message || err);
+            }
           }
-        } catch {}
+        } catch (err) {
+          console.warn('[store] Legacy secrets parse failed:', err?.message || err);
+        }
         return null;
       }
     }
     return null;
-  } catch {
+  } catch (err) {
+    console.warn('[store] Could not read secrets file:', err?.message || err);
     return null;
   }
 }
@@ -91,7 +100,9 @@ function loadSecrets() {
 function clearSecrets() {
   try {
     fs.unlinkSync(secretsFile());
-  } catch {}
+  } catch (err) {
+    console.warn('[store] Could not clear secrets:', err?.message || err);
+  }
 }
 
 module.exports = {

@@ -20,7 +20,9 @@ function setLogger(fn) {
 function note(text) {
   try {
     log(`[discord] ${text}`);
-  } catch {}
+  } catch (err) {
+    console.warn('[discord] Logger failed:', err?.message || err);
+  }
 }
 
 function discordClientId() {
@@ -30,7 +32,8 @@ function discordClientId() {
     const s = String(v || '').trim();
     if (!s || /DEIN-|HIER-|XXXX|0000/.test(s)) return '';
     return s;
-  } catch {
+  } catch (err) {
+    console.warn('[discord] Could not get client ID:', err?.message || err);
     return '';
   }
 }

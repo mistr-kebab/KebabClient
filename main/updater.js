@@ -10,13 +10,16 @@ let downloaded = false;
 function emit(state, data) {
   try {
     send('update:state', { state, ...(data || {}) });
-  } catch {}
+  } catch (err) {
+    console.warn('[updater] Emit failed:', err?.message || err);
+  }
 }
 
 function isSupported() {
   try {
     return app.isPackaged === true;
-  } catch {
+  } catch (err) {
+    console.warn('[updater] isSupported check failed:', err?.message || err);
     return false;
   }
 }
@@ -74,7 +77,9 @@ function later(fn, ms) {
   return setTimeout(() => {
     try {
       fn(false);
-    } catch {}
+    } catch (err) {
+      console.warn('[updater] Later callback failed:', err?.message || err);
+    }
   }, ms);
 }
 
@@ -82,7 +87,9 @@ function repeat(fn, ms) {
   return setInterval(() => {
     try {
       fn(false);
-    } catch {}
+    } catch (err) {
+      console.warn('[updater] Repeat callback failed:', err?.message || err);
+    }
   }, ms);
 }
 

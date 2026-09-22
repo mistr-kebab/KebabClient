@@ -39,6 +39,8 @@ function register(ipcMain, ctx) {
   ipcMain.handle('skins:equipCape', async (_e, args) => skins.equipCape(args?.capeId));
   ipcMain.handle('skins:history', async () => skins.getHistory());
   ipcMain.handle('skins:applyHistory', async (_e, args) => skins.applyHistory(args?.id));
+  ipcMain.handle('skins:renameHistory', async (_e, args) => skins.renameHistory(args?.id, args?.name));
+  ipcMain.handle('skins:deleteHistory', async (_e, args) => skins.deleteHistory(args?.id));
 }
 
 module.exports = { register };

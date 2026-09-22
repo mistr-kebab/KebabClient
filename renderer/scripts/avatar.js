@@ -61,7 +61,8 @@
     return true;
   }
 
-  const SNAP = 192;
+  const SNAP = 256;
+  const CROP = 192;
   const ROT_Y = -Math.PI / 4;
   let viewer3d = null;
   let snapCanvas = null;
@@ -212,14 +213,14 @@
       const img = await loadImage(shot);
       const rect = bustRect(v);
       const out = document.createElement('canvas');
-      out.width = 144;
-      out.height = 144;
+      out.width = CROP;
+      out.height = CROP;
       const octx = out.getContext('2d');
       if (!octx) throw new Error('crop failed');
       octx.imageSmoothingEnabled = true;
       octx.imageSmoothingQuality = 'high';
-      octx.clearRect(0, 0, 144, 144);
-      octx.drawImage(img, rect.x, rect.y, rect.side, rect.side, 0, 0, 144, 144);
+      octx.clearRect(0, 0, CROP, CROP);
+      octx.drawImage(img, rect.x, rect.y, rect.side, rect.side, 0, 0, CROP, CROP);
       lastKey = key;
       lastCrop = out;
       return out;

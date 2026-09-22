@@ -7,7 +7,7 @@ const updater = require('../updater');
 const { URLS } = require('../config');
 
 function register(ipcMain) {
-  ipcMain.on('views:load', event => {
+  ipcMain.handle('views:load', async () => {
     const dir = path.join(app.getAppPath(), 'renderer', 'views');
     const out = {};
     try {
@@ -15,11 +15,13 @@ function register(ipcMain) {
         if (!file.toLowerCase().endsWith('.html')) continue;
         out[path.basename(file, '.html')] = fs.readFileSync(path.join(dir, file), 'utf8');
       }
-    } catch {}
-    event.returnValue = out;
+    } catch (err) {
+      console.error('[system] Failed to load views:', err);
+    }
+    return out;
   });
 
-  ipcMain.on('locales:load', event => {
+  ipcMain.handle('locales:load', async () => {
     const dir = path.join(app.getAppPath(), 'renderer', 'locales');
     const out = {};
     try {
@@ -28,10 +30,14 @@ function register(ipcMain) {
         if (!m) continue;
         try {
           out[m[1].toLowerCase()] = JSON.parse(fs.readFileSync(path.join(dir, file), 'utf8'));
-        } catch {}
+        } catch (err) {
+          console.error(`[system] Failed to parse locale ${file}:`, err);
+        }
       }
-    } catch {}
-    event.returnValue = out;
+    } catch (err) {
+      console.error('[system] Failed to load locales:', err);
+    }
+    return out;
   });
 
   ipcMain.handle('assets:banners', async () => {

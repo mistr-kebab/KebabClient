@@ -1011,6 +1011,12 @@ button.skin-card {
   align-items: stretch;
 }
 
+.skin-card-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--space-1);
+}
+
 .skin-card-name {
   font-weight: 600;
   font-size: var(--text-sm);
