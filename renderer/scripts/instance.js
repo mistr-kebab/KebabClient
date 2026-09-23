@@ -205,7 +205,7 @@
     }
   }
 
-  document.addEventListener('DOMContentLoaded', () => {
+  window.whenViewsReady(() => {
     const ensureBtn = document.getElementById('ensureButton');
     const launchBtn = document.getElementById('launchButton');
     const stopBtn = document.getElementById('stopButton');

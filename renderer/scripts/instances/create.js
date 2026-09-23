@@ -104,7 +104,7 @@
     }
   }
 
-  document.addEventListener('DOMContentLoaded', () => {
+  window.whenViewsReady(() => {
     const newBtn = document.getElementById('newInstanceButton');
     const panel = document.getElementById('newInstancePanel');
     const cancelBtn = document.getElementById('cancelInstanceButton');

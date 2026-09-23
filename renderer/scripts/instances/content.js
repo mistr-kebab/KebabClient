@@ -416,7 +416,7 @@
     });
   }
 
-  document.addEventListener('DOMContentLoaded', () => {
+  window.whenViewsReady(() => {
     const detailUpdateAll = document.getElementById('detailUpdateAllButton');
     if (detailUpdateAll) detailUpdateAll.addEventListener('click', updateAllContent);
     const detailInput = document.getElementById('detailSearchInput');

@@ -38,7 +38,7 @@
     }
   }
 
-  document.addEventListener('DOMContentLoaded', () => {
+  window.whenViewsReady(() => {
     load();
     const btn = document.getElementById('aboutCheckButton');
     if (btn) {

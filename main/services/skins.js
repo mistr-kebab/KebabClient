@@ -96,15 +96,18 @@ async function rememberSkin(buffer, variant) {
     fs.writeFileSync(historyFile(id), buf);
     const state = loadState();
     const prev = Array.isArray(state.skinHistory) ? state.skinHistory : [];
-    const next = [{ id, variant, addedAt: Date.now() }, ...prev.filter(h => h.id !== id)].slice(0, HISTORY_LIMIT);
+    const prevEntry = prev.find(h => h.id === id);
+    const entry = { id, variant, addedAt: Date.now() };
+    if (prevEntry && prevEntry.name) entry.name = prevEntry.name;
+    const next = [entry, ...prev.filter(h => h.id !== id)].slice(0, HISTORY_LIMIT);
     const keep = new Set(next.map(h => `${h.id}.png`));
     for (const f of fs.readdirSync(skinsDir())) {
       if (f.endsWith('.png') && !keep.has(f)) {
         try {
           fs.unlinkSync(path.join(skinsDir(), f));
-} catch (err) {
-      console.warn('[skins] Failed to remove old skin file:', err?.message || err);
-    }
+        } catch (err) {
+          console.warn('[skins] Failed to remove old skin file:', err?.message || err);
+        }
       }
     }
     saveState({ skinHistory: next });
@@ -115,10 +118,10 @@ async function getHistory() {
   const state = loadState();
   const hist = Array.isArray(state.skinHistory) ? state.skinHistory : [];
   const out = [];
-for (const h of hist) {
+  for (const h of hist) {
     try {
       const dataUrl = 'data:image/png;base64,' + fs.readFileSync(historyFile(h.id)).toString('base64');
-      out.push({ id: h.id, variant: h.variant, addedAt: h.addedAt, dataUrl });
+      out.push({ id: h.id, name: h.name || '', variant: h.variant, addedAt: h.addedAt, dataUrl });
     } catch (err) {
       console.warn('[skins] Failed to read history entry:', h.id, err?.message || err);
     }

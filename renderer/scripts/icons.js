@@ -14,6 +14,8 @@
   } else {
     renderIcons();
   }
+  // View fragments are inserted async; icons inside them need a second pass.
+  document.addEventListener('views:loaded', renderIcons);
 
   window.refreshIcons = renderIcons;
 })();

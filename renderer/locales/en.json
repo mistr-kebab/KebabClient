@@ -142,7 +142,7 @@
   "skins.renameHint": "Click to rename",
   "skins.renamePrompt": "New name for this skin:",
   "skins.delete": "Delete",
-  "skins.deleteConfirm": 'Delete "{name}" from history?',
+  "skins.deleteConfirm": "Delete \"{name}\" from history?",
   "skins.deleted": "Deleted.",
   "skins.actionFail": "Failed: {msg}",
   "logs.title": "Game log",

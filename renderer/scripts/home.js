@@ -78,7 +78,7 @@
     }
   }
 
-  document.addEventListener('DOMContentLoaded', () => {
+  window.whenViewsReady(() => {
     refreshStats();
     document.addEventListener('instances:changed', refreshStats);
     document.addEventListener('servers:changed', refreshStats);

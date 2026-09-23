@@ -514,7 +514,7 @@
     }
   }
 
-  document.addEventListener('DOMContentLoaded', () => {
+  window.whenViewsReady(() => {
     bindCollapsible();
     const addBtn = document.getElementById('serverAddButton');
     if (addBtn) addBtn.addEventListener('click', submit);

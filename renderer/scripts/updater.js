@@ -49,7 +49,7 @@
     }
   }
 
-  document.addEventListener('DOMContentLoaded', () => {
+  window.whenViewsReady(() => {
     const b = document.getElementById('updateButton');
     if (b) b.addEventListener('click', onClick);
     try {

@@ -100,7 +100,7 @@
     }
   }
 
-  document.addEventListener('DOMContentLoaded', () => {
+  window.whenViewsReady(() => {
     paintHeads();
     const btn = document.getElementById('authButton');
     if (btn) btn.addEventListener('click', onAuthButton);

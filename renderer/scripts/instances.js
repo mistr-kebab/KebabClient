@@ -4,7 +4,7 @@
   const ctx = window.instancesCtx;
   const { bridge } = window.launcherUtil;
 
-  document.addEventListener('DOMContentLoaded', () => {
+  window.whenViewsReady(() => {
     document.addEventListener('instances:changed', () => {
       if (ctx.detailId) ctx.loadDetailInstalled();
     });

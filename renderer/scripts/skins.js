@@ -83,6 +83,24 @@
     viewer.autoRotate = check ? check.checked : true;
   }
 
+  function isElytraMode() {
+    const check = document.getElementById('elytraCheck');
+    return !!(check && check.checked);
+  }
+
+  // skinview3d has no viewer.elytra flag; cape vs. elytra rendering is
+  // selected via playerObject.backEquipment ('cape' | 'elytra' | null).
+  // loadCape()/resetCape() overwrite it, so re-apply after every load.
+  function applyBackEquipment() {
+    if (!viewer || !viewer.playerObject) return;
+    try {
+      if (isElytraMode() && currentCape) viewer.playerObject.backEquipment = 'elytra';
+      else if (capeVisible && currentCape) viewer.playerObject.backEquipment = 'cape';
+      else viewer.playerObject.backEquipment = null;
+      viewer.render();
+    } catch {}
+  }
+
   async function showSkin(dataUrl, capeDataUrl) {
     const v = ensureViewer();
     if (dataUrl) currentSkin = dataUrl;
@@ -110,6 +128,7 @@
         v.resetCape();
       } catch {}
     }
+    applyBackEquipment();
     return { skinOk: !!dataUrl && !skinError, skinError, capeError };
   }
 
@@ -517,7 +536,7 @@
     });
   }
 
-  document.addEventListener('DOMContentLoaded', () => {
+  window.whenViewsReady(() => {
     const animSelect = document.getElementById('skinAnimSelect');
     if (animSelect) animSelect.addEventListener('change', applyAnimation);
     document.querySelectorAll('#outfitTabs .segment-btn').forEach(btn => {
@@ -559,6 +578,7 @@
             const v = ensureViewer();
             await v.loadSkin(currentSkin, { model: viewerModel() });
             if (capeVisible && currentCape) await v.loadCape(currentCape);
+            applyBackEquipment();
           } catch (err) {
             toast(fmt(tr('skins.previewFail', 'Preview failed: {msg}'), { msg: err.message }), 'error');
           }
@@ -573,6 +593,7 @@
         try {
           if (capeVisible && currentCape) await viewer.loadCape(currentCape);
           else viewer.resetCape();
+          applyBackEquipment();
         } catch (err) {
           toast(fmt(tr('skins.capePreviewFail', 'Cape preview failed: {msg}'), { msg: err.message }), 'error');
         }
@@ -581,12 +602,10 @@
     const elytraCheck = document.getElementById('elytraCheck');
     const elytraRow = document.getElementById('elytraRow');
     if (elytraCheck && elytraRow) {
-      elytraCheck.addEventListener('change', async () => {
-        const isElytra = elytraCheck.checked;
+      elytraCheck.addEventListener('change', () => {
         if (!viewer) return;
         try {
-          viewer.elytra = isElytra;
-          viewer.render();
+          applyBackEquipment();
         } catch (err) {
           toast(fmt(tr('skins.previewFail', 'Preview failed: {msg}'), { msg: err.message }), 'error');
         }
@@ -604,8 +623,7 @@
           if (elytraCheck.checked) {
             elytraCheck.checked = false;
             try {
-              viewer.elytra = false;
-              viewer.render();
+              applyBackEquipment();
             } catch {}
           }
         });

@@ -139,7 +139,7 @@
     if (node) node.textContent = text;
   }
 
-  document.addEventListener('DOMContentLoaded', () => {
+  window.whenViewsReady(() => {
     if (window.i18n) window.i18n.initLanguage(null);
     document.querySelectorAll('#themeModeSegment .segment-btn').forEach(b => {
       b.addEventListener('click', async () => {

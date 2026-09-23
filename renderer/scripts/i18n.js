@@ -1,31 +1,30 @@
 'use strict';
 
-(async function () {
-  let STRINGS = null;
-  try {
-    STRINGS = await window.mc.loadLocales();
-  } catch (err) {
-    console.error('[i18n] Failed to load locales:', err);
-  }
-  if (!STRINGS || !STRINGS.de) {
-    STRINGS = { de: {}, en: {} };
-    console.warn('Locales could not be loaded from renderer/locales.');
-  }
-
+(function () {
+  // Defined synchronously so view scripts can use window.i18n during init.
+  // The locale tables arrive via async IPC and are applied once loaded
+  // (and again when the async view fragments are inserted, whichever
+  // happens last).
+  let STRINGS = { de: {}, en: {} };
   let lang = 'en';
 
   function detect() {
     try {
       const nav = String(navigator.language || '').toLowerCase();
       if (nav.startsWith('de')) return 'de';
-    } catch {}
+    } catch (err) {
+      console.warn('[i18n] Language detection failed:', err?.message || err);
+    }
     return 'en';
   }
 
+  // Must never throw: a missing table (e.g. unparsable locale file)
+  // previously aborted whole view inits on the first apply().
   function t(key) {
-    const table = STRINGS[lang] || STRINGS.en;
+    const table = STRINGS[lang] || STRINGS.en || {};
     if (table[key] !== undefined) return table[key];
-    if ((STRINGS.en || {})[key] !== undefined) return STRINGS.en[key];
+    const enTable = STRINGS.en || {};
+    if (enTable[key] !== undefined) return enTable[key];
     return key;
   }
 
@@ -86,4 +85,19 @@
   }
 
   window.i18n = { t, setLanguage, getLanguage, initLanguage, apply };
+
+  // Views are inserted async and may arrive after the locales (or before);
+  // re-apply in both cases so data-i18n nodes inside fragments translate.
+  document.addEventListener('views:loaded', apply);
+
+  (async function () {
+    try {
+      const loaded = await window.mc.loadLocales();
+      if (loaded && loaded.de) STRINGS = loaded;
+      else console.warn('Locales could not be loaded from renderer/locales.');
+    } catch (err) {
+      console.error('[i18n] Failed to load locales:', err);
+    }
+    apply();
+  })();
 })();

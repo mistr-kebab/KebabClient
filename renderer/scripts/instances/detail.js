@@ -468,7 +468,7 @@
   }
   ctx.contentCard = contentCard;
 
-  document.addEventListener('DOMContentLoaded', () => {
+  window.whenViewsReady(() => {
     const backBtn = document.getElementById('detailBackButton');
     if (backBtn) backBtn.addEventListener('click', () => window.showView('instances'));
     const detailReload = document.getElementById('detailReloadButton');

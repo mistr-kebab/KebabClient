@@ -182,7 +182,7 @@
     } catch {}
   }
 
-  document.addEventListener('DOMContentLoaded', () => {
+  window.whenViewsReady(() => {
     bindNav();
     bindWindowControls();
     document.addEventListener('mouseup', e => {
@@ -194,7 +194,9 @@
         goViewForward();
       }
     });
-    setView('home');
+    // Init runs after the async fragments are inserted (whenViewsReady),
+    // so this also activates the view for clicks made before they arrived.
+    setView(currentView);
     const status = document.getElementById('splashStatus');
     const steps = [
       tr('app.load1', 'Loading settings…'),

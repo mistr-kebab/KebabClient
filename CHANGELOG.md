@@ -2,6 +2,32 @@
 
 All notable changes to KebabClient are documented here.
 
+## [0.3.4] – 2026-09-23
+
+- **Settings still dead in 0.3.3 (really fixed now)**: `en.json`
+  contained one invalid line (single-quoted string, introduced in 0.3.2),
+  so the whole English locale failed to parse and `i18n.t()` threw on the
+  first `apply()` — aborting the settings init before any listener was
+  bound. The line is fixed, `t()` can no longer throw on a missing table,
+  and a `locales` test suite (JSON validity + de/en key parity) guards
+  against regression.
+- **0.3.3 (retrospective)**: fixed async view loading race (controls never
+  bound), Elytra via `playerObject.backEquipment`, skin history names.
+
+## [0.3.3] – 2026-09-23
+
+- **Settings & Skins dead after 0.3.2 (fixed)**: async IPC view loading
+  raced `DOMContentLoaded`, so no control inside any view was ever bound
+  (dead settings, empty storage path, language/accent controls, skin
+  controls, save). All view scripts now init via a `whenViewsReady` gate
+  after the fragments are inserted; `window.i18n` is defined synchronously
+  again and re-applied to late fragments.
+- **Elytra view (fixed)**: `viewer.elytra` was a no-op (no such property in
+  skinview3d). Cape/Elytra rendering is now selected via
+  `playerObject.backEquipment` and re-applied after every cape load.
+- **Skin history names**: renamed skins keep their name (also across
+  re-uploads) instead of falling back to the model label.
+
 ## [0.3.2] – 2026-09-22
 
 - **Async IPC**: Replaced synchronous `ipcRenderer.sendSync` calls with asynchronous `ipcRenderer.invoke`/`ipcMain.handle` for view and locale loading. This removes main-thread blocking during startup and improves UI responsiveness.
