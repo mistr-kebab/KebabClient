@@ -407,7 +407,10 @@
       }
       toast(fmt(tr('servers.joining', 'Starting {instance} → {server}…'), { instance: inst.name, server: server.ip }));
       await bridge().ensureClient(inst.id);
-      await bridge().launch(inst.id, server.ip);
+      const launched = await bridge().launch(inst.id, server.ip);
+      if (launched && launched.banned) {
+        if (typeof window.showBanScreen === 'function') window.showBanScreen(launched);
+      }
     } catch (err) {
       toast(fmt(tr('servers.joinFail', 'Join failed: {msg}'), { msg: err.message }), 'error');
     }

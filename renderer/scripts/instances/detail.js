@@ -101,7 +101,7 @@
     return 'Release';
   }
 
-  function openVersionModal(m, key, projectId, info) {
+  function openVersionModal(m, key, projectId, info, preselectId) {
     closeVersionModal();
     const modalDetailId = ctx.detailId;
     const overlay = el('div', 'modal-backdrop');
@@ -189,7 +189,7 @@
     if (window.refreshIcons) window.refreshIcons();
 
     let versions = [];
-    let selectedId = (info && info.installedId) || null;
+    let selectedId = preselectId || (info && info.installedId) || null;
     let showAll = false;
 
     function isCurrent(v) {
@@ -559,4 +559,25 @@
       });
     }
   });
+
+  window.openContentVersionModal = async (instanceId, file, category, preselectVersionId) => {
+    const cat = String(category || 'mod');
+    const all = await bridge().listInstalledContent(instanceId);
+    const list = Array.isArray(all) ? all : (all && all[cat]) || [];
+    const base = String(file || '')
+      .toLowerCase()
+      .replace(/\.disabled$/, '');
+    const item =
+      list.find(i => String(i.file || '').toLowerCase() === String(file || '').toLowerCase()) ||
+      list.find(i => String(i.file || '').toLowerCase().replace(/\.disabled$/, '') === base) ||
+      null;
+    if (!item || !item.projectId) throw new Error(tr('inst.versionNoProject', 'No switchable version for this file.'));
+    openVersionModal(
+      { file: item.file, name: item.name, icon: item.icon },
+      cat,
+      item.projectId,
+      { installedId: null, installedVersion: item.version || null },
+      preselectVersionId || null
+    );
+  };
 })();

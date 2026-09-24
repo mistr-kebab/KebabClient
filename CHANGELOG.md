@@ -2,6 +2,24 @@
 
 All notable changes to KebabClient are documented here.
 
+## [0.3.4] – 2026-09-24
+
+- **Server-backed client ban**: fresh `POST /api/client/hello` check on
+  every game launch (also after login and hourly in the background).
+  Banned accounts are blocked with a ban screen (reason, username, Discord
+  appeal hint, re-check button). Fail-open on network errors, timeouts and
+  rate limits — offline users are never blocked. Ping telemetry untouched.
+- **Ban dialog**: compact layout with red-tinted icon and reason box, plus
+  an "Appeal ban" button that opens the Discord invite
+  (`https://discord.com/invite/kSSRXqtb8S`) in the external browser.
+- **Crash Doctor**: automatic crash detection on game exit (new report in
+  `crash-reports/`), local rule engine (`main/crashRules.json`, no code
+  changes needed to extend), plain-language diagnosis (DE/EN) with
+  collapsible log excerpt, and one-click fixes reusing existing launcher
+  functions (more RAM, disable mod, install missing dependency from
+  Modrinth, open version picker preselected). Manual stop never triggers
+  the banner.
+
 ## [0.3.3] – 2026-09-23
 
 - **Settings & Skins dead after 0.3.2 (fixed)**: async IPC view loading

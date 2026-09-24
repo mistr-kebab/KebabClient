@@ -195,14 +195,36 @@
       if (typeof window.showView === 'function') window.showView('instances');
       return;
     }
+    if (!(await preLaunchBanCheck())) return;
     const ok = await ensureActive();
     if (!ok) return;
     try {
       const res = await bridge().launch();
+      // Main-side ban enforcement (fresh check per launch): blocked starts
+      // come back as { banned: true } instead of throwing.
+      if (res && res.banned) {
+        if (typeof window.showBanScreen === 'function') window.showBanScreen(res);
+        else toast(tr('ban.title', 'Account banned'), 'error');
+        return;
+      }
       setRunning(true, res?.pid);
     } catch (err) {
       toast(fmt(tr('play.launchFail', 'Launch failed: {msg}'), { msg: err.message }), 'error');
     }
+  }
+
+  async function preLaunchBanCheck() {
+    // Fast-fail before the slow download/verify step. Fail-open: any error
+    // or inconclusive answer lets the launch proceed (main enforces again).
+    try {
+      const res = await bridge().checkBan();
+      if (res && res.banned) {
+        if (typeof window.showBanScreen === 'function') window.showBanScreen(res);
+        else toast(tr('ban.title', 'Account banned'), 'error');
+        return false;
+      }
+    } catch {}
+    return true;
   }
 
   window.whenViewsReady(() => {

@@ -1,0 +1,107 @@
+{
+  "rules": [
+    {
+      "id": "oom",
+      "patterns": ["OutOfMemoryError", "Java heap space", "There is not enough memory", "Not enough memory"],
+      "fixType": "increase_ram",
+      "payload": { "minGb": 6 },
+      "title": { "de": "Zu wenig Arbeitsspeicher", "en": "Not enough memory" },
+      "body": {
+        "de": "Minecraft ist mit einem OutOfMemoryError abgestürzt. Mehr RAM für Java löst das in den meisten Fällen.",
+        "en": "Minecraft crashed with an OutOfMemoryError. Giving Java more RAM fixes this in most cases."
+      }
+    },
+    {
+      "id": "dupmod",
+      "patterns": ["Found duplicate mods", "DuplicateModsFoundException", "Duplicate mods found"],
+      "fixType": "disable_mod",
+      "payload": {
+        "conflicts": [
+          { "keep": "sodium", "remove": "optifine" },
+          { "keep": "iris", "remove": "optifine" },
+          { "keep": "sodium", "remove": "embeddium" },
+          { "keep": "fabric-api", "remove": "quilted-fabric-api" }
+        ]
+      },
+      "title": { "de": "Doppelte oder konkurrierende Mods", "en": "Duplicate or conflicting mods" },
+      "body": {
+        "de": "Zwei Mods liefern dieselbe Funktion und blockieren sich. Eine davon wird deaktiviert, die andere bleibt aktiv.",
+        "en": "Two mods provide the same feature and block each other. One of them will be disabled, the other stays active."
+      }
+    },
+    {
+      "id": "missingdep",
+      "patterns": [
+        "which is missing",
+        "Incompatible mods found",
+        "HARD_DEP",
+        "Mod resolution failed",
+        "Unmet dependency",
+        "Missing mandatory dependencies",
+        "Missing or unsupported mandatory dependencies",
+        "Mod ID:"
+      ],
+      "fixType": "install_dependency",
+      "payload": {},
+      "title": { "de": "Fehlende Pflicht-Abhängigkeit", "en": "Missing mandatory dependency" },
+      "body": {
+        "de": "Eine Mod braucht eine weitere Mod, die nicht installiert ist. Die fehlende Mod wird von Modrinth nachinstalliert.",
+        "en": "A mod needs another mod that is not installed. The missing mod will be installed from Modrinth."
+      }
+    },
+    {
+      "id": "loadermismatch",
+      "patterns": [
+        "Incompatible mods found",
+        "is incompatible with",
+        "requires a newer version of",
+        "Unsupported mod version"
+      ],
+      "fixType": "switch_version",
+      "payload": {},
+      "title": { "de": "Inkompatible Mod-Version", "en": "Incompatible mod version" },
+      "body": {
+        "de": "Eine installierte Mod passt nicht zum Loader oder zu Minecraft. Im Versions-Dialog kann eine passende Version gewählt werden.",
+        "en": "An installed mod does not match the loader or Minecraft. Pick a matching version in the version dialog."
+      }
+    },
+    {
+      "id": "gl",
+      "patterns": [
+        "Pixel format not accelerated",
+        "GLFW error 65542",
+        "Couldn't set pixel format",
+        "GLFW error"
+      ],
+      "fixType": "none",
+      "payload": {},
+      "title": { "de": "Grafiktreiber-Problem", "en": "Graphics driver issue" },
+      "body": {
+        "de": "Der Grafiktreiber meldet keinen OpenGL-Kontext. Grafikkartentreiber aktualisieren und prüfen, dass Minecraft die richtige GPU nutzt.",
+        "en": "The graphics driver reports no OpenGL context. Update the GPU driver and check that Minecraft uses the right GPU."
+      }
+    },
+    {
+      "id": "classmissing",
+      "patterns": ["ClassNotFoundException", "NoClassDefFoundError", "Failed to find class"],
+      "fixType": "none",
+      "payload": {},
+      "title": { "de": "Beschädigte Installation", "en": "Corrupt installation" },
+      "body": {
+        "de": "Eine Klasse fehlt, vermutlich ist die Instanz unvollständig. Instanz über Download/Prüfen neu verifizieren.",
+        "en": "A class is missing, the instance is probably incomplete. Re-verify the instance via Download / verify."
+      }
+    },
+    {
+      "id": "javaversion",
+      "patterns": ["UnsupportedClassVersionError", "Unsupported class file major version", "requires Java"],
+      "fixType": "none",
+      "payload": {},
+      "title": { "de": "Falsche Java-Version", "en": "Wrong Java version" },
+      "body": {
+        "de": "Der Client braucht eine andere Java-Version, als eingestellt ist. Java-Einstellung prüfen oder automatisch erkennen lassen.",
+        "en": "The client needs a different Java version than configured. Check the Java setting or let it auto-detect."
+      }
+    }
+  ]
+}

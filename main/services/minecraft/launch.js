@@ -12,6 +12,7 @@ const { javaSettings, ensureJavaRuntime, requiredJavaMajor, getJavaMajor } = req
 
 let child = null;
 let runningInstanceId = null;
+let stopRequested = false;
 
 function appVersion() {
   try {
@@ -247,14 +248,25 @@ async function launchGame(instanceId, serverAddr) {
     } catch {}
     emit('game:log', { stream: 'system', line: `Game exited (code=${code} signal=${signal || '-'})` });
     emit('game:status', { running: false, pid: null, code, instanceId: playId });
+    const wasStopped = stopRequested;
+    stopRequested = false;
     child = null;
     runningInstanceId = null;
+    if (code !== 0 && !wasStopped) {
+      try {
+        const file = require('../crashDoctor').scanAfterExit(playId, playStart);
+        emit('crash:detected', { instanceId: playId, crash: !!file, file: file || null });
+      } catch (err) {
+        console.warn('[launch] Crash scan failed:', err?.message || err);
+      }
+    }
   });
   return { pid: child.pid || null };
 }
 
 function stopGame() {
   if (!child) return { stopped: false };
+  stopRequested = true;
   try {
     if (process.platform === 'win32') child.kill();
     else child.kill('SIGTERM');

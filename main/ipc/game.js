@@ -2,6 +2,7 @@
 
 const { shell } = require('electron');
 const auth = require('../services/auth');
+const ban = require('../services/ban');
 const minecraft = require('../services/minecraft');
 const servers = require('../services/servers');
 const instances = require('../services/instances');
@@ -16,6 +17,12 @@ function register(ipcMain, ctx) {
   });
   ipcMain.handle('game:launch', async (_e, args) => {
     servers.syncToAllInstances();
+    // Fresh enforcement on every launch attempt (covers direct joins too).
+    // Fail-open: only a definitive banned=true blocks the start.
+    const banRes = await ban.checkNow({ trigger: 'launch' });
+    if (banRes.ok && banRes.banned) {
+      return { ok: false, banned: true, reason: banRes.reason, username: banRes.username };
+    }
     return minecraft.launchGame(args?.instanceId, args?.server);
   });
   ipcMain.handle('game:stop', async () => minecraft.stopGame());

@@ -8,6 +8,7 @@ const minecraft = require('./services/minecraft');
 const servers = require('./services/servers');
 const updater = require('./updater');
 const telemetry = require('./telemetry');
+const ban = require('./services/ban');
 
 let mainWindow = null;
 
@@ -69,6 +70,8 @@ function registerIpc() {
   require('./ipc/content').register(ipcMain, ctx);
   require('./ipc/skins').register(ipcMain, ctx);
   require('./ipc/servers').register(ipcMain, ctx);
+  require('./ipc/ban').register(ipcMain, ctx);
+  require('./ipc/crashdoctor').register(ipcMain, ctx);
   require('./ipc/system').register(ipcMain, ctx);
 }
 
@@ -100,6 +103,12 @@ if (!gotSingleInstanceLock) {
     createWindow();
     updater.initUpdater(broadcast);
     telemetry.startTelemetry();
+    ban.startBanWatcher(broadcast);
+    // Pre-login hello (no uuid/username yet) is allowed; the ban check only
+    // takes effect once a UUID is known. Best-effort, never blocks startup.
+    setTimeout(() => {
+      ban.checkNow({ background: true, trigger: 'startup' }).catch(() => {});
+    }, 10000);
     try {
       require('./services/discord').showMenu();
     } catch (err) {

@@ -123,6 +123,8 @@ const URLS = {
   sessionServerJoin: 'https://sessionserver.mojang.com/session/minecraft/join',
   downloadPage: 'https://kebabdev.de/download/',
   telemetryPing: 'https://kebabdev.de/api/ping',
+  clientHello: 'https://kebabdev.de/api/client/hello',
+  discordInvite: 'https://discord.com/invite/kSSRXqtb8S',
   latestRelease: 'https://kebabdev.de/api/latest.json',
 };
 

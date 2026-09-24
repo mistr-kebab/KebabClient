@@ -83,6 +83,15 @@ contextBridge.exposeInMainWorld('mc', {
   renameSkinHistory: (id, name) => ipcRenderer.invoke('skins:renameHistory', { id, name }),
   deleteSkinHistory: id => ipcRenderer.invoke('skins:deleteHistory', { id }),
 
+  checkBan: () => ipcRenderer.invoke('ban:check'),
+  appealBan: () => ipcRenderer.invoke('ban:appeal'),
+  onBanStatus: cb => on('ban:status', cb),
+
+  analyzeCrash: instanceId => ipcRenderer.invoke('crashdoctor:analyze', { instanceId }),
+  applyCrashFix: (instanceId, fixType, fixPayload) =>
+    ipcRenderer.invoke('crashdoctor:applyFix', { instanceId, fixType, fixPayload }),
+  onCrashDetected: cb => on('crash:detected', cb),
+
   listServers: () => ipcRenderer.invoke('servers:list'),
   addServer: (name, ip, categoryId, invite) => ipcRenderer.invoke('servers:add', { name, ip, categoryId, invite }),
   updateServer: (id, name, ip, categoryId, invite) =>

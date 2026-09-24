@@ -93,4 +93,4 @@ function startTelemetry() {
   }, DAY);
 }
 
-module.exports = { startTelemetry, pingOnce };
+module.exports = { startTelemetry, pingOnce, installId };

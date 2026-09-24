@@ -1,13 +1,24 @@
 'use strict';
 
 const auth = require('../services/auth');
+const ban = require('../services/ban');
 const store = require('../store');
 
 function register(ipcMain, ctx) {
   const getWindow = ctx.getWindow;
+  const broadcast = ctx.broadcast;
 
-  ipcMain.handle('auth:login', async () => auth.fullLoginFlow(getWindow()));
-  ipcMain.handle('auth:refresh', async () => auth.refreshSession());
+  ipcMain.handle('auth:login', async () => {
+    const res = await auth.fullLoginFlow(getWindow());
+    // Fire-and-forget hello now that UUID/username are known.
+    ban.afterAuth(broadcast, 'login').catch(() => {});
+    return res;
+  });
+  ipcMain.handle('auth:refresh', async () => {
+    const res = await auth.refreshSession();
+    ban.afterAuth(broadcast, 'refresh').catch(() => {});
+    return res;
+  });
   ipcMain.handle('auth:logout', async () => {
     auth.logout();
     return { ok: true };
