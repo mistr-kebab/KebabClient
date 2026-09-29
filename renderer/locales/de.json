@@ -152,6 +152,8 @@
   "logs.output": "Spielausgabe",
   "settings.theme": "Design",
   "settings.appearance": "Aussehen und Akzentfarbe.",
+  "settings.appearanceLabel": "Darstellung",
+  "settings.accentLabel": "Akzentfarbe",
   "settings.storage": "Speicher",
   "settings.currentDir": "Aktuelles Datenverzeichnis:",
   "settings.openFolder": "Ordner öffnen",

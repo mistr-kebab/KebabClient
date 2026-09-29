@@ -1,7 +1,7 @@
 'use strict';
 
 (function () {
-  const { bridge, toast, el, tr, fmt } = window.launcherUtil;
+  const { bridge, toast, tr, fmt } = window.launcherUtil;
 
   const ACCENTS = {
     amber: { label: 'Amber', accent: '#e8a020', strong: '#f5b93c', rgb: '232, 160, 32', ink: '#1a1204' },
@@ -13,7 +13,7 @@
 
   const THEME_MODES = ['oled', 'dark', 'light', 'system'];
   let currentAccent = 'amber';
-  let currentMode = 'oled';
+  let currentMode = 'system';
   let currentLanguage = 'en';
   let systemQuery = null;
   const onSystemChange = () => applyTheme(currentAccent, 'system');
@@ -39,12 +39,10 @@
     const effective = resolveMode(currentMode);
     if (effective === 'oled') root.removeAttribute('data-theme');
     else root.setAttribute('data-theme', effective);
-    document.querySelectorAll('#accentSwatches .swatch').forEach(b => {
-      b.classList.toggle('is-active', b.dataset.accent === currentAccent);
-    });
-    document.querySelectorAll('#themeModeSegment .segment-btn').forEach(b => {
-      b.classList.toggle('is-active', b.dataset.themeMode === currentMode);
-    });
+    const modeSelect = document.getElementById('themeModeSelect');
+    if (modeSelect) modeSelect.value = currentMode;
+    const accentSelect = document.getElementById('accentSelect');
+    if (accentSelect) accentSelect.value = currentAccent;
     document.querySelectorAll('#langSegment .segment-btn').forEach(b => {
       b.classList.toggle('is-active', b.dataset.lang === currentLanguage);
     });
@@ -76,26 +74,35 @@
     }
   }
 
-  function renderSwatches(active) {
-    const row = document.getElementById('accentSwatches');
-    if (!row) return;
-    row.textContent = '';
-    for (const [key, p] of Object.entries(ACCENTS)) {
-      const btn = el('button', 'swatch' + (key === active ? ' is-active' : ''));
-      btn.type = 'button';
-      btn.dataset.accent = key;
-      btn.title = p.label;
-      btn.setAttribute('aria-label', `${p.label} accent`);
-      btn.addEventListener('click', async () => {
-        try {
-          await bridge().updateSettings({ theme: { accent: key, mode: currentMode } });
-          applyTheme(key, currentMode);
-          toast(fmt(tr('settings.themeSet', 'Theme: {name}.'), { name: p.label }), 'ok');
-        } catch (err) {
-          toast(fmt(tr('settings.themeFail', 'Theme failed: {msg}'), { msg: err.message }), 'error');
-        }
-      });
-      row.appendChild(btn);
+  function modeLabel(mode) {
+    if (mode === 'dark') return tr('settings.mDark', 'Dark');
+    if (mode === 'light') return tr('settings.mLight', 'Light');
+    if (mode === 'system') return tr('settings.mSystem', 'System');
+    return 'OLED';
+  }
+
+  function fillThemeSelects() {
+    const modeSelect = document.getElementById('themeModeSelect');
+    if (modeSelect) {
+      modeSelect.textContent = '';
+      for (const mode of THEME_MODES) {
+        const opt = document.createElement('option');
+        opt.value = mode;
+        opt.textContent = modeLabel(mode);
+        if (mode === currentMode) opt.selected = true;
+        modeSelect.appendChild(opt);
+      }
+    }
+    const accentSelect = document.getElementById('accentSelect');
+    if (accentSelect) {
+      accentSelect.textContent = '';
+      for (const [key, p] of Object.entries(ACCENTS)) {
+        const opt = document.createElement('option');
+        opt.value = key;
+        opt.textContent = p.label;
+        if (key === currentAccent) opt.selected = true;
+        accentSelect.appendChild(opt);
+      }
     }
   }
 
@@ -111,8 +118,8 @@
       const s = (data && data.settings) || {};
       currentLanguage = s.language === 'de' ? 'de' : 'en';
       if (window.i18n) window.i18n.initLanguage(currentLanguage);
+      fillThemeSelects();
       applyTheme(s.theme && s.theme.accent, s.theme && s.theme.mode);
-      renderSwatches(s.theme && s.theme.accent);
       fillSelect('javaRamSelect', data.ramOptions || [2, 4, 6, 8, 12, 16], s.java && s.java.xmx, ' GB');
       fillSelect('threadSelect', data.threadOptions || [2, 4, 8, 16], s.downloads && s.downloads.threads, '');
       const javaPath = document.getElementById('javaPathInput');
@@ -141,18 +148,36 @@
 
   window.whenViewsReady(() => {
     if (window.i18n) window.i18n.initLanguage(null);
-    document.querySelectorAll('#themeModeSegment .segment-btn').forEach(b => {
-      b.addEventListener('click', async () => {
-        const mode = b.dataset.themeMode;
+    fillThemeSelects();
+    document.addEventListener('i18n:applied', fillThemeSelects);
+    const modeSelect = document.getElementById('themeModeSelect');
+    if (modeSelect) {
+      modeSelect.addEventListener('change', async () => {
+        const mode = THEME_MODES.includes(modeSelect.value) ? modeSelect.value : currentMode;
         try {
           await bridge().updateSettings({ theme: { accent: currentAccent, mode } });
           applyTheme(currentAccent, mode);
-          toast(fmt(tr('settings.appearanceSet', 'Appearance: {mode}.'), { mode }), 'ok');
+          toast(fmt(tr('settings.appearanceSet', 'Appearance: {mode}.'), { mode: modeLabel(mode) }), 'ok');
         } catch (err) {
+          modeSelect.value = currentMode;
           toast(fmt(tr('settings.themeFail', 'Theme failed: {msg}'), { msg: err.message }), 'error');
         }
       });
-    });
+    }
+    const accentSelect = document.getElementById('accentSelect');
+    if (accentSelect) {
+      accentSelect.addEventListener('change', async () => {
+        const key = ACCENTS[accentSelect.value] ? accentSelect.value : currentAccent;
+        try {
+          await bridge().updateSettings({ theme: { accent: key, mode: currentMode } });
+          applyTheme(key, currentMode);
+          toast(fmt(tr('settings.themeSet', 'Theme: {name}.'), { name: ACCENTS[key].label }), 'ok');
+        } catch (err) {
+          accentSelect.value = currentAccent;
+          toast(fmt(tr('settings.themeFail', 'Theme failed: {msg}'), { msg: err.message }), 'error');
+        }
+      });
+    }
     document.querySelectorAll('#langSegment .segment-btn').forEach(b => {
       b.addEventListener('click', async () => {
         const next = b.dataset.lang === 'en' ? 'en' : 'de';

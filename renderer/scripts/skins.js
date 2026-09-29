@@ -410,8 +410,6 @@
     } catch {}
   }
 
-  let dataLoadedAt = 0;
-
   function skinsFingerprint(state) {
     try {
       return (state.skins || []).map(s => `${s.id}:${s.state}`).join('|');
@@ -515,7 +513,6 @@
         );
       }
       await loadHistory();
-      dataLoadedAt = Date.now();
     } catch (err) {
       if (statusEl)
         statusEl.textContent = fmt(tr('skins.unavailable', 'Preview unavailable: {msg}'), { msg: err.message });
@@ -527,7 +524,7 @@
       ensureViewer();
       fitViewer();
     } catch {}
-    if (!dataLoadedAt || Date.now() - dataLoadedAt > 5 * 60 * 1000) reload();
+    reload();
   }
 
   function syncVariantButtons() {

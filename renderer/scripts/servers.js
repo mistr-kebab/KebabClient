@@ -519,6 +519,9 @@
 
   window.whenViewsReady(() => {
     bindCollapsible();
+    try {
+      bridge().onServersChanged(() => reload());
+    } catch {}
     const addBtn = document.getElementById('serverAddButton');
     if (addBtn) addBtn.addEventListener('click', submit);
     const ipInput = document.getElementById('serverIpInput');

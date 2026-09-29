@@ -12,7 +12,7 @@ const RAM_OPTIONS = [2, 4, 6, 8, 12, 16];
 const THREAD_OPTIONS = [2, 4, 8, 16];
 
 const DEFAULTS = {
-  theme: { accent: 'amber' },
+  theme: { accent: 'amber', mode: 'system' },
   java: { path: '', xmx: 4, extraArgs: '' },
   downloads: { threads: 8 },
   language: 'en',
@@ -32,7 +32,7 @@ function sanitizeTelemetry(v) {
 
 function sanitizeTheme(t) {
   const key = ACCENT_KEYS.includes(t?.accent) ? t.accent : 'amber';
-  const mode = THEME_MODES.includes(t?.mode) ? t.mode : 'oled';
+  const mode = THEME_MODES.includes(t?.mode) ? t.mode : 'system';
   return { accent: key, mode };
 }
 

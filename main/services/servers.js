@@ -88,14 +88,16 @@ function saveServers(servers) {
   return servers;
 }
 
+function serverKey(ip) {
+  return String(ip || '').trim().toLowerCase();
+}
+
 function mergeServers(managed, existing, removedKeys) {
-  const key = s =>
-    String((s && s.ip) || '')
-      .trim()
-      .toLowerCase();
-  const managedKeys = new Set((managed || []).map(key));
+  const managedKeys = new Set((managed || []).map(s => serverKey(s && s.ip)));
   const removed = removedKeys instanceof Set ? removedKeys : new Set(removedKeys || []);
-  const extras = (existing || []).filter(s => s && s.ip && !managedKeys.has(key(s)) && !removed.has(key(s)));
+  const extras = (existing || []).filter(
+    s => s && s.ip && !managedKeys.has(serverKey(s.ip)) && !removed.has(serverKey(s.ip))
+  );
   const clean = s => ({ name: String(s.name || ''), ip: String(s.ip || '') });
   return [...(managed || []).map(clean), ...extras.map(clean)];
 }
@@ -228,6 +230,69 @@ function moveServer(id, direction) {
   return saveServers(servers);
 }
 
+function readInstanceServers(root) {
+  const file = path.join(root, 'servers.dat');
+  let stat = null;
+  try {
+    stat = fs.statSync(file);
+  } catch {
+    return null;
+  }
+  if (!stat.isFile()) return null;
+  try {
+    const parsed = parseServersDat(fs.readFileSync(file));
+    return { mtimeMs: stat.mtimeMs, servers: Array.isArray(parsed) ? parsed : [] };
+  } catch {
+    return null;
+  }
+}
+
+function reconcileFromInstance(root, sinceMs) {
+  const read = readInstanceServers(root);
+  if (!read) return { changed: false, servers: listServers() };
+  if (sinceMs && read.mtimeMs < sinceMs) return { changed: false, servers: listServers() };
+  if (!read.servers.length) return { changed: false, servers: listServers() };
+  const state = listServers();
+  const byKey = new Map();
+  for (const s of state) {
+    if (s && s.ip) byKey.set(serverKey(s.ip), s);
+  }
+  const seen = new Set();
+  const next = [];
+  let dirty = false;
+  for (const e of read.servers) {
+    if (!e || !e.ip) continue;
+    const k = serverKey(e.ip);
+    if (seen.has(k)) continue;
+    seen.add(k);
+    const managed = byKey.get(k);
+    if (managed) {
+      if (e.name && managed.name !== String(e.name)) {
+        managed.name = String(e.name);
+        dirty = true;
+      }
+      next.push(managed);
+    } else {
+      next.push({
+        id: crypto.randomUUID(),
+        name: String(e.name || e.ip || '').trim(),
+        ip: String(e.ip).trim(),
+        categoryId: null,
+        invite: null,
+        disabled: false,
+      });
+    }
+  }
+  for (const s of state) {
+    if (s && s.disabled && s.ip && !seen.has(serverKey(s.ip))) next.push(s);
+  }
+  const before = state.map(s => s && s.id).join('|');
+  const after = next.map(s => s && s.id).join('|');
+  if (before === after && !dirty) return { changed: false, servers: state };
+  saveState({ servers: next });
+  return { changed: true, servers: next };
+}
+
 module.exports = {
   listServers,
   listCategories,
@@ -239,6 +304,7 @@ module.exports = {
   setServerDisabled,
   removeServer,
   moveServer,
+  reconcileFromInstance,
   syncToInstance,
   syncToAllInstances,
 };

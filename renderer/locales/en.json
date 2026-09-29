@@ -152,6 +152,8 @@
   "logs.output": "Game output",
   "settings.theme": "Theme",
   "settings.appearance": "Appearance and accent color.",
+  "settings.appearanceLabel": "Appearance",
+  "settings.accentLabel": "Accent color",
   "settings.storage": "Storage",
   "settings.currentDir": "Current data directory:",
   "settings.openFolder": "Open folder",

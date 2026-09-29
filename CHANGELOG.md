@@ -2,6 +2,19 @@
 
 All notable changes to KebabClient are documented here.
 
+## [0.3.5] – 2026-09-24
+
+- **Server list**: in-game order, renames and newly added servers are now
+  imported back into the launcher on clean game exit (disabled servers are
+  kept, stale/corrupt data is ignored).
+- **Skins**: the Skins view always reloads fresh data from Mojang, so newly
+  claimed capes show up without waiting.
+- **Theme**: fresh installs default to System mode; appearance and accent
+  color are now two dropdowns side by side in Settings.
+- **Crash Doctor fixes**: modern Fabric loader errors
+  (`requires … which is missing`) resolve to one-click Modrinth installs;
+  banner analysis wiring fixed.
+
 ## [0.3.4] – 2026-09-24
 
 - **Server-backed client ban**: fresh `POST /api/client/hello` check on

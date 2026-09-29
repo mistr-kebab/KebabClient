@@ -104,6 +104,7 @@ contextBridge.exposeInMainWorld('mc', {
   deleteCategory: id => ipcRenderer.invoke('servers:deleteCategory', { id }),
   removeServer: id => ipcRenderer.invoke('servers:remove', { id }),
   moveServer: (id, direction) => ipcRenderer.invoke('servers:move', { id, direction }),
+  onServersChanged: cb => on('servers:changed', cb),
   pingServer: ip => ipcRenderer.invoke('servers:ping', { ip }),
   refreshDiscord: () => ipcRenderer.invoke('discord:refresh'),
 

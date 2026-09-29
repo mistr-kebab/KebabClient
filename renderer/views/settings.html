@@ -22,13 +22,16 @@
       <span data-i18n="settings.theme">Theme</span>
     </h3>
     <p class="muted" data-i18n="settings.appearance">Appearance and accent color.</p>
-    <div class="segment" role="group" aria-label="Appearance" id="themeModeSegment">
-      <button type="button" class="segment-btn" data-theme-mode="oled">OLED</button>
-      <button type="button" class="segment-btn" data-theme-mode="dark" data-i18n="settings.mDark">Dark</button>
-      <button type="button" class="segment-btn" data-theme-mode="light" data-i18n="settings.mLight">Light</button>
-      <button type="button" class="segment-btn" data-theme-mode="system" data-i18n="settings.mSystem">System</button>
+    <div class="form-grid">
+      <label class="form-field" for="themeModeSelect">
+        <span data-i18n="settings.appearanceLabel">Appearance</span>
+        <select id="themeModeSelect" class="input input-plain"></select>
+      </label>
+      <label class="form-field" for="accentSelect">
+        <span data-i18n="settings.accentLabel">Accent color</span>
+        <select id="accentSelect" class="input input-plain"></select>
+      </label>
     </div>
-    <div class="swatch-row" id="accentSwatches" role="group" aria-label="Accent color"></div>
   </div>
 
   <div class="panel settings-panel">

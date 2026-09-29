@@ -260,6 +260,17 @@ async function launchGame(instanceId, serverAddr) {
         console.warn('[launch] Crash scan failed:', err?.message || err);
       }
     }
+    if (!wasStopped) {
+      try {
+        const { dirsFor } = require('./paths');
+        const { getInstance } = require('../instances');
+        const inst = getInstance(playId);
+        const res = require('../servers').reconcileFromInstance(dirsFor(inst).root, playStart);
+        if (res.changed) emit('servers:changed', { servers: res.servers });
+      } catch (err) {
+        console.warn('[launch] Server reconcile failed:', err?.message || err);
+      }
+    }
   });
   return { pid: child.pid || null };
 }
