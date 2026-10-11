@@ -1,7 +1,7 @@
 'use strict';
 
 (function () {
-  const { bridge, toast } = window.launcherUtil;
+  const { bridge, toast, cleanError } = window.launcherUtil;
   const ctx = window.instancesCtx;
   const { tr, fmt, notifyChanged, LOADER_LABELS } = ctx;
 
@@ -25,7 +25,7 @@
       opt.textContent = '26.1.2';
       select.appendChild(opt);
       toast(
-        fmt(tr('inst.verFallback', 'Version list unavailable, using 26.1.2: {msg}'), { msg: err.message }),
+        fmt(tr('inst.verFallback', 'Version list unavailable, using 26.1.2: {msg}'), { msg: cleanError(err) }),
         'error'
       );
     }
@@ -42,7 +42,7 @@
     try {
       loaderMeta = await bridge().getLoaders(mc);
     } catch (err) {
-      if (note) note.textContent = fmt(tr('inst.loaderCheckFail', 'Loader check failed: {msg}'), { msg: err.message });
+      if (note) note.textContent = fmt(tr('inst.loaderCheckFail', 'Loader check failed: {msg}'), { msg: cleanError(err) });
       return;
     }
     for (const key of ['fabric', 'quilt']) {
@@ -97,8 +97,8 @@
         await window.ensureActiveInstance();
       }
     } catch (err) {
-      if (status) status.textContent = err.message;
-      toast(fmt(tr('inst.createFail', 'Create failed: {msg}'), { msg: err.message }), 'error');
+      if (status) status.textContent = cleanError(err);
+      toast(fmt(tr('inst.createFail', 'Create failed: {msg}'), { msg: cleanError(err) }), 'error');
     } finally {
       if (btn) btn.disabled = false;
     }

@@ -1,7 +1,7 @@
 'use strict';
 
 (function () {
-  const { bridge, toast, el, formatDownloads } = window.launcherUtil;
+  const { bridge, toast, el, formatDownloads, cleanError } = window.launcherUtil;
   const ctx = window.instancesCtx;
   const { tr, fmt } = ctx;
 
@@ -10,6 +10,7 @@
   let resultTotal = 0;
   let resultLoading = false;
   let resultQ = '';
+  let lastHadResults = false;
   const RESULT_LIMIT = 50;
 
   const DETAIL_CATS = {
@@ -58,7 +59,7 @@
       el(
         'p',
         'muted',
-        resultTotal
+        lastHadResults
           ? tr('inst.allInstalled', 'Everything here is already installed.')
           : tr('inst.noContent', 'No compatible content found.')
       )
@@ -78,8 +79,15 @@
     const grid = document.getElementById('detailResults');
     if (!grid) return;
     if (!append) grid.textContent = '';
-    const fresh = (results || []).filter(mod => mod && !ctx.installedProjectIds.has(mod.id));
+    lastHadResults = (results || []).length > 0 || (append && lastHadResults);
+    const seen = new Set(
+      [...grid.querySelectorAll('[data-project-id]')].map(n => n.dataset.projectId).filter(Boolean)
+    );
+    const fresh = (results || []).filter(
+      mod => mod && !ctx.installedProjectIds.has(mod.id) && !seen.has(mod.id)
+    );
     for (const mod of fresh) {
+      seen.add(mod.id);
       const card = el('article', 'mod-card');
       card.dataset.projectId = mod.id;
       const top = el('div', 'mod-top');
@@ -146,7 +154,7 @@
             void ctx.checkForUpdates(true);
             pruneInstalledCards();
           } catch (err) {
-            toast(fmt(tr('inst.installFail', 'Install failed: {msg}'), { msg: err.message }), 'error');
+            toast(fmt(tr('inst.installFail', 'Install failed: {msg}'), { msg: cleanError(err) }), 'error');
             btn.disabled = false;
           }
         });
@@ -184,6 +192,7 @@
       resultOffset = 0;
       resultTotal = 0;
       resultQ = input ? input.value.trim() : '';
+      lastHadResults = false;
     }
     const searching = resultQ.length > 0;
     resultLoading = true;
@@ -200,13 +209,14 @@
       if (!ctx.detailId) return;
       resultTotal = res.total || 0;
       renderDetailResults(res.results || [], !reset);
-      resultOffset += (res.results || []).length;
+      resultOffset += typeof res.fetched === 'number' ? res.fetched : (res.results || []).length;
     } catch (err) {
+      const msg = cleanError(err);
       const statusEl = document.getElementById('detailSearchStatus');
       if (statusEl)
         statusEl.textContent = searching
-          ? fmt(tr('inst.searchFail', 'Search failed: {msg}'), { msg: err.message })
-          : fmt(tr('inst.browseFail', 'Browse failed: {msg}'), { msg: err.message });
+          ? fmt(tr('inst.searchFail', 'Search failed: {msg}'), { msg })
+          : fmt(tr('inst.browseFail', 'Browse failed: {msg}'), { msg });
     } finally {
       resultLoading = false;
       resultStatus();
@@ -272,7 +282,7 @@
       toast(summarizeImport(res, groupLabel(ctx.detailCategory)), res?.failed?.length ? 'error' : 'ok');
       await ctx.loadDetailInstalled();
     } catch (err) {
-      toast(fmt(tr('inst.uploadFail', 'Upload failed: {msg}'), { msg: err.message }), 'error');
+      toast(fmt(tr('inst.uploadFail', 'Upload failed: {msg}'), { msg: cleanError(err) }), 'error');
     }
   }
 
@@ -360,7 +370,7 @@
         toast(summarizeImport(res, groupLabel(ctx.detailCategory)), res?.failed?.length ? 'error' : 'ok');
         await ctx.loadDetailInstalled();
       } catch (err) {
-        toast(fmt(tr('inst.dropFail', 'Drop failed: {msg}'), { msg: err.message }), 'error');
+        toast(fmt(tr('inst.dropFail', 'Drop failed: {msg}'), { msg: cleanError(err) }), 'error');
       }
     };
     for (const viewId of ['view-instance-detail', 'view-add-content']) {

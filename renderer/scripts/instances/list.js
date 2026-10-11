@@ -1,7 +1,7 @@
 'use strict';
 
 (function () {
-  const { bridge, toast, el } = window.launcherUtil;
+  const { bridge, toast, el, cleanError } = window.launcherUtil;
   const ctx = window.instancesCtx;
   const { tr, fmt, loaderLabel, notifyChanged } = ctx;
 
@@ -157,7 +157,7 @@
         try {
           await bridge().setActiveInstance(instance.id);
         } catch (err) {
-          toast(fmt(tr('inst.selectFail', 'Select failed: {msg}'), { msg: err.message }), 'error');
+          toast(fmt(tr('inst.selectFail', 'Select failed: {msg}'), { msg: cleanError(err) }), 'error');
           return;
         }
         notifyChanged();
@@ -187,7 +187,7 @@
           notifyChanged();
           await loadInstances();
         } catch (err) {
-          toast(fmt(tr('inst.deleteFail', 'Delete failed: {msg}'), { msg: err.message }), 'error');
+          toast(fmt(tr('inst.deleteFail', 'Delete failed: {msg}'), { msg: cleanError(err) }), 'error');
         }
       });
       actions.appendChild(playBtn);
@@ -220,7 +220,7 @@
           notifyChanged();
           await loadInstances();
         } catch (err) {
-          toast(fmt(tr('inst.selectFail', 'Select failed: {msg}'), { msg: err.message }), 'error');
+          toast(fmt(tr('inst.selectFail', 'Select failed: {msg}'), { msg: cleanError(err) }), 'error');
         }
       };
       tile.addEventListener('click', e => {
@@ -244,7 +244,7 @@
       const res = await bridge().listInstances();
       renderTiles(res?.instances || [], res?.activeId);
     } catch (err) {
-      toast(fmt(tr('inst.loadFail', 'Could not load instances: {msg}'), { msg: err.message }), 'error');
+      toast(fmt(tr('inst.loadFail', 'Could not load instances: {msg}'), { msg: cleanError(err) }), 'error');
     }
   }
 

@@ -40,7 +40,7 @@
         }
         await ctx.openDetail(id);
       }
-      if (tab === 'mod' || tab === 'resourcepack' || tab === 'shader' || tab === 'logs') {
+      if (tab === 'all' || tab === 'mod' || tab === 'resourcepack' || tab === 'shader' || tab === 'logs') {
         ctx.installedTab = tab;
         ctx.syncContentTabs();
       }

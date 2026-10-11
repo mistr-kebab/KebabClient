@@ -2,6 +2,19 @@
 
 All notable changes to KebabClient are documented here.
 
+## [0.3.6] – 2026-10-11
+
+- **Modrinth search**: only content with a matching version for the open
+  instance is listed (loader + Minecraft version filtered, incl. the "All"
+  tab), so installs no longer fail with "no compatible files found".
+- **Modrinth downloads**: automatic retry with backoff on rate limits,
+  server errors and interrupted downloads; errors are short plain-language
+  sentences (DE/EN) instead of technical API output.
+- **Instance view**: new "All" tab combining mods, resource packs and
+  shaders (now the default), plus live search across installed content.
+- **Toasts**: notifications stack behind a single card and fan out on
+  hover, with status icons, deduplicated messages and per-kind durations.
+
 ## [0.3.5] – 2026-09-24
 
 - **Server list**: in-game order, renames and newly added servers are now

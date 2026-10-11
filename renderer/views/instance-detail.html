@@ -38,7 +38,8 @@
   </div>
   <div class="detail-toolbar">
     <div class="segment" role="group" aria-label="Installed content" id="detailContentTabs">
-      <button type="button" class="segment-btn is-active" data-content-tab="mod" data-i18n="detail.gMods">Mods</button>
+      <button type="button" class="segment-btn is-active" data-content-tab="all" data-i18n="detail.fAll">All</button>
+      <button type="button" class="segment-btn" data-content-tab="mod" data-i18n="detail.gMods">Mods</button>
       <button type="button" class="segment-btn" data-content-tab="resourcepack" data-i18n="detail.gRp">
         Resource Packs
       </button>
@@ -77,6 +78,20 @@
         <span data-i18n="detail.addContent">Add content</span>
       </button>
     </span>
+  </div>
+  <div class="toolbar" id="installedSearchRow">
+    <div class="search-box">
+      <i data-lucide="search" class="search-icon"></i>
+      <input
+        type="search"
+        id="installedSearchInput"
+        class="input"
+        placeholder="Search installed content…"
+        data-i18n-ph="detail.installedSearchPh"
+        autocomplete="off"
+        spellcheck="false"
+      />
+    </div>
   </div>
   <div class="content-grid" id="detailContentGrid"></div>
   <div class="panel" id="detailLogPanel" hidden>

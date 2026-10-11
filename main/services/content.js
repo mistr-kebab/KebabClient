@@ -59,15 +59,48 @@ function modsDir(instanceId) {
   return contentDir(instanceId, 'mod');
 }
 
-async function apiGet(p, params) {
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function apiGet(p, params, attempt) {
   const url = new URL(API + p);
   if (params) for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
-  const res = await fetch(url, {
-    headers: { Accept: 'application/json', 'User-Agent': clientUA() },
-  });
-  if (!res.ok) throw new Error(`Modrinth request failed (${res.status}): ${p}`);
+  const currentAttempt = attempt || 1;
+  let res;
+  try {
+    res = await fetch(url, {
+      headers: { Accept: 'application/json', 'User-Agent': clientUA() },
+    });
+  } catch {
+    if (currentAttempt < 3) {
+      await sleep(400 * currentAttempt);
+      return apiGet(p, params, currentAttempt + 1);
+    }
+    throw new Error('Could not reach Modrinth. Check your connection and try again.');
+  }
+  if (res.status === 429) {
+    const retryAfter = Number(res.headers && res.headers.get ? res.headers.get('retry-after') : NaN);
+    const waitMs = Number.isFinite(retryAfter) && retryAfter >= 0 ? Math.min(retryAfter * 1000, 8000) : 800 * currentAttempt;
+    if (currentAttempt < 4) {
+      await sleep(waitMs);
+      return apiGet(p, params, currentAttempt + 1);
+    }
+    throw new Error('Modrinth is busy right now (rate limited). Wait a moment and try again.');
+  }
+  if (res.status >= 500 && res.status < 600 && currentAttempt < 3) {
+    await sleep(600 * currentAttempt);
+    return apiGet(p, params, currentAttempt + 1);
+  }
+  if (!res.ok) {
+    if (res.status >= 500) throw new Error(`Modrinth is currently unavailable (${res.status}). Try again later.`);
+    if (res.status === 404) throw new Error(`Modrinth request failed (404): ${p}`);
+    throw new Error(`Modrinth request failed (${res.status}): ${p}`);
+  }
   return res.json();
 }
+
+const INSTALLABLE_TYPES = ['mod', 'resourcepack', 'shader'];
 
 async function searchContent(query, options) {
   const opts =
@@ -76,10 +109,16 @@ async function searchContent(query, options) {
       : { limit: options, offset: arguments[2], instanceId: arguments[3] };
   const instance = resolveInstance(opts.instanceId);
   const catKey = String(opts.category || 'mod').toLowerCase();
+  const loaders = loaderFilter(instance);
   const facets = [[`versions:${instance.mc}`]];
   if (catKey !== 'all') {
     const cat = categoryOf(catKey);
     facets.push([`project_type:${cat.key}`]);
+    if (loaders && cat.key === 'mod') {
+      facets.push(loaders.map(l => `categories:${l}`));
+    }
+  } else {
+    facets.push(INSTALLABLE_TYPES.map(t => `project_type:${t}`));
   }
   const params = {
     query: query || '',
@@ -89,9 +128,18 @@ async function searchContent(query, options) {
   };
   if (opts.sort === 'popular') params.index = 'downloads';
   const data = await apiGet('/search', params);
-  return {
-    total: data.total_hits || 0,
-    results: (data.hits || []).map(h => ({
+  const rawHits = data.hits || [];
+  const filtered = [];
+  for (const h of rawHits) {
+    const projectType = h.project_type || 'mod';
+    if (catKey === 'all' && !INSTALLABLE_TYPES.includes(projectType)) continue;
+    if (projectType === 'mod' && loaders && loaders.length) {
+      const cats = (h.categories || []).map(c => String(c).toLowerCase());
+      if (!loaders.some(l => cats.includes(String(l).toLowerCase()))) continue;
+    }
+    const vers = h.versions || [];
+    if (Array.isArray(vers) && vers.length && !vers.includes(instance.mc)) continue;
+    filtered.push({
       id: h.project_id,
       slug: h.slug,
       title: h.title,
@@ -100,9 +148,14 @@ async function searchContent(query, options) {
       downloads: h.downloads || 0,
       author: h.author || '',
       categories: h.categories || [],
-      projectType: h.project_type || 'mod',
-      versions: h.versions || [],
-    })),
+      projectType,
+      versions: vers,
+    });
+  }
+  return {
+    total: data.total_hits || 0,
+    results: filtered,
+    fetched: rawHits.length,
   };
 }
 
@@ -266,22 +319,43 @@ async function switchContentVersion(filename, projectId, versionId, instanceId, 
   return installed;
 }
 
-async function downloadToFile(url, dest) {
+async function downloadToFile(url, dest, attempt) {
+  const currentAttempt = attempt || 1;
   fs.mkdirSync(path.dirname(dest), { recursive: true });
-  const res = await fetch(url, { headers: { 'User-Agent': clientUA() } });
-  if (!res.ok) throw new Error(`Download failed (${res.status}): ${url}`);
+  let res;
+  try {
+    res = await fetch(url, { headers: { 'User-Agent': clientUA() } });
+  } catch {
+    if (currentAttempt < 3) {
+      await sleep(500 * currentAttempt);
+      return downloadToFile(url, dest, currentAttempt + 1);
+    }
+    throw new Error('Download failed: could not reach the download server. Check your connection.');
+  }
+  if ((res.status === 429 || (res.status >= 500 && res.status < 600)) && currentAttempt < 3) {
+    await sleep(700 * currentAttempt);
+    return downloadToFile(url, dest, currentAttempt + 1);
+  }
+  if (!res.ok) {
+    if (res.status === 429) throw new Error('Download failed: server is busy (rate limited). Try again shortly.');
+    throw new Error(`Download failed (${res.status})`);
+  }
   const tmp = `${dest}.tmp-${process.pid}`;
   const out = fs.createWriteStream(tmp);
   try {
     for await (const chunk of res.body) out.write(chunk);
-  } catch (e) {
+  } catch {
     try {
       out.close();
     } catch {}
     try {
       fs.unlinkSync(tmp);
     } catch {}
-    throw e;
+    if (currentAttempt < 3) {
+      await sleep(500 * currentAttempt);
+      return downloadToFile(url, dest, currentAttempt + 1);
+    }
+    throw new Error('Download was interrupted. Check your connection and try again.');
   }
   await new Promise((resolve, reject) => out.end(err => (err ? reject(err) : resolve())));
   fs.renameSync(tmp, dest);
@@ -307,7 +381,10 @@ async function installContent(projectId, versionId, instanceId, onStep, category
   let version = null;
   if (versionId) version = versions.find(v => v.id === versionId) || null;
   if (!version) version = pickVersion(versions, loaders);
-  if (!version) throw new Error(`No ${mc}-compatible files found for this ${cat.label}.`);
+  if (!version) {
+    const loaderHint = loaders && loaders.length ? ` for ${loaders.join('/')} ${mc}` : ` for ${mc}`;
+    throw new Error(`No compatible files found${loaderHint} for this ${cat.label}.`);
+  }
   const primary = (version.files || []).find(f => f.primary) || version.files[0];
   if (!primary?.url) throw new Error(`Selected ${cat.label} version has no downloadable file.`);
 

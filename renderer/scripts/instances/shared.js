@@ -1,13 +1,14 @@
 'use strict';
 
 (function () {
-  const { bridge, toast, el, tr, fmt } = window.launcherUtil;
+  const { bridge, toast, el, tr, fmt, cleanError } = window.launcherUtil;
 
   const ctx = {};
 
   ctx.detailId = null;
   ctx.detailName = '';
-  ctx.installedTab = 'mod';
+  ctx.installedTab = 'all';
+  ctx.installedQuery = '';
   ctx.detailContentData = null;
   ctx.detailCategory = 'mod';
   ctx.searchFilter = 'all';
@@ -23,7 +24,12 @@
   const LOG_VIEW_MAX = 1000;
 
   ctx.LOADER_LABELS = { vanilla: 'Vanilla', fabric: 'Fabric', quilt: 'Quilt', forge: 'Forge', neoforge: 'NeoForge' };
-  ctx.EMPTY_BY_CAT = { mod: 'inst.emptyMods', resourcepack: 'inst.emptyRp', shader: 'inst.emptyShaders' };
+  ctx.EMPTY_BY_CAT = {
+    mod: 'inst.emptyMods',
+    resourcepack: 'inst.emptyRp',
+    shader: 'inst.emptyShaders',
+    all: 'inst.emptyAll',
+  };
 
   ctx.tr = tr;
   ctx.fmt = fmt;
@@ -147,25 +153,54 @@
   }
   ctx.checkForUpdates = checkForUpdates;
 
+  function installedItemsForTab() {
+    const data = ctx.detailContentData || {};
+    if (ctx.installedTab === 'all') {
+      const out = [];
+      for (const key of ['mod', 'resourcepack', 'shader']) {
+        for (const m of data[key] || []) {
+          if (m) out.push({ ...m, _cat: key });
+        }
+      }
+      out.sort((a, b) => String(a.name || a.file || '').localeCompare(String(b.name || b.file || '')));
+      return out;
+    }
+    return (data[ctx.installedTab] || []).map(m => (m ? { ...m, _cat: ctx.installedTab } : m));
+  }
+  ctx.installedItemsForTab = installedItemsForTab;
+
   function renderDetailGrid() {
     const grid = document.getElementById('detailContentGrid');
     const logPanel = document.getElementById('detailLogPanel');
+    const searchRow = document.getElementById('installedSearchRow');
     const showLog = ctx.installedTab === 'logs';
     if (grid) grid.hidden = showLog;
     if (logPanel) logPanel.hidden = !showLog;
+    if (searchRow) searchRow.hidden = showLog;
     if (showLog) {
       renderDetailLog();
       return;
     }
     if (!grid) return;
     grid.textContent = '';
-    const items = (ctx.detailContentData && ctx.detailContentData[ctx.installedTab]) || [];
+    const q = String(ctx.installedQuery || '').trim().toLowerCase();
+    const items = installedItemsForTab().filter(m => {
+      if (!q) return true;
+      const hay = `${m.name || ''} ${m.file || ''}`.toLowerCase();
+      return hay.includes(q);
+    });
     if (!items.length) {
-      grid.appendChild(
-        el('p', 'content-empty', tr(ctx.EMPTY_BY_CAT[ctx.installedTab] || 'inst.emptyMods', 'No content installed.'))
-      );
+      const allItems = installedItemsForTab();
+      const key = q && allItems.length ? 'inst.noInstalledMatch' : ctx.EMPTY_BY_CAT[ctx.installedTab] || 'inst.emptyAll';
+      const fallback =
+        key === 'inst.noInstalledMatch'
+          ? 'No installed content matches this search.'
+          : key === 'inst.emptyAll'
+            ? 'No content installed.'
+            : 'No content installed.';
+      grid.appendChild(el('p', 'content-empty', tr(key, fallback)));
     } else {
-      for (const m of items) grid.appendChild(ctx.contentCard(m, ctx.installedTab));
+      for (const m of items) grid.appendChild(ctx.contentCard(m, m._cat || ctx.installedTab));
     }
     if (window.refreshIcons) window.refreshIcons();
   }
@@ -177,7 +212,7 @@
     try {
       data = await bridge().listInstalledContent(ctx.detailId);
     } catch (err) {
-      toast(fmt(tr('inst.listFail', 'Could not list content: {msg}'), { msg: err.message }), 'error');
+      toast(fmt(tr('inst.listFail', 'Could not list content: {msg}'), { msg: cleanError(err) }), 'error');
       return;
     }
     ctx.installedProjectIds.clear();

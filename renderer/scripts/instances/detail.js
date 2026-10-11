@@ -1,7 +1,7 @@
 'use strict';
 
 (function () {
-  const { bridge, toast, el } = window.launcherUtil;
+  const { bridge, toast, el, cleanError } = window.launcherUtil;
   const ctx = window.instancesCtx;
   const { tr, fmt, loaderLabel, localeDate, notifyChanged, updateKey } = ctx;
 
@@ -11,7 +11,7 @@
       const res = await bridge().listInstances();
       found = (res?.instances || []).find(i => i.id === id) || null;
     } catch (err) {
-      toast(fmt(tr('inst.openFail', 'Could not open instance: {msg}'), { msg: err.message }), 'error');
+      toast(fmt(tr('inst.openFail', 'Could not open instance: {msg}'), { msg: cleanError(err) }), 'error');
       return;
     }
     if (!found) {
@@ -61,7 +61,7 @@
             await ctx.loadInstances();
           }
         } catch (err) {
-          toast(fmt(tr('inst.iconFail', 'Icon failed: {msg}'), { msg: err.message }), 'error');
+          toast(fmt(tr('inst.iconFail', 'Icon failed: {msg}'), { msg: cleanError(err) }), 'error');
         }
       };
     }
@@ -69,7 +69,10 @@
     if (title) title.textContent = fmt(tr('detail.addTo', 'Add content to {name}'), { name: found.name });
     const input = document.getElementById('detailSearchInput');
     if (input) input.value = '';
-    ctx.installedTab = 'mod';
+    const installedInput = document.getElementById('installedSearchInput');
+    if (installedInput) installedInput.value = '';
+    ctx.installedTab = 'all';
+    ctx.installedQuery = '';
     ctx.syncContentTabs();
     ctx.resetContentSearch();
     ctx.refreshDetailDropText();
@@ -295,7 +298,7 @@
         await ctx.checkForUpdates(true);
       } catch (err) {
         closeVersionModal();
-        toast(fmt(tr('inst.switchFail', 'Switch failed: {msg}'), { msg: err.message }), 'error');
+        toast(fmt(tr('inst.switchFail', 'Switch failed: {msg}'), { msg: cleanError(err) }), 'error');
       }
     });
 
@@ -314,7 +317,7 @@
           selectedId = cur ? cur.id : null;
         }
       } catch (err) {
-        toast(fmt(tr('inst.versionFail', 'Versions failed: {msg}'), { msg: err.message }), 'error');
+        toast(fmt(tr('inst.versionFail', 'Versions failed: {msg}'), { msg: cleanError(err) }), 'error');
       }
       if (!overlay.isConnected) return;
       paintList();
@@ -360,6 +363,15 @@
     const main = el('div', 'card-main');
     main.appendChild(el('h4', 'card-name', m.name || m.file));
     main.appendChild(el('p', 'card-sub', m.file));
+    if (ctx.installedTab === 'all' && key) {
+      const kind =
+        key === 'resourcepack'
+          ? tr('inst.typeRp', 'Resource Pack')
+          : key === 'shader'
+            ? tr('inst.typeShader', 'Shader')
+            : tr('inst.typeMod', 'Mod');
+      main.appendChild(el('p', 'card-sub muted', kind));
+    }
     main.title = m.file;
     top.appendChild(main);
     card.appendChild(top);
@@ -389,7 +401,7 @@
           await ctx.loadDetailInstalled();
           void ctx.checkForUpdates(true);
         } catch (err) {
-          toast(fmt(tr('inst.switchFail', 'Switch failed: {msg}'), { msg: err.message }), 'error');
+          toast(fmt(tr('inst.switchFail', 'Switch failed: {msg}'), { msg: cleanError(err) }), 'error');
           up.disabled = false;
         }
       });
@@ -429,7 +441,7 @@
         void ctx.checkForUpdates(true);
       } catch (err) {
         box.checked = !m.disabled;
-        toast(fmt(tr('inst.toggleFail', 'Toggle failed: {msg}'), { msg: err.message }), 'error');
+        toast(fmt(tr('inst.toggleFail', 'Toggle failed: {msg}'), { msg: cleanError(err) }), 'error');
       } finally {
         box.disabled = false;
       }
@@ -459,7 +471,7 @@
         await ctx.loadDetailInstalled();
         void ctx.checkForUpdates(true);
       } catch (err) {
-        toast(fmt(tr('inst.uninstallFail', 'Uninstall failed: {msg}'), { msg: err.message }), 'error');
+        toast(fmt(tr('inst.uninstallFail', 'Uninstall failed: {msg}'), { msg: cleanError(err) }), 'error');
       }
     });
     foot.appendChild(del);
@@ -475,11 +487,18 @@
     if (detailReload) detailReload.addEventListener('click', () => ctx.loadDetailInstalled());
     document.querySelectorAll('#detailContentTabs .segment-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        ctx.installedTab = btn.dataset.contentTab || 'mod';
+        ctx.installedTab = btn.dataset.contentTab || 'all';
         ctx.syncContentTabs();
         ctx.renderDetailGrid();
       });
     });
+    const installedInput = document.getElementById('installedSearchInput');
+    if (installedInput) {
+      installedInput.addEventListener('input', () => {
+        ctx.installedQuery = installedInput.value || '';
+        ctx.renderDetailGrid();
+      });
+    }
     const detailDelete = document.getElementById('detailDeleteButton');
     if (detailDelete) {
       detailDelete.addEventListener('click', async () => {
@@ -501,7 +520,7 @@
           window.showView('instances');
           await ctx.loadInstances();
         } catch (err) {
-          toast(fmt(tr('inst.deleteFail', 'Delete failed: {msg}'), { msg: err.message }), 'error');
+          toast(fmt(tr('inst.deleteFail', 'Delete failed: {msg}'), { msg: cleanError(err) }), 'error');
         }
       });
     }
@@ -515,7 +534,7 @@
           const mb = res && res.bytes ? ` (${Math.round(res.bytes / 1048576)} MB)` : '';
           toast(fmt(tr('inst.backedUp', 'Backup saved: {file}{mb}.'), { file: res?.file || '', mb }), 'ok');
         } catch (err) {
-          toast(fmt(tr('inst.backupFail', 'Backup failed: {msg}'), { msg: err.message }), 'error');
+          toast(fmt(tr('inst.backupFail', 'Backup failed: {msg}'), { msg: cleanError(err) }), 'error');
         } finally {
           detailBackupBtn.disabled = false;
         }
@@ -536,7 +555,7 @@
         try {
           await bridge().setActiveInstance(ctx.detailId);
         } catch (err) {
-          toast(fmt(tr('inst.selectFail', 'Select failed: {msg}'), { msg: err.message }), 'error');
+          toast(fmt(tr('inst.selectFail', 'Select failed: {msg}'), { msg: cleanError(err) }), 'error');
           return;
         }
         notifyChanged();
@@ -554,7 +573,7 @@
           await ctx.loadInstances();
           toast(fmt(tr('inst.selected', 'Selected {name}.'), { name: ctx.detailName || 'Instance' }), 'ok');
         } catch (err) {
-          toast(fmt(tr('inst.selectFail', 'Select failed: {msg}'), { msg: err.message }), 'error');
+          toast(fmt(tr('inst.selectFail', 'Select failed: {msg}'), { msg: cleanError(err) }), 'error');
         }
       });
     }
