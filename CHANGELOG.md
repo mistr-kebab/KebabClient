@@ -2,6 +2,33 @@
 
 All notable changes to KebabClient are documented here.
 
+## [0.3.7] – 2026-10-11
+
+- **Java per instance**: each instance can override Java executable, max memory
+  and JVM args from a new toolbar button; the global Java panel is gone. Memory
+  is a slider (100 MB steps, dots on every GB, exact 16 GB reachable) with a
+  typeable GB field, stored in MB with automatic migration.
+- **Modrinth search**: only versions matching the instance (loader + Minecraft
+  version) are listed; API and downloads retry with backoff, errors are short
+  plain-language sentences.
+- **Instance view**: "All" tab (default) plus live search across installed
+  content; installed cards stay until you leave the page; new "Update all"
+  icon; detail page tightened up.
+- **Toasts**: stack behind a single card, fan out on hover, status icons,
+  deduplicated, per-kind durations.
+- **Dialogs**: all native confirm/prompt popups replaced with client modals;
+  skins can be named at upload and renamed later (pencil button).
+- **Outfit tab**: reworked into one preview card (controls merged in, reload
+  in the header, toggle switches); Mojang profile caching and retry stop the
+  429 bursts.
+- **Home tab**: playtime chart of the last 7 days plus installed/latest
+  version rows; the window reopens as left (maximized included).
+- **Look**: hero glow and banner rotation removed, Friends nav hidden until
+  the feature exists, icon fallbacks instead of placeholder glyphs, no more
+  em dashes anywhere.
+- **Loading**: skeleton placeholders for instances, installed content, search
+  results, servers and version lists.
+
 ## [0.3.6] – 2026-10-11
 
 - **Modrinth search**: only content with a matching version for the open
@@ -34,7 +61,7 @@ All notable changes to KebabClient are documented here.
   every game launch (also after login and hourly in the background).
   Banned accounts are blocked with a ban screen (reason, username, Discord
   appeal hint, re-check button). Fail-open on network errors, timeouts and
-  rate limits — offline users are never blocked. Ping telemetry untouched.
+  rate limits, offline users are never blocked. Ping telemetry untouched.
 - **Ban dialog**: compact layout with red-tinted icon and reason box, plus
   an "Appeal ban" button that opens the Discord invite
   (`https://discord.com/invite/kSSRXqtb8S`) in the external browser.
@@ -56,7 +83,7 @@ All notable changes to KebabClient are documented here.
   again and re-applied to late fragments.
 - **Broken English locale (fixed)**: `en.json` contained one invalid line
   (single-quoted string), so the whole English locale failed to parse and
-  `i18n.t()` threw on the first `apply()` — aborting the settings init
+  `i18n.t()` threw on the first `apply()`, aborting the settings init
   before any listener was bound. The line is fixed, `t()` can no longer
   throw on a missing table, and a `locales` test suite (JSON validity +
   de/en key parity) guards against regression.

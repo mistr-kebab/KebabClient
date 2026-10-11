@@ -9,6 +9,7 @@ function register(ipcMain, ctx) {
     settings: appSettings.getSettings(),
     dataDir: appSettings.getDataDirInfo(),
     ramOptions: appSettings.RAM_OPTIONS,
+    ramRange: { min: appSettings.RAM_MIN_MB, max: appSettings.RAM_MAX_MB, step: appSettings.RAM_STEP_MB },
     threadOptions: appSettings.THREAD_OPTIONS,
   }));
   ipcMain.handle('settings:update', async (_e, args) => ({

@@ -9,7 +9,7 @@ const os = require('node:os');
 // launcher only reads an external `.env` placed next to the source (dev) or
 // next to the portable `.exe`. Real environment variables always win.
 // IMPORTANT: `.env` must NEVER contain secrets (no tokens, passwords or
-// client secrets) — only public, non-sensitive IDs/paths (see .env.example).
+// client secrets) - only public, non-sensitive IDs/paths (see .env.example).
 function loadDotEnv() {
   const candidates = [];
   try {

@@ -9,31 +9,51 @@
             <i data-lucide="person-standing" class="panel-icon"></i>
             <span id="skinPlayerLabel" data-i18n="skins.preview">Preview</span>
           </h3>
+          <button
+            type="button"
+            class="icon-btn"
+            id="reloadSkinButton"
+            title="Reload preview"
+            data-i18n-title="skins.reload"
+            aria-label="Reload preview"
+            data-i18n-aria="skins.reload"
+          >
+            <i data-lucide="rotate-ccw"></i>
+          </button>
         </div>
         <div class="skin-stage" id="skinStage">
           <canvas id="skinCanvas" class="skin-canvas" width="320" height="320"></canvas>
         </div>
-        <label class="check-row" for="capeVisibleCheck">
-          <input type="checkbox" id="capeVisibleCheck" checked />
+        <label class="switch-row" for="capeVisibleCheck">
+          <span class="switch">
+            <input type="checkbox" id="capeVisibleCheck" checked />
+            <span class="track" aria-hidden="true"></span>
+          </span>
           <span data-i18n="skins.showCape">Show cape in preview</span>
         </label>
-      </div>
-      <div class="panel skin-controls-panel">
-        <div class="row viewer-controls" role="group" aria-label="Preview controls">
+        <div class="skin-controls">
           <select id="skinAnimSelect" class="input input-plain input-sm" aria-label="Preview animation">
             <option value="idle" data-i18n="skins.animIdle" selected>Idle</option>
             <option value="walk" data-i18n="skins.animWalk">Walk</option>
             <option value="run" data-i18n="skins.animRun">Run</option>
             <option value="none" data-i18n="skins.animStatic">Static</option>
           </select>
-          <label class="check-row" for="spinCheck">
-            <input type="checkbox" id="spinCheck" />
+          <label class="switch-row" for="spinCheck">
+            <span class="switch">
+              <input type="checkbox" id="spinCheck" />
+              <span class="track" aria-hidden="true"></span>
+            </span>
             <span data-i18n="skins.spin">Spin</span>
           </label>
-          <label class="check-row" id="elytraRow" hidden>
-            <input type="checkbox" id="elytraCheck" />
-            <span data-i18n="skins.elytra">Elytra view</span>
-          </label>
+          <div class="skin-toggle" id="elytraRow" hidden>
+            <label class="switch-row" for="elytraCheck">
+              <span class="switch">
+                <input type="checkbox" id="elytraCheck" />
+                <span class="track" aria-hidden="true"></span>
+              </span>
+              <span data-i18n="skins.elytra">Elytra view</span>
+            </label>
+          </div>
           <div class="segment" role="group" aria-label="Skin model">
             <button type="button" class="segment-btn is-active" data-variant="classic" data-i18n="skins.classic">
               Classic
@@ -41,18 +61,12 @@
             <button type="button" class="segment-btn" data-variant="slim" data-i18n="skins.slim">Slim</button>
           </div>
         </div>
-        <div class="row">
-          <button type="button" class="btn btn-ghost btn-sm" id="reloadSkinButton">
-            <i data-lucide="rotate-ccw" class="btn-icon"></i>
-            <span data-i18n="skins.reload">Reload preview</span>
-          </button>
-        </div>
+        <button type="button" class="btn btn-play btn-block" id="saveOutfitButton" disabled>
+          <i data-lucide="check" class="btn-icon"></i>
+          <span data-i18n="skins.save">Save</span>
+        </button>
+        <p class="status-line" id="skinStatus"></p>
       </div>
-      <button type="button" class="btn btn-play btn-block" id="saveOutfitButton" disabled>
-        <i data-lucide="check" class="btn-icon"></i>
-        <span data-i18n="skins.save">Save</span>
-      </button>
-      <p class="status-line" id="skinStatus"></p>
     </div>
     <div class="skin-gallerycol">
       <div class="skin-toolbar">

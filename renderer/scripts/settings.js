@@ -1,7 +1,7 @@
 'use strict';
 
 (function () {
-  const { bridge, toast, tr, fmt } = window.launcherUtil;
+  const { bridge, toast, tr, fmt, confirmDialog } = window.launcherUtil;
 
   const ACCENTS = {
     amber: { label: 'Amber', accent: '#e8a020', strong: '#f5b93c', rgb: '232, 160, 32', ink: '#1a1204' },
@@ -120,12 +120,7 @@
       if (window.i18n) window.i18n.initLanguage(currentLanguage);
       fillThemeSelects();
       applyTheme(s.theme && s.theme.accent, s.theme && s.theme.mode);
-      fillSelect('javaRamSelect', data.ramOptions || [2, 4, 6, 8, 12, 16], s.java && s.java.xmx, ' GB');
       fillSelect('threadSelect', data.threadOptions || [2, 4, 8, 16], s.downloads && s.downloads.threads, '');
-      const javaPath = document.getElementById('javaPathInput');
-      const javaArgs = document.getElementById('javaArgsInput');
-      if (javaPath) javaPath.value = (s.java && s.java.path) || '';
-      if (javaArgs) javaArgs.value = (s.java && s.java.extraArgs) || '';
       const dirLabel = document.getElementById('dataDirLabel');
       if (dirLabel) {
         const current = (data.dataDir && data.dataDir.current) || '';
@@ -195,41 +190,6 @@
         }
       });
     });
-    const saveJava = document.getElementById('saveJavaButton');
-    if (saveJava) {
-      saveJava.addEventListener('click', async () => {
-        const pathInput = document.getElementById('javaPathInput');
-        const ramSelect = document.getElementById('javaRamSelect');
-        const argsInput = document.getElementById('javaArgsInput');
-        try {
-          await bridge().updateSettings({
-            java: {
-              path: pathInput ? pathInput.value : '',
-              xmx: ramSelect ? Number(ramSelect.value) : 4,
-              extraArgs: argsInput ? argsInput.value : '',
-            },
-          });
-          setStatus('javaStatus', tr('settings.javaApplies', 'Saved. Applies to the next launch.'));
-          toast(tr('settings.javaSaved', 'Java settings saved.'), 'ok');
-        } catch (err) {
-          setStatus('javaStatus', err.message);
-          toast(fmt(tr('settings.saveFail', 'Save failed: {msg}'), { msg: err.message }), 'error');
-        }
-      });
-    }
-    const browseJava = document.getElementById('browseJavaButton');
-    if (browseJava) {
-      browseJava.addEventListener('click', async () => {
-        try {
-          const res = await bridge().browseJava();
-          if (res?.canceled) return;
-          const pathInput = document.getElementById('javaPathInput');
-          if (pathInput) pathInput.value = res.path;
-        } catch (err) {
-          toast(fmt(tr('settings.browseFail', 'Browse failed: {msg}'), { msg: err.message }), 'error');
-        }
-      });
-    }
     const saveDl = document.getElementById('saveDownloadsButton');
     if (saveDl) {
       saveDl.addEventListener('click', async () => {
@@ -257,7 +217,7 @@
             fmt(
               tr(
                 'settings.dirSavedStatus',
-                'Saved ({file}). Restart the app to use it. Nothing is moved automatically — use “Move everything here” to move now.'
+                'Saved ({file}). Restart the app to use it. Nothing is moved automatically, use “Move everything here” to move now.'
               ),
               { file: res.bootstrapFile }
             )
@@ -289,17 +249,19 @@
           setStatus('dataDirStatus', tr('settings.needTarget', 'Enter a destination path first.'));
           return;
         }
-        if (
-          !window.confirm(
-            fmt(
-              tr(
-                'settings.moveConfirm',
-                'Move ALL launcher data to\n{target}\nand switch over? The app must be restarted afterwards. Do not start the game during the move.'
-              ),
-              { target }
-            )
-          )
-        ) {
+        const ok = await confirmDialog({
+          title: tr('settings.moveAll', 'Move everything here'),
+          message: fmt(
+            tr(
+              'settings.moveConfirm',
+              'Move ALL launcher data to\n{target}\nand switch over? The app must be restarted afterwards. Do not start the game during the move.'
+            ),
+            { target }
+          ),
+          confirmLabel: tr('settings.moveAll', 'Move everything here'),
+          danger: false,
+        });
+        if (!ok) {
           return;
         }
         moveDir.disabled = true;

@@ -1,7 +1,7 @@
 'use strict';
 
 (function () {
-  const { bridge, toast, el, formatDownloads, cleanError } = window.launcherUtil;
+  const { bridge, toast, el, formatDownloads, cleanError, paintSkeletons } = window.launcherUtil;
   const ctx = window.instancesCtx;
   const { tr, fmt } = ctx;
 
@@ -66,13 +66,16 @@
     );
   }
 
-  function pruneInstalledCards() {
-    const grid = document.getElementById('detailResults');
-    if (!grid) return;
-    grid.querySelectorAll('[data-project-id]').forEach(card => {
-      if (ctx.installedProjectIds.has(card.dataset.projectId)) card.remove();
-    });
-    showEmptyResultsMessage();
+  function markInstalled(btn) {
+    if (!btn) return;
+    btn.disabled = true;
+    btn.textContent = '';
+    const ok = document.createElement('i');
+    ok.setAttribute('data-lucide', 'check');
+    ok.className = 'btn-icon';
+    btn.appendChild(ok);
+    btn.appendChild(el('span', '', tr('inst.installedBtn', 'Installed')));
+    if (window.refreshIcons) window.refreshIcons();
   }
 
   function renderDetailResults(results, append) {
@@ -99,8 +102,11 @@
         img.src = mod.iconUrl;
         top.appendChild(img);
       } else {
-        const fallback = el('span', 'mod-icon mod-icon-fallback', '◈');
+        const fallback = el('span', 'mod-icon mod-icon-fallback');
         fallback.setAttribute('aria-hidden', 'true');
+        const fallbackIcon = document.createElement('i');
+        fallbackIcon.setAttribute('data-lucide', 'package');
+        fallback.appendChild(fallbackIcon);
         top.appendChild(fallback);
       }
       const main = el('div', 'mod-main');
@@ -152,7 +158,7 @@
             );
             await ctx.loadDetailInstalled();
             void ctx.checkForUpdates(true);
-            pruneInstalledCards();
+            markInstalled(btn);
           } catch (err) {
             toast(fmt(tr('inst.installFail', 'Install failed: {msg}'), { msg: cleanError(err) }), 'error');
             btn.disabled = false;
@@ -197,6 +203,10 @@
     const searching = resultQ.length > 0;
     resultLoading = true;
     resultStatus();
+    if (reset) {
+      const grid = document.getElementById('detailResults');
+      paintSkeletons(grid, 'card', 6);
+    }
     try {
       const params = {
         limit: RESULT_LIMIT,
@@ -212,6 +222,8 @@
       resultOffset += typeof res.fetched === 'number' ? res.fetched : (res.results || []).length;
     } catch (err) {
       const msg = cleanError(err);
+      const grid = document.getElementById('detailResults');
+      if (grid && grid.querySelector('.skel')) grid.textContent = '';
       const statusEl = document.getElementById('detailSearchStatus');
       if (statusEl)
         statusEl.textContent = searching
@@ -344,7 +356,7 @@
     if (hasFiles) {
       return tr(
         'inst.dropAdmin',
-        'Drop was blocked (Windows strips file drops when the app runs as administrator — restart it normally or use the file button).'
+        'Drop was blocked (Windows strips file drops when the app runs as administrator, restart it normally or use the file button).'
       );
     }
     return tr('inst.dropHint', 'Drop files from Explorer (not browser content).');

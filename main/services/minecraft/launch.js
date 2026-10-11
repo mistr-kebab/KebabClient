@@ -178,9 +178,9 @@ async function launchGame(instanceId, serverAddr) {
   if (!jvmArgs.includes('-cp')) {
     jvmArgs.push('-cp', classpath);
   }
-  const javaOpts = javaSettings();
-  if (javaOpts.xmx > 0 && !jvmArgs.some(a => /^-Xmx/i.test(a))) {
-    jvmArgs.unshift(`-Xmx${javaOpts.xmx}G`);
+  const javaOpts = javaSettings(instance);
+  if (javaOpts.xmxMb > 0 && !jvmArgs.some(a => /^-Xmx/i.test(a))) {
+    jvmArgs.unshift(`-Xmx${javaOpts.xmxMb}M`);
   }
   const extra = javaOpts.extraArgs.split(/\s+/).filter(Boolean);
   if (extra.length) jvmArgs.push(...extra);
@@ -189,7 +189,7 @@ async function launchGame(instanceId, serverAddr) {
   const requiredMajor = requiredJavaMajor(versionJson);
   const java = await ensureJavaRuntime(requiredMajor, (ratio, label) => {
     emit('game:progress', { phase: 'java', ratio, label, instanceId: instance.id, instanceName: instance.name });
-  });
+  }, instance);
   let launchJvmArgs = jvmArgs;
   const javaMajor = await getJavaMajor(java).catch(() => null);
   if (
@@ -208,7 +208,7 @@ async function launchGame(instanceId, serverAddr) {
   emit('game:status', { running: true, pid: null, instanceId: instance.id });
   emit('game:log', {
     stream: 'system',
-    line: `Launching ${instance.name} (${variant}) as ${profile.name} [java: ${java}, needs Java ${requiredMajor}+, Xmx: ${javaOpts.xmx}G]`,
+    line: `Launching ${instance.name} (${variant}) as ${profile.name} [java: ${java}, needs Java ${requiredMajor}+, Xmx: ${javaOpts.xmxMb}M]`,
   });
 
   child = spawn(java, args, { cwd: inst, env: { ...process.env } });

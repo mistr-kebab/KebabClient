@@ -1,7 +1,7 @@
 'use strict';
 
 const path = require('node:path');
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, screen } = require('electron');
 const store = require('./store');
 const auth = require('./services/auth');
 const minecraft = require('./services/minecraft');
@@ -16,10 +16,61 @@ function getWindow() {
   return mainWindow;
 }
 
+function loadWindowState() {
+  try {
+    const w = store.loadState().window;
+    if (!w || typeof w !== 'object') return null;
+    const maximized = w.maximized === true;
+    let bounds = null;
+    const b = w.bounds;
+    if (
+      b &&
+      [b.x, b.y, b.width, b.height].every(Number.isFinite) &&
+      b.width >= 400 &&
+      b.height >= 300
+    ) {
+      const area = screen.getDisplayMatching({
+        x: b.x,
+        y: b.y,
+        width: b.width,
+        height: b.height,
+      }).workArea;
+      if (
+        b.x + 100 > area.x &&
+        b.x + 100 < area.x + area.width &&
+        b.y + 50 > area.y &&
+        b.y + 50 < area.y + area.height
+      ) {
+        bounds = { x: Math.round(b.x), y: Math.round(b.y), width: Math.round(b.width), height: Math.round(b.height) };
+      }
+    }
+    return { bounds, maximized };
+  } catch {
+    return null;
+  }
+}
+
+function saveWindowState(win) {
+  try {
+    if (!win || win.isDestroyed()) return;
+    const maximized = win.isMaximized();
+    const prev = store.loadState().window;
+    store.saveState({
+      window: {
+        maximized,
+        bounds: maximized ? (prev && prev.bounds) || null : win.getBounds(),
+      },
+    });
+  } catch {}
+}
+
 function createWindow() {
+  const saved = loadWindowState();
   mainWindow = new BrowserWindow({
-    width: 1180,
-    height: 760,
+    width: (saved && saved.bounds && saved.bounds.width) || 1180,
+    height: (saved && saved.bounds && saved.bounds.height) || 760,
+    x: saved && saved.bounds ? saved.bounds.x : undefined,
+    y: saved && saved.bounds ? saved.bounds.y : undefined,
     minWidth: 960,
     minHeight: 620,
     backgroundColor: '#000000',
@@ -39,6 +90,12 @@ function createWindow() {
     if (!url.startsWith('file://')) event.preventDefault();
   });
   mainWindow.loadFile(path.join(__dirname, '..', 'renderer', 'index.html'));
+  if (saved && saved.maximized) {
+    try {
+      mainWindow.maximize();
+    } catch {}
+  }
+  mainWindow.on('close', () => saveWindowState(mainWindow));
   mainWindow.on('closed', () => {
     mainWindow = null;
   });

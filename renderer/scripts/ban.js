@@ -19,7 +19,7 @@
     const wrap = el('div', 'ban-field');
     wrap.appendChild(el('span', 'ban-field-label', label));
     // textContent only: reason/username come from the server.
-    wrap.appendChild(el('span', 'ban-field-value', value || '—'));
+      wrap.appendChild(el('span', 'ban-field-value', value || '-'));
     return wrap;
   }
 
@@ -111,7 +111,7 @@
           showBanScreen(res);
         } else {
           closeBanScreen();
-          toast(tr('ban.cleared', 'Ban lifted — have fun!'), 'ok');
+          toast(tr('ban.cleared', 'Ban lifted, have fun!'), 'ok');
         }
       } catch (err) {
         toast(fmt(tr('ban.checkFail', 'Check failed: {msg}'), { msg: err.message }), 'error');

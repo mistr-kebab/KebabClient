@@ -1,7 +1,7 @@
 'use strict';
 
 (function () {
-  const { bridge, toast, el, cleanError } = window.launcherUtil;
+  const { bridge, toast, el, cleanError, confirmDialog } = window.launcherUtil;
   const ctx = window.instancesCtx;
   const { tr, fmt, loaderLabel, localeDate, notifyChanged, updateKey } = ctx;
 
@@ -121,8 +121,11 @@
       img.src = m.icon;
       head.appendChild(img);
     } else {
-      const fb = el('span', 'modal-icon modal-icon-fallback', '◈');
+      const fb = el('span', 'modal-icon modal-icon-fallback');
       fb.setAttribute('aria-hidden', 'true');
+      const fbIcon = document.createElement('i');
+      fbIcon.setAttribute('data-lucide', 'package');
+      fb.appendChild(fbIcon);
       head.appendChild(fb);
     }
     head.appendChild(el('h3', 'modal-title', tr('inst.switchVersion', 'Switch version')));
@@ -302,7 +305,8 @@
       }
     });
 
-    list.appendChild(el('p', 'muted small', tr('inst.loadingPopular', 'Loading popular content…')));
+    list.textContent = '';
+    for (let i = 0; i < 5; i++) list.appendChild(el('div', 'skel skel-row'));
     void (async () => {
       try {
         const cacheKey = `${projectId}|${modalDetailId}|${key}`;
@@ -356,8 +360,11 @@
       img.src = m.icon;
       top.appendChild(img);
     } else {
-      const fb = el('span', 'card-icon card-icon-fallback', '◈');
+      const fb = el('span', 'card-icon card-icon-fallback');
       fb.setAttribute('aria-hidden', 'true');
+      const fbIcon = document.createElement('i');
+      fbIcon.setAttribute('data-lucide', 'package');
+      fb.appendChild(fbIcon);
       top.appendChild(fb);
     }
     const main = el('div', 'card-main');
@@ -459,12 +466,14 @@
     trash.setAttribute('data-lucide', 'trash-2');
     del.appendChild(trash);
     del.addEventListener('click', async () => {
-      if (
-        !window.confirm(
-          fmt(tr('inst.delContentConfirm', 'Delete “{name}” from this instance?'), { name: m.name || m.file })
-        )
-      )
-        return;
+      const name = m.name || m.file;
+      const ok = await confirmDialog({
+        title: fmt(tr('inst.deleteTitle', 'Delete {name}'), { name }),
+        message: fmt(tr('inst.delContentConfirm', 'Delete “{name}” from this instance?'), { name }),
+        confirmLabel: tr('actions.delete', 'Delete'),
+        danger: true,
+      });
+      if (!ok) return;
       try {
         await bridge().uninstallContent(m.file, key, ctx.detailId);
         toast(fmt(tr('inst.removedToast', 'Removed {name}.'), { name: m.name || m.file }), 'ok');
@@ -478,6 +487,177 @@
     card.appendChild(foot);
     return card;
   }
+  let javaModal = null;
+
+  function closeJavaModal() {
+    if (javaModal) {
+      try {
+        javaModal.remove();
+      } catch {}
+      javaModal = null;
+    }
+    document.removeEventListener('keydown', onJavaModalKey);
+  }
+
+  function onJavaModalKey(e) {
+    if (e && e.key === 'Escape') closeJavaModal();
+  }
+
+  async function openJavaModal() {
+    if (!ctx.detailId) return;
+    let data = null;
+    try {
+      data = await bridge().getInstanceJava(ctx.detailId);
+    } catch (err) {
+      toast(fmt(tr('inst.javaSaveFail', 'Save failed: {msg}'), { msg: cleanError(err) }), 'error');
+      return;
+    }
+    if (!ctx.detailId) return;
+    closeJavaModal();
+    const modalId = ctx.detailId;
+    const global = (data && data.global) || {};
+    const own = (data && data.instance) || null;
+    const range = (data && data.ram) || {};
+
+    const overlay = el('div', 'modal-backdrop');
+    const modal = el('div', 'modal version-modal java-modal');
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-label', tr('inst.javaTitle', 'Java settings'));
+    overlay.appendChild(modal);
+    const head = el('div', 'modal-head');
+    const iconBox = el('span', 'confirm-icon');
+    iconBox.setAttribute('aria-hidden', 'true');
+    const headIco = document.createElement('i');
+    headIco.setAttribute('data-lucide', 'settings');
+    iconBox.appendChild(headIco);
+    head.appendChild(iconBox);
+    head.appendChild(el('h3', 'modal-title', tr('inst.javaTitle', 'Java settings')));
+    const xBtn = el('button', 'icon-btn modal-close', '');
+    xBtn.type = 'button';
+    xBtn.setAttribute('aria-label', tr('actions.close', 'Close'));
+    const xIco = document.createElement('i');
+    xIco.setAttribute('data-lucide', 'x');
+    xBtn.appendChild(xIco);
+    xBtn.addEventListener('click', closeJavaModal);
+    head.appendChild(xBtn);
+    modal.appendChild(head);
+
+    const body = el('div', 'java-body');
+    const switchRow = el('div', 'row');
+    const sw = el('label', 'switch');
+    const ownBox = document.createElement('input');
+    ownBox.type = 'checkbox';
+    ownBox.checked = !!own;
+    const track = el('span', 'track');
+    track.setAttribute('aria-hidden', 'true');
+    sw.appendChild(ownBox);
+    sw.appendChild(track);
+    switchRow.appendChild(sw);
+    switchRow.appendChild(el('span', '', tr('inst.javaOwn', 'Custom settings for this instance')));
+    body.appendChild(switchRow);
+    const globalLine = el(
+      'p',
+      'muted small',
+      fmt(tr('inst.javaGlobalLine', 'Global: {path} · {ram}'), {
+        path: global.path || tr('inst.javaAuto', 'Auto'),
+        ram: window.formatRamGb ? window.formatRamGb(global.xmxMb || 4096) : `${global.xmxMb || 4096} MB`,
+      })
+    );
+    body.appendChild(globalLine);
+    body.appendChild(el('p', 'muted small', tr('inst.javaOwnHint', 'When off, the global settings apply.')));
+
+    const fields = el('div', 'java-fields');
+    const pathField = el('label', 'form-field');
+    pathField.appendChild(el('span', '', tr('inst.javaPath', 'Java executable (empty = auto-detect)')));
+    const pathRow = el('div', 'java-row');
+    const pathInput = document.createElement('input');
+    pathInput.className = 'input';
+    pathInput.value = (own && own.path) || '';
+    pathInput.placeholder = global.path || tr('inst.javaAuto', 'Auto');
+    pathInput.autocomplete = 'off';
+    pathInput.spellcheck = false;
+    pathRow.appendChild(pathInput);
+    const browseBtn = el('button', 'btn btn-ghost btn-sm', tr('inst.javaBrowse', 'Browse…'));
+    browseBtn.type = 'button';
+    browseBtn.addEventListener('click', async () => {
+      try {
+        const res = await bridge().browseJava();
+        if (res && !res.canceled && res.path) pathInput.value = res.path;
+      } catch (err) {
+        toast(fmt(tr('settings.browseFail', 'Browse failed: {msg}'), { msg: cleanError(err) }), 'error');
+      }
+    });
+    pathRow.appendChild(browseBtn);
+    pathField.appendChild(pathRow);
+    fields.appendChild(pathField);
+
+    const ramField = el('label', 'form-field');
+    ramField.appendChild(el('span', '', tr('inst.javaRam', 'Max memory')));
+    const slider = window.createRamSlider({
+      min: range.min,
+      max: range.max,
+      step: range.step,
+      value: (own && own.xmxMb) || global.xmxMb || 4096,
+    });
+    ramField.appendChild(slider.element);
+    fields.appendChild(ramField);
+
+    const argsField = el('label', 'form-field');
+    argsField.appendChild(el('span', '', tr('inst.javaArgs', 'Extra JVM arguments')));
+    const argsInput = document.createElement('input');
+    argsInput.className = 'input';
+    argsInput.value = (own && typeof own.extraArgs === 'string' ? own.extraArgs : '');
+    argsInput.placeholder = global.extraArgs || tr('inst.javaArgsPh', 'e.g. -XX:+UseG1GC');
+    argsInput.autocomplete = 'off';
+    argsInput.spellcheck = false;
+    argsField.appendChild(argsInput);
+    fields.appendChild(argsField);
+    body.appendChild(fields);
+    modal.appendChild(body);
+
+    const foot = el('div', 'modal-foot');
+    const cancelBtn = el('button', 'btn btn-ghost', tr('inst.cancelBtn', 'Cancel'));
+    cancelBtn.type = 'button';
+    cancelBtn.addEventListener('click', closeJavaModal);
+    foot.appendChild(cancelBtn);
+    const saveBtn = el('button', 'btn btn-play', tr('inst.javaSave', 'Save'));
+    saveBtn.type = 'button';
+    foot.appendChild(saveBtn);
+    modal.appendChild(foot);
+    document.body.appendChild(overlay);
+    javaModal = overlay;
+    document.addEventListener('keydown', onJavaModalKey);
+    overlay.addEventListener('mousedown', e => {
+      if (e.target === overlay) closeJavaModal();
+    });
+    if (window.refreshIcons) window.refreshIcons();
+
+    function syncFields() {
+      const on = ownBox.checked;
+      pathInput.disabled = !on;
+      argsInput.disabled = !on;
+      slider.input.disabled = !on;
+      fields.classList.toggle('is-off', !on);
+    }
+    ownBox.addEventListener('change', syncFields);
+    syncFields();
+
+    saveBtn.addEventListener('click', async () => {
+      saveBtn.disabled = true;
+      try {
+        const payload = ownBox.checked
+          ? { path: pathInput.value.trim(), xmxMb: slider.get(), extraArgs: argsInput.value }
+          : null;
+        await bridge().setInstanceJava(modalId, payload);
+        closeJavaModal();
+        toast(fmt(tr('inst.javaSaved', 'Java settings saved for {name}.'), { name: ctx.detailName || 'Instance' }), 'ok');
+      } catch (err) {
+        toast(fmt(tr('inst.javaSaveFail', 'Save failed: {msg}'), { msg: cleanError(err) }), 'error');
+        saveBtn.disabled = false;
+      }
+    });
+  }
   ctx.contentCard = contentCard;
 
   window.whenViewsReady(() => {
@@ -485,6 +665,8 @@
     if (backBtn) backBtn.addEventListener('click', () => window.showView('instances'));
     const detailReload = document.getElementById('detailReloadButton');
     if (detailReload) detailReload.addEventListener('click', () => ctx.loadDetailInstalled());
+    const detailJava = document.getElementById('detailJavaButton');
+    if (detailJava) detailJava.addEventListener('click', () => openJavaModal());
     document.querySelectorAll('#detailContentTabs .segment-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         ctx.installedTab = btn.dataset.contentTab || 'all';
@@ -504,12 +686,13 @@
       detailDelete.addEventListener('click', async () => {
         if (!ctx.detailId) return;
         const name = ctx.detailName || 'Instance';
-        if (
-          !window.confirm(
-            fmt(tr('inst.deleteConfirm', 'Delete instance “{name}” including its mods and worlds?'), { name })
-          )
-        )
-          return;
+        const ok = await confirmDialog({
+          title: tr('inst.deleteTitleShort', 'Delete instance'),
+          message: fmt(tr('inst.deleteConfirm', 'Delete instance “{name}” including its mods and worlds?'), { name }),
+          confirmLabel: tr('actions.delete', 'Delete'),
+          danger: true,
+        });
+        if (!ok) return;
         try {
           await bridge().deleteInstance(ctx.detailId);
           toast(fmt(tr('inst.deleted', 'Deleted {name}.'), { name }), 'ok');

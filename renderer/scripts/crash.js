@@ -53,7 +53,7 @@
     const iconWrap = el('span', 'crash-banner-icon');
     iconWrap.appendChild(iconNode('triangle-alert'));
     banner.appendChild(iconWrap);
-    banner.appendChild(el('span', 'crash-banner-text', tr('crash.detected', 'Crash detected — diagnosis available.')));
+      banner.appendChild(el('span', 'crash-banner-text', tr('crash.detected', 'Crash detected, diagnosis available.')));
     const actions = el('span', 'crash-banner-actions');
     const goBtn = el('button', 'btn btn-primary btn-sm', tr('crash.analyze', 'Analyze'));
     goBtn.type = 'button';
@@ -134,7 +134,7 @@
     if (body) content.appendChild(el('p', 'crash-diag', body));
     const detailLine = fixDetailLine(fixType, res && res.fixPayload);
     if (detailLine) content.appendChild(el('p', 'muted', detailLine));
-    if (!hasFix) content.appendChild(el('p', 'muted', tr('crash.noFixHint', 'No automatic fix known — please check the log manually.')));
+      if (!hasFix) content.appendChild(el('p', 'muted', tr('crash.noFixHint', 'No automatic fix known, please check the log manually.')));
 
     const raw = res && res.rawExcerpt ? String(res.rawExcerpt) : '';
     if (raw) {

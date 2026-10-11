@@ -1,7 +1,7 @@
 'use strict';
 
 (function () {
-  const { bridge, toast, el, tr, fmt } = window.launcherUtil;
+  const { bridge, toast, el, tr, fmt, confirmDialog, promptDialog, paintSkeletons } = window.launcherUtil;
 
   function formStatus(text, isError) {
     const s = document.getElementById('serverFormStatus');
@@ -78,7 +78,7 @@
       if (server.disabled) motdEl.textContent = tr('servers.disabled', 'Disabled');
       else if (!st || st.state === 'loading') motdEl.textContent = tr('servers.pinging', 'Pinging…');
       else if (st.state === 'ok') motdEl.textContent = (st.data && st.data.motd) || tr('servers.noMotd', 'No MOTD.');
-      else motdEl.textContent = tr('servers.offline', 'Offline — ping failed.');
+      else motdEl.textContent = tr('servers.offline', 'Offline, ping failed.');
     }
     const subEl = li.querySelector('.server-sub');
     if (subEl) {
@@ -376,6 +376,9 @@
   }
 
   async function reload() {
+    const list = document.getElementById('serverList');
+    const first = list && !list.children.length;
+    if (first) paintSkeletons(list, 'row', 5);
     try {
       const [servers, categories] = await Promise.all([bridge().listServers(), bridge().listCategories()]);
       lastCategories = categories || [];
@@ -388,6 +391,7 @@
       pingAll();
       document.dispatchEvent(new CustomEvent('servers:changed'));
     } catch (err) {
+      if (first && list) list.textContent = '';
       formStatus(fmt(tr('servers.loadFail', 'Could not load servers: {msg}'), { msg: err.message }), true);
     }
   }
@@ -486,10 +490,13 @@
   }
 
   async function removeCategory(cat) {
-    if (
-      !window.confirm(fmt(tr('servers.catConfirm', 'Delete category “{name}”? Servers are kept.'), { name: cat.name }))
-    )
-      return;
+    const ok = await confirmDialog({
+      title: fmt(tr('servers.deleteCategory', 'Delete category “{name}”'), { name: cat.name }),
+      message: fmt(tr('servers.catConfirm', 'Delete category “{name}”? Servers are kept.'), { name: cat.name }),
+      confirmLabel: tr('actions.delete', 'Delete'),
+      danger: true,
+    });
+    if (!ok) return;
     try {
       await bridge().deleteCategory(cat.id);
       if (activeCatFilter === cat.id) activeCatFilter = 'all';
@@ -502,7 +509,12 @@
   }
 
   async function renameCategory(cat) {
-    const next = window.prompt(fmt(tr('servers.renamePrompt', 'New name for “{name}”:'), { name: cat.name }), cat.name);
+    const next = await promptDialog({
+      title: fmt(tr('servers.renameCategory', 'Rename category “{name}”'), { name: cat.name }),
+      initialValue: cat.name,
+      confirmLabel: tr('servers.save', 'Save changes'),
+      maxLength: 64,
+    });
     if (next === null) return;
     if (!next.trim()) {
       toast(tr('servers.catEmpty', 'Category name is required.'), 'error');

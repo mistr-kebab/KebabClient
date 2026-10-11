@@ -88,6 +88,17 @@
   background: rgba(229, 72, 77, 0.08);
 }
 
+.btn-danger {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #c93a3f;
+  border-color: #c93a3f;
+}
+
 .update-btn[hidden] {
   display: none;
 }
@@ -244,6 +255,221 @@
   font-size: var(--text-xs);
   color: var(--text-dim);
   min-height: 16px;
+}
+
+.ram-slider {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-width: 0;
+}
+
+.ram-top {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.ram-range {
+  flex: 1;
+  min-width: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  height: 22px;
+  background: transparent;
+  cursor: pointer;
+  --fill: 20%;
+}
+
+.ram-range::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: linear-gradient(90deg, var(--accent) var(--fill), var(--bg-active) var(--fill));
+}
+
+.ram-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  margin-top: -5px;
+  border-radius: 50%;
+  background: var(--accent-strong);
+  border: 2px solid var(--bg-raised);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+.ram-range::-moz-range-track {
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--bg-active);
+}
+
+.ram-range::-moz-range-progress {
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--accent);
+}
+
+.ram-range::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--accent-strong);
+  border: 2px solid var(--bg-raised);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+.ram-range:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.ram-val {
+  flex: 0 0 auto;
+  min-width: 64px;
+  text-align: right;
+  font-family: var(--font-mono);
+  font-size: var(--text-md);
+  font-weight: 700;
+  color: var(--text);
+}
+
+.ram-readout {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.ram-num {
+  width: 58px;
+  text-align: right;
+  font-family: var(--font-mono);
+  font-size: var(--text-md);
+  font-weight: 700;
+  color: var(--text);
+  background: var(--bg-active);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 3px 6px;
+}
+
+.ram-num:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.ram-unit {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-dim);
+}
+
+.ram-ticks {
+  position: relative;
+  height: 12px;
+  margin: 0 8px;
+}
+
+.ram-tick {
+  position: absolute;
+  top: 3px;
+  width: 6px;
+  height: 6px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--line);
+  transform: translateX(-50%);
+  cursor: pointer;
+}
+
+.ram-tick:hover {
+  transform: translateX(-50%) scale(1.5);
+}
+
+.ram-tick.is-on {
+  background: var(--accent-strong);
+}
+
+.skel {
+  position: relative;
+  overflow: hidden;
+  background: var(--bg-hover);
+}
+
+.skel::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 20%, rgba(255, 255, 255, 0.07) 50%, transparent 80%);
+  animation: skel-shine 1.3s infinite;
+}
+
+@keyframes skel-shine {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skel::after {
+    animation: none;
+  }
+}
+
+.skel-tile {
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.skel-tile-banner {
+  height: 84px;
+}
+
+.skel-tile-body {
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.skel-line {
+  height: 12px;
+  border-radius: 6px;
+}
+
+.skel-card {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+}
+
+.skel-ic {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  border-radius: var(--radius-sm);
+}
+
+.skel-lines {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.skel-row {
+  height: 46px;
+  border-radius: var(--radius-sm);
 }
 
 .toast-stack {

@@ -1,7 +1,7 @@
 'use strict';
 
 (function () {
-  const { bridge, toast, el, cleanError } = window.launcherUtil;
+  const { bridge, toast, el, cleanError, confirmDialog, paintSkeletons } = window.launcherUtil;
   const ctx = window.instancesCtx;
   const { tr, fmt, loaderLabel, notifyChanged } = ctx;
 
@@ -35,13 +35,13 @@
     const pct = Math.max(0, Math.min(100, Math.round(ratio * 100)));
     prog.hidden = false;
     fill.style.width = `${pct}%`;
-    lab.textContent = label ? `${pct}% — ${label}` : `${pct}%`;
+    lab.textContent = label ? `${pct}% · ${label}` : `${pct}%`;
   }
 
   function onInstanceProgress(p) {
     if (!p || !p.instanceId || typeof p.ratio !== 'number') return;
     if (p.phase === 'mods' || p.phase === 'settings') return;
-    const label = `${p.phase || ''} — ${p.label || ''}`.replace(/^ — | — $/g, '').trim();
+    const label = `${p.phase || ''} · ${p.label || ''}`.replace(/^ · | · $/g, '').trim();
     const done = p.ratio >= 1;
     if (progressTimers.has(p.instanceId)) {
       window.clearTimeout(progressTimers.get(p.instanceId));
@@ -173,14 +173,15 @@
       delBtn.appendChild(trash);
       delBtn.addEventListener('click', async e => {
         e.stopPropagation();
-        if (
-          !window.confirm(
-            fmt(tr('inst.deleteConfirm', 'Delete instance “{name}” including its mods and worlds?'), {
-              name: instance.name,
-            })
-          )
-        )
-          return;
+        const ok = await confirmDialog({
+          title: tr('inst.deleteTitleShort', 'Delete instance'),
+          message: fmt(tr('inst.deleteConfirm', 'Delete instance “{name}” including its mods and worlds?'), {
+            name: instance.name,
+          }),
+          confirmLabel: tr('actions.delete', 'Delete'),
+          danger: true,
+        });
+        if (!ok) return;
         try {
           await bridge().deleteInstance(instance.id);
           toast(fmt(tr('inst.deleted', 'Deleted {name}.'), { name: instance.name }), 'ok');
@@ -240,10 +241,18 @@
   }
 
   async function loadInstances() {
+    const grid = document.getElementById('instanceGrid');
+    const first = grid && !grid.children.length;
+    if (first) paintSkeletons(grid, 'tile', 6);
     try {
       const res = await bridge().listInstances();
       renderTiles(res?.instances || [], res?.activeId);
     } catch (err) {
+      if (first && grid) {
+        grid.textContent = '';
+        grid.appendChild(el('p', 'muted', fmt(tr('inst.loadFail', 'Could not load instances: {msg}'), { msg: cleanError(err) })));
+        if (window.refreshIcons) window.refreshIcons();
+      }
       toast(fmt(tr('inst.loadFail', 'Could not load instances: {msg}'), { msg: cleanError(err) }), 'error');
     }
   }

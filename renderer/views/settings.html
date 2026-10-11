@@ -72,53 +72,6 @@
 
   <div class="panel settings-panel">
     <h3 class="panel-title">
-      <i data-lucide="coffee" class="panel-icon"></i>
-      <span data-i18n="settings.java">Java</span>
-    </h3>
-    <label class="form-field" for="javaPathInput">
-      <span data-i18n="settings.javaPath">Java executable (empty = auto-detect)</span>
-      <input
-        type="text"
-        id="javaPathInput"
-        class="input input-plain"
-        placeholder="auto-detect"
-        autocomplete="off"
-        spellcheck="false"
-      />
-    </label>
-    <div class="row">
-      <button type="button" class="btn btn-ghost btn-sm" id="browseJavaButton">
-        <i data-lucide="folder-search" class="btn-icon"></i>
-        <span data-i18n="settings.browse">Browse…</span>
-      </button>
-    </div>
-    <div class="form-grid">
-      <label class="form-field" for="javaRamSelect">
-        <span data-i18n="settings.maxMem">Max memory (Xmx)</span>
-        <select id="javaRamSelect" class="input input-plain"></select>
-      </label>
-    </div>
-    <label class="form-field" for="javaArgsInput">
-      <span data-i18n="settings.extraArgs">Extra JVM arguments</span>
-      <input
-        type="text"
-        id="javaArgsInput"
-        class="input input-plain"
-        placeholder="-XX:+UseG1GC"
-        autocomplete="off"
-        spellcheck="false"
-      />
-    </label>
-    <div class="row">
-      <button type="button" class="btn btn-primary btn-sm" id="saveJavaButton">
-        <span data-i18n="settings.saveJava">Save Java settings</span>
-      </button>
-    </div>
-    <p class="status-line" id="javaStatus"></p>
-  </div>
-
-  <div class="panel settings-panel">
-    <h3 class="panel-title">
       <i data-lucide="download" class="panel-icon"></i>
       <span data-i18n="settings.downloads">Downloads</span>
     </h3>

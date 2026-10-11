@@ -61,7 +61,7 @@
     const pct = Math.max(0, Math.min(100, Math.round(ratio * 100)));
     wrap.hidden = false;
     bar.style.width = `${pct}%`;
-    text.textContent = label ? `${pct}% — ${label}` : `${pct}%`;
+    text.textContent = label ? `${pct}% · ${label}` : `${pct}%`;
   }
 
   function paintHeroIcon(instance) {
@@ -94,7 +94,7 @@
     if (nameEl) nameEl.textContent = 'KebabClient';
     if (verEl) verEl.textContent = tr('play.noInstance', 'No instance yet');
     if (homeName) homeName.textContent = tr('home.noInstance', 'Noch keine Instanz');
-    if (homeSub) homeSub.textContent = '—';
+    if (homeSub) homeSub.textContent = '-';
     if (pathLabel) pathLabel.textContent = tr('play.getStarted', 'Create an instance to get started.');
     if (launchBtn) launchBtn.disabled = true;
     if (homePlay) homePlay.disabled = true;
@@ -116,18 +116,9 @@
     try {
       const banners = await bridge().getBanners();
       if (!banners || !banners.length) return;
-      let last = null;
-      try {
-        last = window.localStorage.getItem('kebabLastBanner');
-      } catch {}
-      let pool = banners.filter(b => b.name !== last);
-      if (!pool.length) pool = banners;
-      const pick = pool[Math.floor(Math.random() * pool.length)];
+      const pick = banners[0];
       const safeUrl = String(pick.dataUrl || '').replace(/"/g, '%22');
       document.documentElement.style.setProperty('--hero-image', `url("${safeUrl}")`);
-      try {
-        window.localStorage.setItem('kebabLastBanner', pick.name);
-      } catch {}
     } catch {}
   }
 
@@ -281,7 +272,7 @@
           return;
         }
         const ratio = typeof p.ratio === 'number' ? p.ratio : 0;
-        setProgress(ratio, `${p.phase || ''} — ${p.label || ''}`.trim());
+        setProgress(ratio, `${p.phase || ''} · ${p.label || ''}`.trim());
         if (ratio >= 1) window.setTimeout(() => setProgress(null), 2500);
       });
     } catch {}

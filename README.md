@@ -6,18 +6,18 @@ capes, servers, Discord Rich Presence, and automatic updates.
 
 ## Features
 
-- **Play** — downloads and verifies the game via piston-meta, launches it as
+- **Play**: downloads and verifies the game via piston-meta, launches it as
   a child process, streams logs into the log view.
-- **Instances** — one folder per instance (own version + loader), shared
+- **Instances**: one folder per instance (own version + loader), shared
   libraries/assets. Fabric/Quilt install the latest stable loader via their
   meta APIs.
-- **Content** — Modrinth search/install for mods, resource packs, and shaders,
+- **Content**: Modrinth search/install for mods, resource packs, and shaders,
   filtered to the active instance's version and loader.
-- **Skins & capes** — 2D layered preview (front/back, classic/slim), PNG
+- **Skins & capes**: 2D layered preview (front/back, classic/slim), PNG
   validation, upload via Mojang API, cape equip.
-- **Servers** — list written as `servers.dat` into every instance
+- **Servers**: list written as `servers.dat` into every instance
   automatically (on change, on start, before launch).
-- **Extras** — Discord Rich Presence, daily anonymous install ping (packaged
+- **Extras**: Discord Rich Presence, daily anonymous install ping (packaged
   builds only, see `main/telemetry.js`), DE/EN interface, OLED black theme.
 
 ## Quick start
@@ -38,17 +38,17 @@ npm run dev
 ## Sign-in
 
 Sign-in uses our own approved Entra app, shipped with the launcher like
-other launchers ship theirs. Works immediately — just press Sign in in the
+other launchers ship theirs. Works immediately, just press Sign in in the
 account drawer. No configuration needed.
 
 New App IDs return HTTP 403 from Minecraft Services until Mojang approves
-them — request approval at `https://aka.ms/mce-reviewappid`.
+them, request approval at `https://aka.ms/mce-reviewappid`.
 
 ## Configuration
 
 Optional local overrides via `.env` next to the source (dev) or next to the
 portable `.exe` (runtime, external file). Real environment variables always
-win. `.env` is git-ignored — never commit it — and is NEVER bundled into the
+win. `.env` is git-ignored, never commit it, and is NEVER bundled into the
 packaged app (see `package.json` → `build.files`).
 
 `.env` must NEVER contain secrets (no tokens, passwords, or client secrets).
@@ -97,7 +97,7 @@ Lucide (`data-lucide`), vendored locally.
 ## Security
 
 See [SECURITY.md](SECURITY.md) for reporting vulnerabilities. Short version:
-no public issues for security bugs — use private vulnerability reporting.
+no public issues for security bugs, use private vulnerability reporting.
 
 ## Development
 
@@ -106,4 +106,4 @@ with humans handling direction, review, testing, and releases.
 
 ## License
 
-MIT © 2026 KebabDev — see [LICENSE](LICENSE).
+MIT © 2026 KebabDev, see [LICENSE](LICENSE).

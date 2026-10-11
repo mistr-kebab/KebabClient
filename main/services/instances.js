@@ -235,6 +235,24 @@ function renameInstance(id, name) {
   return entry;
 }
 
+function updateInstanceJava(id, java) {
+  const instances = listInstances();
+  const entry = instances.find(i => i.id === id);
+  if (!entry) throw new Error('Instance not found.');
+  if (java === null || java === undefined) {
+    entry.java = null;
+  } else {
+    const { sanitizeJava } = require('../settings');
+    entry.java = sanitizeJava({
+      path: java.path ?? '',
+      xmxMb: java.xmxMb ?? 4096,
+      extraArgs: java.extraArgs ?? '',
+    });
+  }
+  persistInstances(instances);
+  return entry;
+}
+
 function deleteInstance(id) {
   const instances = listInstances();
   const entry = instances.find(i => i.id === id);
@@ -372,9 +390,33 @@ function addPlaytime(id, ms) {
     const instances = listInstances();
     const entry = instances.find(i => i.id === id);
     if (!entry || !(ms > 0)) return;
-    entry.totalPlayMs = (Number(entry.totalPlayMs) || 0) + Math.round(ms);
+    const rounded = Math.round(ms);
+    entry.totalPlayMs = (Number(entry.totalPlayMs) || 0) + rounded;
     persistInstances(instances);
+    const state = loadState();
+    const days = state.playDays && typeof state.playDays === 'object' ? state.playDays : {};
+    const key = dayKey(new Date());
+    days[key] = (Number(days[key]) || 0) + rounded;
+    const cutoff = dayKey(new Date(Date.now() - 31 * 86400000));
+    for (const k of Object.keys(days)) {
+      if (k < cutoff) delete days[k];
+    }
+    saveState({ playDays: days });
   } catch {}
+}
+
+function dayKey(d) {
+  const pad = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+function getPlayDays() {
+  try {
+    const days = loadState().playDays;
+    return days && typeof days === 'object' ? days : {};
+  } catch {
+    return {};
+  }
 }
 
 module.exports = {
@@ -386,12 +428,14 @@ module.exports = {
   createInstance,
   setLoaderVersion,
   renameInstance,
+  updateInstanceJava,
   deleteInstance,
   touchLastPlayed,
   backupInstanceSaves,
   setInstanceIcon,
   clearInstanceIcon,
   addPlaytime,
+  getPlayDays,
   describeInstance,
   provisionalVariantId,
   ensureSeeded,

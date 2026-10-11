@@ -6,31 +6,29 @@ const { dataDir, temurinDownloadUrl } = require('../../config');
 const { emit } = require('./events');
 const { downloadFileResilient } = require('./download');
 
-function javaSettings() {
+function javaSettings(entry) {
   try {
-    const { loadState } = require('../../store');
-    const s = loadState().settings?.java || {};
+    const { getSettings, sanitizeRamMb, sanitizeJvmArgs } = require('../../settings');
+    const s = getSettings().java || {};
     let customPath = String(s.path || '').trim();
     if (customPath && (!path.isAbsolute(customPath) || !fs.existsSync(customPath))) {
       customPath = '';
     }
-    const rawArgs = String(s.extraArgs || '')
-      .trim()
-      .slice(0, 500);
-    const kept = [];
-    for (const token of rawArgs.split(/\s+/).filter(Boolean)) {
-      if (token.includes('\0')) continue;
-      if (/javaagent/i.test(token)) continue;
-      if (/^(-agentlib|-agentpath|-Xbootclasspath|-Xrunjdwp)/i.test(token)) continue;
-      kept.push(token);
-    }
-    return {
+    const out = {
       path: customPath,
-      xmx: [2, 4, 6, 8, 12, 16].includes(Number(s.xmx)) ? Number(s.xmx) : 4,
-      extraArgs: kept.join(' '),
+      xmxMb: sanitizeRamMb(s.xmxMb, 4096),
+      extraArgs: sanitizeJvmArgs(s.extraArgs),
     };
+    const ov = entry && entry.java;
+    if (ov && typeof ov === 'object') {
+      const ownPath = String(ov.path || '').trim();
+      if (ownPath && path.isAbsolute(ownPath) && fs.existsSync(ownPath)) out.path = ownPath;
+      if (ov.xmxMb !== undefined && ov.xmxMb !== null) out.xmxMb = sanitizeRamMb(ov.xmxMb, out.xmxMb);
+      if (typeof ov.extraArgs === 'string') out.extraArgs = sanitizeJvmArgs(ov.extraArgs);
+    }
+    return out;
   } catch {
-    return { path: '', xmx: 4, extraArgs: '' };
+    return { path: '', xmxMb: 4096, extraArgs: '' };
   }
 }
 
@@ -186,7 +184,17 @@ async function downloadBundledJava(major, onProgress) {
   return found;
 }
 
-function persistJavaPath(javaPath) {
+function persistJavaPath(javaPath, instanceEntry) {
+  try {
+    if (instanceEntry && instanceEntry.java) {
+      require('../instances').updateInstanceJava(instanceEntry.id, {
+        path: javaPath,
+        xmxMb: instanceEntry.java.xmxMb,
+        extraArgs: instanceEntry.java.extraArgs,
+      });
+      return;
+    }
+  } catch {}
   try {
     require('../../settings').updateSettings({ java: { path: javaPath } });
   } catch {}
@@ -194,7 +202,7 @@ function persistJavaPath(javaPath) {
 
 const javaSetupInflight = {};
 
-async function ensureJavaRuntime(requiredMajorOrOnProgress, maybeOnProgress) {
+async function ensureJavaRuntime(requiredMajorOrOnProgress, maybeOnProgress, instanceEntry) {
   let requiredMajor = 21;
   let onProgress;
   if (typeof requiredMajorOrOnProgress === 'function') {
@@ -203,7 +211,7 @@ async function ensureJavaRuntime(requiredMajorOrOnProgress, maybeOnProgress) {
     requiredMajor = normalizeJavaMajor(requiredMajorOrOnProgress, 21);
     onProgress = maybeOnProgress;
   }
-  const opts = javaSettings();
+  const opts = javaSettings(instanceEntry || null);
   if (opts.path) {
     if (!isBundledJavaPath(opts.path)) {
       try {
@@ -246,7 +254,7 @@ async function ensureJavaRuntime(requiredMajorOrOnProgress, maybeOnProgress) {
   }
   const bundled = await findBundledJava(requiredMajor);
   if (bundled) {
-    persistJavaPath(bundled);
+    persistJavaPath(bundled, instanceEntry);
     return bundled;
   }
   emit('game:log', {
@@ -270,7 +278,7 @@ async function ensureJavaRuntime(requiredMajorOrOnProgress, maybeOnProgress) {
       `Java download failed (${err?.message || err}). Install Eclipse Temurin manually (https://adoptium.net) or pick java.exe in Settings → Java.`
     );
   }
-  persistJavaPath(fresh);
+  persistJavaPath(fresh, instanceEntry);
   return fresh;
 }
 

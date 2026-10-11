@@ -1,6 +1,5 @@
 <section class="view" id="view-play" aria-label="Play">
   <div class="hero">
-    <div class="hero-glow" aria-hidden="true"></div>
     <div class="hero-top">
       <span class="ver-pill hero-ver" id="heroVer">Minecraft 26.1.2 &middot; Vanilla</span>
       <span class="status-pill" id="heroStatusPill">
@@ -23,24 +22,13 @@
       </span>
       <span class="progress-label" id="dlProgressLabel"></span>
       <div class="hero-actions">
-        <button
-          type="button"
-          class="icon-btn"
-          id="ensureButton"
-          data-i18n-title="play.download"
-          title="Client laden / prüfen"
-          aria-label="Download or verify client"
-          data-i18n-aria="play.download"
-        >
-          <i data-lucide="download"></i>
-        </button>
         <button type="button" class="btn btn-play btn-hero" id="launchButton">
           <i data-lucide="play" class="btn-icon"></i>
           <span data-i18n="home.play">Spielen</span>
         </button>
         <button
           type="button"
-          class="icon-btn"
+          class="btn btn-ghost"
           id="stopButton"
           data-i18n-title="play.stop"
           title="Spiel stoppen"
@@ -48,7 +36,8 @@
           data-i18n-aria="play.stop"
           disabled
         >
-          <i data-lucide="square"></i>
+          <i data-lucide="square" class="btn-icon"></i>
+          <span data-i18n="play.stop">Stop</span>
         </button>
       </div>
     </div>

@@ -73,6 +73,14 @@
         <span class="mini-key" data-i18n="home.totalPlay">Total playtime</span>
         <span class="mini-val" id="homeStatsPlaytime">–</span>
       </div>
+      <div class="mini-row">
+        <span class="mini-key" data-i18n="home.version">Version</span>
+        <span class="mini-val" id="homeStatsVersion">–</span>
+      </div>
+      <div class="mini-row">
+        <span class="mini-key" data-i18n="home.latest">Latest</span>
+        <span class="mini-val" id="homeStatsLatest">–</span>
+      </div>
       <p class="muted small" data-i18n="home.tip">
         Tipp: Fabric / Quilt gibt es pro Instanz über die Detailansicht, inkl. Modrinth-Suche.
       </p>
@@ -83,6 +91,13 @@
         <span data-i18n="home.recent">Zuletzt gespielt</span>
       </h3>
       <div class="recent-list" id="homeRecentList"></div>
+    </div>
+    <div class="panel home-card">
+      <h3 class="panel-title">
+        <i data-lucide="clock" class="panel-icon"></i>
+        <span data-i18n="home.playDays">Letzte 7 Tage</span>
+      </h3>
+      <div id="homePlayDays"></div>
     </div>
   </div>
 </section>

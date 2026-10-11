@@ -178,9 +178,9 @@ describe('crashdoctor', () => {
   it('applies the ram fix through settings', async () => {
     seedInstance('inst-5');
     const res = await crashDoctor.applyFix('inst-5', 'increase_ram', { toGb: 6 });
-    assert.deepStrictEqual(res, { ok: true, xmx: 6 });
+    assert.deepStrictEqual(res, { ok: true, xmxMb: 6144 });
     const { loadState } = require('../main/store');
-    assert.strictEqual(loadState().settings.java.xmx, 6);
+    assert.strictEqual(loadState().settings.java.xmxMb, 6144);
   });
 
   it('disables a conflicting mod file', async () => {

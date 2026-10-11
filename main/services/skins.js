@@ -8,24 +8,59 @@ const { getValidMcAccessToken, getStoredProfile } = require('./auth');
 const { loadState, saveState } = require('../store');
 
 const HISTORY_LIMIT = 12;
+const SKIN_STATE_TTL_MS = 5000;
+let skinStateCache = null;
 
-async function mcGet(p) {
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function mcGet(p, attempt) {
+  const currentAttempt = attempt || 1;
   const token = await getValidMcAccessToken();
-  const res = await fetch(`${URLS.mcServicesBase}${p}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  let res;
+  try {
+    res = await fetch(`${URLS.mcServicesBase}${p}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  } catch {
+    if (currentAttempt < 3) {
+      await sleep(500 * currentAttempt);
+      return mcGet(p, currentAttempt + 1);
+    }
+    throw new Error('Could not reach Mojang. Check your connection and try again.');
+  }
+  if (res.status === 429 || (res.status >= 500 && res.status < 600)) {
+    if (currentAttempt < 4) {
+      const retryAfter = Number(res.headers && res.headers.get ? res.headers.get('retry-after') : NaN);
+      const waitMs =
+        Number.isFinite(retryAfter) && retryAfter >= 0
+          ? Math.min(retryAfter * 1000, 8000)
+          : 900 * currentAttempt;
+      await sleep(waitMs);
+      return mcGet(p, currentAttempt + 1);
+    }
+  }
   if (!res.ok) throw new Error(`Mojang API request failed (${res.status}): ${p}`);
   return res.json();
 }
 
+function bustSkinCache() {
+  skinStateCache = null;
+}
+
 async function getSkinState() {
+  const now = Date.now();
+  if (skinStateCache && now - skinStateCache.at < SKIN_STATE_TTL_MS) return skinStateCache.data;
   const profile = await mcGet('/minecraft/profile');
-  return {
+  const data = {
     id: profile.id,
     name: profile.name,
     skins: profile.skins || [],
     capes: profile.capes || [],
   };
+  skinStateCache = { at: Date.now(), data };
+  return data;
 }
 
 function validateSkinPng(buffer) {
@@ -70,7 +105,7 @@ async function fetchUrlAsDataUrl(url, retries = 1) {
       return `data:${mime};base64,${buf.toString('base64')}`;
     } catch (err) {
       if (attempt === retries) {
-        console.error(`[skins] texture download failed: ${url} — ${err?.message || err}`);
+        console.error(`[skins] texture download failed: ${url}: ${err?.message || err}`);
         return null;
       }
       await new Promise(r => setTimeout(r, 600));
@@ -89,7 +124,7 @@ function historyFile(id) {
   return path.join(skinsDir(), `${String(id).replace(/[^0-9a-f]/gi, '')}.png`);
 }
 
-async function rememberSkin(buffer, variant) {
+async function rememberSkin(buffer, variant, name) {
   try {
     const buf = Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer);
     const id = crypto.createHash('sha1').update(buf).digest('hex');
@@ -98,7 +133,9 @@ async function rememberSkin(buffer, variant) {
     const prev = Array.isArray(state.skinHistory) ? state.skinHistory : [];
     const prevEntry = prev.find(h => h.id === id);
     const entry = { id, variant, addedAt: Date.now() };
-    if (prevEntry && prevEntry.name) entry.name = prevEntry.name;
+    const cleanName = String(name || '').trim().slice(0, 64);
+    if (cleanName) entry.name = cleanName;
+    else if (prevEntry && prevEntry.name) entry.name = prevEntry.name;
     const next = [entry, ...prev.filter(h => h.id !== id)].slice(0, HISTORY_LIMIT);
     const keep = new Set(next.map(h => `${h.id}.png`));
     for (const f of fs.readdirSync(skinsDir())) {
@@ -185,7 +222,7 @@ async function getPreview() {
   };
 }
 
-async function uploadSkin(buffer, variant) {
+async function uploadSkin(buffer, variant, name) {
   const buf = Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer);
   const { width, height } = validateSkinPng(buf);
   const model = variant === 'slim' ? 'slim' : 'classic';
@@ -202,7 +239,8 @@ async function uploadSkin(buffer, variant) {
     const text = await res.text().catch(() => '');
     throw new Error(`Skin upload failed (${res.status}): ${text.slice(0, 300)}`);
   }
-  await rememberSkin(buf, model);
+  await rememberSkin(buf, model, name);
+  bustSkinCache();
   return { ok: true, width, height, variant: model };
 }
 
@@ -219,6 +257,7 @@ async function equipCape(capeId) {
     const text = await res.text().catch(() => '');
     throw new Error(`Equip cape failed (${res.status}): ${text.slice(0, 300)}`);
   }
+  bustSkinCache();
   return { ok: true, capeId: id };
 }
 

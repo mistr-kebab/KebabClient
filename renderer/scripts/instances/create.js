@@ -66,7 +66,7 @@
       }
       note.textContent = parts.length
         ? fmt(tr('inst.latestLoaders', 'Latest stable loaders for {mc}: {parts}.'), { mc, parts: parts.join(' · ') })
-        : fmt(tr('inst.noBuilds', 'No Fabric/Quilt builds for {mc} — Vanilla works.'), { mc });
+        : fmt(tr('inst.noBuilds', 'No Fabric/Quilt builds for {mc}, Vanilla works.'), { mc });
     }
   }
 

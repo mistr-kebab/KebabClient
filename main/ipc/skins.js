@@ -18,7 +18,7 @@ function register(ipcMain, ctx) {
     const buf = Buffer.from(raw, 'base64');
     if (!buf.length) throw new Error('No skin data received.');
     if (buf.length > 5 * 1024 * 1024) throw new Error('Skin file is too large (max 5 MB).');
-    return skins.uploadSkin(buf, args?.variant || 'classic');
+    return skins.uploadSkin(buf, args?.variant || 'classic', args?.name);
   });
   ipcMain.handle('skins:pickFile', async () => {
     const res = await dialog.showOpenDialog(getWindow(), {

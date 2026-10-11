@@ -1,7 +1,7 @@
 'use strict';
 
 (function () {
-  const { bridge, toast, el, tr, fmt } = window.launcherUtil;
+  const { bridge, toast, el, tr, fmt, cleanError, confirmDialog, promptDialog } = window.launcherUtil;
 
   let viewer = null;
   let resizeObserver = null;
@@ -189,7 +189,7 @@
           pending = isActive ? null : { kind: 'cape', capeId: cape.id, alias: cape.alias };
           updateSaveButton();
         } catch (err) {
-          toast(fmt(tr('skins.previewFail', 'Preview failed: {msg}'), { msg: err.message }), 'error');
+          toast(fmt(tr('skins.previewFail', 'Preview failed: {msg}'), { msg: cleanError(err) }), 'error');
         } finally {
           btn.disabled = isActive;
         }
@@ -321,6 +321,23 @@
     }
   }
 
+  async function renameSkin(entry) {
+    const newName = await promptDialog({
+      title: tr('skins.nameTitle', 'Name this skin'),
+      initialValue: entry.name || '',
+      placeholder: tr('skins.namePh', 'Enter a name…'),
+      confirmLabel: tr('skins.save', 'Save'),
+      maxLength: 64,
+    });
+    if (newName === null) return;
+    try {
+      await bridge().renameSkinHistory(entry.id, newName);
+      await loadHistory();
+    } catch (err) {
+      toast(fmt(tr('skins.actionFail', 'Failed: {msg}'), { msg: cleanError(err) }), 'error');
+    }
+  }
+
   function renderHistory(history) {
     const row = document.getElementById('skinHistory');
     if (!row) return;
@@ -353,17 +370,22 @@
       nameSpan.title = tr('skins.renameHint', 'Click to rename');
       nameSpan.addEventListener('click', async (e) => {
         e.stopPropagation();
-        const newName = window.prompt(tr('skins.renamePrompt', 'New name for this skin:'), entry.name || '');
-        if (newName === null || newName.trim() === '') return;
-        try {
-          await bridge().renameSkinHistory(entry.id, newName.trim());
-          await loadHistory();
-        } catch (err) {
-          toast(fmt(tr('skins.actionFail', 'Failed: {msg}'), { msg: err.message }), 'error');
-        }
+        await renameSkin(entry);
       });
       foot.appendChild(nameSpan);
       const actions = el('span', 'skin-card-actions');
+      const renameBtn = el('button', 'icon-btn icon-btn-tiny', '');
+      renameBtn.type = 'button';
+      renameBtn.setAttribute('aria-label', tr('skins.rename', 'Rename'));
+      renameBtn.title = tr('skins.rename', 'Rename');
+      const pencilIcon = document.createElement('i');
+      pencilIcon.setAttribute('data-lucide', 'pencil');
+      renameBtn.appendChild(pencilIcon);
+      renameBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        await renameSkin(entry);
+      });
+      actions.appendChild(renameBtn);
       const deleteBtn = el('button', 'icon-btn icon-btn-tiny', '');
       deleteBtn.type = 'button';
       deleteBtn.setAttribute('aria-label', tr('skins.delete', 'Delete'));
@@ -373,13 +395,19 @@
       deleteBtn.appendChild(delIcon);
       deleteBtn.addEventListener('click', async (e) => {
         e.stopPropagation();
-        if (!window.confirm(fmt(tr('skins.deleteConfirm', 'Delete "{name}" from history?'), { name: displayName }))) return;
+        const ok = await confirmDialog({
+          title: tr('skins.delete', 'Delete'),
+          message: fmt(tr('skins.deleteConfirm', 'Delete "{name}" from history?'), { name: displayName }),
+          confirmLabel: tr('skins.delete', 'Delete'),
+          danger: true,
+        });
+        if (!ok) return;
         try {
           await bridge().deleteSkinHistory(entry.id);
           await loadHistory();
           toast(tr('skins.deleted', 'Deleted.'), 'ok');
         } catch (err) {
-          toast(fmt(tr('skins.actionFail', 'Failed: {msg}'), { msg: err.message }), 'error');
+          toast(fmt(tr('skins.actionFail', 'Failed: {msg}'), { msg: cleanError(err) }), 'error');
         }
       });
       actions.appendChild(deleteBtn);
@@ -396,11 +424,12 @@
           pending = { kind: 'skin', base64: b64 };
           updateSaveButton();
         } catch (err) {
-          toast(fmt(tr('skins.previewFail', 'Preview failed: {msg}'), { msg: err.message }), 'error');
+          toast(fmt(tr('skins.previewFail', 'Preview failed: {msg}'), { msg: cleanError(err) }), 'error');
         }
       });
       row.appendChild(btn);
     }
+    if (window.refreshIcons) window.refreshIcons();
     applyGalleryFilter();
   }
 
@@ -447,7 +476,7 @@
     const label = document.getElementById('skinPlayerLabel');
     if (!label) return;
     label.textContent = lastPlayerName
-      ? `${tr('skins.preview', 'Preview')} — ${lastPlayerName}`
+      ? `${tr('skins.preview', 'Preview')} · ${lastPlayerName}`
       : tr('skins.preview', 'Preview');
   }
 
@@ -489,7 +518,7 @@
           statusEl.textContent = tr('skins.noSkin', 'No skin found on profile.');
         } else if (!preview.skin.dataUrl) {
           statusEl.textContent = fmt(
-            tr('skins.texFail', 'Skin texture download failed ({variant}) — check connection, then Reload preview.'),
+            tr('skins.texFail', 'Skin texture download failed ({variant}). Check connection, then reload preview.'),
             { variant: displayVariant(preview.skin.variant) }
           );
         } else if (shown.skinError) {
@@ -506,7 +535,7 @@
       if (preview?.skin && (!preview.skin.dataUrl || shown.skinError)) {
         toast(
           fmt(
-            tr('skins.texFail', 'Skin texture download failed ({variant}) — check connection, then Reload preview.'),
+            tr('skins.texFail', 'Skin texture download failed ({variant}). Check connection, then reload preview.'),
             { variant: displayVariant(preview.skin.variant) }
           ),
           'error'
@@ -515,7 +544,7 @@
       await loadHistory();
     } catch (err) {
       if (statusEl)
-        statusEl.textContent = fmt(tr('skins.unavailable', 'Preview unavailable: {msg}'), { msg: err.message });
+        statusEl.textContent = fmt(tr('skins.unavailable', 'Preview unavailable: {msg}'), { msg: cleanError(err) });
     }
   }
 
@@ -577,7 +606,7 @@
             if (capeVisible && currentCape) await v.loadCape(currentCape);
             applyBackEquipment();
           } catch (err) {
-            toast(fmt(tr('skins.previewFail', 'Preview failed: {msg}'), { msg: err.message }), 'error');
+            toast(fmt(tr('skins.previewFail', 'Preview failed: {msg}'), { msg: cleanError(err) }), 'error');
           }
         }
       });
@@ -592,7 +621,7 @@
           else viewer.resetCape();
           applyBackEquipment();
         } catch (err) {
-          toast(fmt(tr('skins.capePreviewFail', 'Cape preview failed: {msg}'), { msg: err.message }), 'error');
+          toast(fmt(tr('skins.capePreviewFail', 'Cape preview failed: {msg}'), { msg: cleanError(err) }), 'error');
         }
       });
     }
@@ -604,7 +633,7 @@
         try {
           applyBackEquipment();
         } catch (err) {
-          toast(fmt(tr('skins.previewFail', 'Preview failed: {msg}'), { msg: err.message }), 'error');
+          toast(fmt(tr('skins.previewFail', 'Preview failed: {msg}'), { msg: cleanError(err) }), 'error');
         }
       });
       const capeTabBtn = document.querySelector('[data-outfit="capes"]');
@@ -638,7 +667,7 @@
           const res = await bridge().pickSkinFile();
           if (res?.canceled) return;
           const shown = await showSkin(`data:image/png;base64,${res.dataBase64}`, currentCape);
-          pending = { kind: 'skin', base64: res.dataBase64 };
+          pending = { kind: 'skin', base64: res.dataBase64, fileName: res.fileName || '' };
           updateSaveButton();
           if (!shown.skinOk)
             toast(
@@ -646,7 +675,7 @@
               'error'
             );
         } catch (err) {
-          toast(fmt(tr('skins.invalidSkin', 'Invalid skin: {msg}'), { msg: err.message }), 'error');
+          toast(fmt(tr('skins.invalidSkin', 'Invalid skin: {msg}'), { msg: cleanError(err) }), 'error');
         }
       });
     }
@@ -654,17 +683,30 @@
     if (saveBtn) {
       saveBtn.addEventListener('click', async () => {
         if (!pending) {
-          toast(tr('skins.nothingPending', 'Nothing to apply — pick a skin or cape first.'));
+          toast(tr('skins.nothingPending', 'Nothing to apply, pick a skin or cape first.'));
           return;
         }
         const job = pending;
         saveBtn.disabled = true;
         try {
           if (job.kind === 'skin') {
+            const suggested = job.fileName ? String(job.fileName).replace(/\.png$/i, '') : '';
+            const name = await promptDialog({
+              title: tr('skins.nameTitle', 'Name this skin'),
+              initialValue: suggested,
+              placeholder: tr('skins.namePh', 'Enter a name…'),
+              confirmLabel: tr('skins.save', 'Save'),
+              maxLength: 64,
+            });
+            if (name === null) {
+              saveBtn.disabled = false;
+              updateSaveButton();
+              return;
+            }
             const before = await bridge()
               .getSkinState()
               .then(skinsFingerprint, () => '');
-            await bridge().uploadSkin(job.base64, variant);
+            await bridge().uploadSkin(job.base64, variant, name);
             pending = null;
             setSkinStatus(tr('skins.waiting', 'Saving… waiting for Mojang…'));
             const reflected = await waitForSkinState({ skinFp: before });
@@ -673,7 +715,7 @@
             toast(
               reflected
                 ? tr('skins.uploadedOk', 'Skin uploaded.')
-                : tr('skins.slowSkin', 'Applied. Mojang is slow — use Reload preview if the skin is missing.')
+                : tr('skins.slowSkin', 'Applied. Mojang is slow, use Reload preview if the skin is missing.')
             );
           } else {
             await bridge().equipCape(job.capeId);
@@ -687,7 +729,7 @@
                 ? fmt(tr('skins.equippedOk', 'Equipped {name}.'), {
                     name: job.alias || tr('skins.capesTitle', 'Capes'),
                   })
-                : tr('skins.slowCape', 'Equipped. Mojang is slow — use Reload preview if the cape is missing.')
+                : tr('skins.slowCape', 'Equipped. Mojang is slow, use Reload preview if the cape is missing.')
             );
           }
         } catch (err) {
@@ -697,7 +739,7 @@
                 job.kind === 'cape' ? 'skins.equipFail' : 'skins.uploadFail',
                 job.kind === 'cape' ? 'Equip failed: {msg}' : 'Upload failed: {msg}'
               ),
-              { msg: err.message }
+              { msg: cleanError(err) }
             ),
             'error'
           );
@@ -709,7 +751,7 @@
       ensureViewer();
     } catch (err) {
       const statusEl = document.getElementById('skinStatus');
-      if (statusEl) statusEl.textContent = fmt(tr('skins.no3d', '3D preview unavailable: {msg}'), { msg: err.message });
+      if (statusEl) statusEl.textContent = fmt(tr('skins.no3d', '3D preview unavailable: {msg}'), { msg: cleanError(err) });
     }
     document.addEventListener('i18n:applied', () => {
       reload().catch(() => {});

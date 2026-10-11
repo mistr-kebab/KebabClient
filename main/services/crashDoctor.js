@@ -275,14 +275,25 @@ function snapRam(gb) {
   return RAM_OPTIONS[RAM_OPTIONS.length - 1];
 }
 
+function roundGb(mb) {
+  return Math.round((Number(mb) / 1024) * 10) / 10;
+}
+
 function buildFixPayload(rule, text, instanceId) {
   if (rule.fixType === 'increase_ram') {
     const settings = require('../settings');
-    const current = settings.getSettings().java.xmx;
+    let currentMb = settings.getSettings().java.xmxMb;
+    try {
+      const entry = require('./instances').getInstance(instanceId);
+      if (entry && entry.java && Number.isFinite(Number(entry.java.xmxMb))) {
+        currentMb = Number(entry.java.xmxMb);
+      }
+    } catch {}
+    const currentGb = currentMb / 1024;
     const minGb = Number(rule.payload && rule.payload.minGb) || 6;
-    const to = snapRam(Math.max(minGb, current + 2));
-    if (to <= current) return null;
-    return { fromGb: current, toGb: to };
+    const to = snapRam(Math.max(minGb, currentGb + 2));
+    if (to * 1024 <= currentMb) return null;
+    return { fromGb: roundGb(currentMb), toGb: to };
   }
   if (rule.fixType === 'disable_mod') return buildDisablePayload(text, instanceId, rule);
   if (rule.fixType === 'install_dependency') return buildDepPayload(text);
@@ -366,9 +377,18 @@ async function applyFix(instanceId, fixType, fixPayload) {
   if (fixType === 'increase_ram') {
     const to = Number(payload.toGb);
     if (!RAM_OPTIONS.includes(to)) throw new Error('Invalid RAM target.');
-    const settings = require('../settings');
-    settings.updateSettings({ java: { xmx: to } });
-    return { ok: true, xmx: to };
+    const instances = require('./instances');
+    const entry = instances.getInstance(instanceId);
+    if (entry && entry.java) {
+      instances.updateInstanceJava(instanceId, {
+        path: entry.java.path,
+        xmxMb: to * 1024,
+        extraArgs: entry.java.extraArgs,
+      });
+    } else {
+      require('../settings').updateSettings({ java: { xmxMb: to * 1024 } });
+    }
+    return { ok: true, xmxMb: to * 1024 };
   }
   if (fixType === 'disable_mod') {
     const file = path.basename(String(payload.file || ''));

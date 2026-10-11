@@ -1,7 +1,7 @@
 'use strict';
 
 (function () {
-  const { bridge, toast, el, tr, fmt, cleanError } = window.launcherUtil;
+  const { bridge, toast, el, tr, fmt, cleanError, paintSkeletons } = window.launcherUtil;
 
   const ctx = {};
 
@@ -208,11 +208,15 @@
 
   async function loadDetailInstalled() {
     if (!ctx.detailId) return;
+    const grid = document.getElementById('detailContentGrid');
+    const first = grid && !grid.hidden && !grid.children.length;
+    if (first) paintSkeletons(grid, 'card', 6);
     let data = null;
     try {
       data = await bridge().listInstalledContent(ctx.detailId);
     } catch (err) {
       toast(fmt(tr('inst.listFail', 'Could not list content: {msg}'), { msg: cleanError(err) }), 'error');
+      renderDetailGrid();
       return;
     }
     ctx.installedProjectIds.clear();

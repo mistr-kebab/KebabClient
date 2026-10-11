@@ -65,7 +65,7 @@
         } else if (msg.state === 'ready') {
           state = 'ready';
           version = msg.version || version;
-          toast(t('update.readyMsg', 'Update geladen — Neustart zum Installieren.'), 'ok');
+          toast(t('update.readyMsg', 'Update geladen, Neustart zum Installieren.'), 'ok');
         } else if (msg.state === 'none') {
           if (state !== 'ready') state = 'idle';
         } else if (msg.state === 'error') {

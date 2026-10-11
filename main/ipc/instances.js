@@ -11,6 +11,7 @@ function register(ipcMain, ctx) {
   ipcMain.handle('instances:list', async () => ({
     instances: instances.listInstances().map(i => instances.describeInstance(i)),
     activeId: instances.getActiveInstance()?.id || null,
+    playDays: instances.getPlayDays(),
   }));
   ipcMain.handle('instances:setIcon', async (_e, args) => {
     const id = String(args?.id || '');
@@ -58,6 +59,28 @@ function register(ipcMain, ctx) {
     const active = instances.setActiveInstance(args?.id);
     broadcast('instances:changed', { instances: instances.listInstances(), activeId: active.id });
     return active;
+  });
+  ipcMain.handle('instances:getJava', async (_e, args) => {
+    const entry = instances.getInstance(String(args?.id || ''));
+    const appSettings = require('../settings');
+    const java = require('../services/minecraft/java');
+    return {
+      global: appSettings.getSettings().java,
+      instance: entry.java || null,
+      effective: java.javaSettings(entry),
+      ram: { min: appSettings.RAM_MIN_MB, max: appSettings.RAM_MAX_MB, step: appSettings.RAM_STEP_MB },
+    };
+  });
+  ipcMain.handle('instances:setJava', async (_e, args) => {
+    const entry = instances.updateInstanceJava(
+      String(args?.id || ''),
+      args?.java === undefined ? null : args.java
+    );
+    broadcast('instances:changed', {
+      instances: instances.listInstances(),
+      activeId: instances.getActiveInstance()?.id || null,
+    });
+    return { ok: true, entry: instances.describeInstance(entry) };
   });
 
   ipcMain.handle('meta:mcVersions', async () => {

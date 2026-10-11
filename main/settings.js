@@ -8,12 +8,15 @@ const { loadState, saveState } = require('./store');
 const ACCENT_KEYS = ['amber', 'crimson', 'azure', 'violet', 'emerald'];
 const THEME_MODES = ['oled', 'dark', 'light', 'system'];
 const LANGUAGES = ['de', 'en'];
+const RAM_MIN_MB = 1024;
+const RAM_MAX_MB = 16384;
+const RAM_STEP_MB = 100;
 const RAM_OPTIONS = [2, 4, 6, 8, 12, 16];
 const THREAD_OPTIONS = [2, 4, 8, 16];
 
 const DEFAULTS = {
   theme: { accent: 'amber', mode: 'system' },
-  java: { path: '', xmx: 4, extraArgs: '' },
+  java: { path: '', xmxMb: 4096, extraArgs: '' },
   downloads: { threads: 8 },
   language: 'en',
   telemetry: true,
@@ -36,27 +39,44 @@ function sanitizeTheme(t) {
   return { accent: key, mode };
 }
 
+function sanitizeRamMb(v, fallback) {
+  const n = Number(v);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(RAM_MAX_MB, Math.max(RAM_MIN_MB, Math.round(n)));
+}
+
 function sanitizeJava(j) {
-  const out = { path: '', xmx: 4, extraArgs: '' };
+  const out = { path: '', xmxMb: DEFAULTS.java.xmxMb, extraArgs: '' };
   const customPath = String(j?.path || '').trim();
   if (customPath) {
     if (!path.isAbsolute(customPath)) throw new Error('Java path must be absolute.');
     out.path = customPath;
   }
-  const xmx = Number(j?.xmx);
-  out.xmx = RAM_OPTIONS.includes(xmx) ? xmx : 4;
-  const rawArgs = String(j?.extraArgs || '')
+  if (j?.xmxMb !== undefined && j?.xmxMb !== null) {
+    out.xmxMb = sanitizeRamMb(j.xmxMb, out.xmxMb);
+  } else if (j?.xmx !== undefined && j?.xmx !== null) {
+    // legacy: xmx was stored in GB
+    const legacy = Number(j.xmx);
+    out.xmxMb = Number.isFinite(legacy)
+      ? sanitizeRamMb(legacy <= 32 ? legacy * 1024 : legacy, out.xmxMb)
+      : out.xmxMb;
+  }
+  out.extraArgs = sanitizeJvmArgs(j?.extraArgs);
+  return out;
+}
+
+function sanitizeJvmArgs(raw) {
+  const tokens = String(raw || '')
     .trim()
     .slice(0, 500);
   const kept = [];
-  for (const token of rawArgs.split(/\s+/).filter(Boolean)) {
+  for (const token of tokens.split(/\s+/).filter(Boolean)) {
     if (token.includes('\0')) continue;
     if (/javaagent/i.test(token)) continue;
     if (/^(-agentlib|-agentpath|-Xbootclasspath|-Xrunjdwp)/i.test(token)) continue;
     kept.push(token);
   }
-  out.extraArgs = kept.join(' ');
-  return out;
+  return kept.join(' ');
 }
 
 function sanitizeDownloads(d) {
@@ -281,8 +301,14 @@ module.exports = {
   ACCENT_KEYS,
   LANGUAGES,
   RAM_OPTIONS,
+  RAM_MIN_MB,
+  RAM_MAX_MB,
+  RAM_STEP_MB,
   THREAD_OPTIONS,
   DEFAULTS,
+  sanitizeJava,
+  sanitizeJvmArgs,
+  sanitizeRamMb,
   getSettings,
   updateSettings,
   getDataDirInfo,

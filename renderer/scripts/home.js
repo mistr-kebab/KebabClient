@@ -12,6 +12,58 @@
     return `${h}h ${m}m`;
   }
 
+  function normVer(v) {
+    return String(v || '').trim().replace(/^v/i, '');
+  }
+
+  function isNewer(a, b) {
+    const pa = normVer(a).split('.').map(Number);
+    const pb = normVer(b).split('.').map(Number);
+    for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+      const x = pa[i] || 0;
+      const y = pb[i] || 0;
+      if (x !== y) return x > y;
+    }
+    return false;
+  }
+
+  function dayLocale() {
+    try {
+      if (window.i18n && window.i18n.getLanguage && window.i18n.getLanguage() === 'en') return 'en-US';
+    } catch {}
+    return 'de-DE';
+  }
+
+  function renderPlayDays(map) {
+    const box = document.getElementById('homePlayDays');
+    if (!box) return;
+    box.textContent = '';
+    const days = [];
+    const now = new Date();
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      days.push({ date: d, ms: Number((map || {})[key]) || 0, today: i === 0 });
+    }
+    if (days.every(d => !d.ms)) {
+      box.appendChild(el('p', 'muted small', t('home.emptyRecent', 'Nothing played yet.')));
+      return;
+    }
+    const locale = dayLocale();
+    const max = Math.max(1, ...days.map(d => d.ms));
+    const chart = el('div', 'playchart');
+    for (const d of days) {
+      const bar = el('div', 'playchart-bar');
+      const fill = el('div', 'playchart-fill' + (d.today ? ' is-today' : ''));
+      fill.style.height = d.ms ? `${Math.max(5, Math.round((d.ms / max) * 100))}%` : '0%';
+      fill.title = `${d.date.toLocaleDateString(locale)}: ${fmtDur(d.ms) || '0 min'}`;
+      bar.appendChild(fill);
+      bar.appendChild(el('span', 'playchart-day', d.date.toLocaleDateString(locale, { weekday: 'short' })));
+      chart.appendChild(bar);
+    }
+    box.appendChild(chart);
+  }
+
   async function refreshStats() {
     try {
       const res = await bridge().listInstances();
@@ -25,6 +77,7 @@
         play.textContent = fmtDur(total) || '–';
       }
       renderRecent(instances);
+      renderPlayDays(res && res.playDays);
     } catch {}
     try {
       const servers = await bridge().listServers();
@@ -39,6 +92,19 @@
       if (state)
         state.textContent =
           res && res.profile ? t('account.connected', 'Microsoft connected') : t('account.only', 'Microsoft only');
+    } catch {}
+    try {
+      const [app, latest] = await Promise.all([bridge().appVersion(), bridge().getLatestRelease()]);
+      const cur = normVer(app && app.version);
+      const lat = normVer(latest && latest.version);
+      const vEl = document.getElementById('homeStatsVersion');
+      const lEl = document.getElementById('homeStatsLatest');
+      if (vEl) vEl.textContent = cur ? `v${cur}` : '–';
+      if (lEl) {
+        if (!lat) lEl.textContent = '–';
+        else if (cur && isNewer(lat, cur)) lEl.textContent = `v${lat} (${t('update.available', 'Update available')})`;
+        else lEl.textContent = `v${lat}`;
+      }
     } catch {}
   }
 
